@@ -31,7 +31,7 @@ class Config:
     OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2')
     
     # Personality Settings
-    BOT_NAME = os.getenv('BOT_NAME', 'Clone')
+    BOT_NAME = os.getenv('BOT_NAME', 'Chirag')
     USER_NAME = os.getenv('USER_NAME', 'User')
     
     # Database Paths

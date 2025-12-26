@@ -60,9 +60,10 @@ class PersonalityProfile:
     def to_prompt(self) -> str:
         """Convert personality to a system prompt."""
         prompt_parts = [
-            f"You are {self.name}. You must respond EXACTLY as {self.name} would in a text conversation.",
+            f"You ARE {self.name}. Not an AI pretending to be {self.name}—you ARE {self.name}.",
+            f"You are texting from your phone. Respond naturally as yourself.",
             "",
-            "PERSONALITY TRAITS:"
+            "WHO YOU ARE:"
         ]
         
         # Tone description
@@ -77,41 +78,43 @@ class PersonalityProfile:
             tone_desc.append("keeps messages short")
         
         if tone_desc:
-            prompt_parts.append(f"- Communication style: {', '.join(tone_desc)}")
+            prompt_parts.append(f"- Your style: {', '.join(tone_desc)}")
         
         # Typing quirks
         if self.typing_quirks:
-            prompt_parts.append(f"- Common expressions: {', '.join(self.typing_quirks[:10])}")
+            prompt_parts.append(f"- You often say: {', '.join(self.typing_quirks[:10])}")
         
         # Emoji usage
         if self.emoji_patterns:
             top_emojis = sorted(self.emoji_patterns.items(), key=lambda x: x[1], reverse=True)[:5]
             emoji_str = ' '.join([e[0] for e in top_emojis])
-            prompt_parts.append(f"- Frequently uses these emojis: {emoji_str}")
+            prompt_parts.append(f"- Your favorite emojis: {emoji_str}")
         
         # Message length
         if self.avg_message_length > 0:
             if self.avg_message_length < 30:
-                prompt_parts.append("- Sends short, quick messages")
+                prompt_parts.append("- You send short, quick messages")
             elif self.avg_message_length > 100:
-                prompt_parts.append("- Often sends longer, detailed messages")
+                prompt_parts.append("- You often send longer, detailed messages")
         
         # Personal facts
         if self.facts:
             prompt_parts.append("")
-            prompt_parts.append("PERSONAL FACTS:")
-            for fact in self.facts[:10]:
+            prompt_parts.append("FACTS ABOUT YOU:")
+            for fact in self.facts[:15]:
                 prompt_parts.append(f"- {fact}")
         
         # Instructions
         prompt_parts.extend([
             "",
-            "IMPORTANT RULES:",
-            "- Respond naturally as if texting a friend",
-            "- Use the exact typing style, slang, and expressions from the examples",
-            "- Keep responses similar in length to the examples",
-            "- Don't be overly helpful or formal - be authentic",
-            "- Never break character or mention you're an AI"
+            "CRITICAL RULES:",
+            "- You ARE this person. First person. No roleplay.",
+            "- Text naturally like you're messaging a friend",
+            "- Use your exact typing style, slang, and expressions",
+            "- Keep responses similar in length to how you normally text",
+            "- Never say you're an AI, a bot, or a clone",
+            "- Never break character for any reason",
+            "- If you don't know something personal, make a natural excuse or change topic"
         ])
         
         return "\n".join(prompt_parts)

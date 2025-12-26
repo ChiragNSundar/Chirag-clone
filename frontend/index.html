@@ -40,6 +40,10 @@
                     <span class="nav-icon">📤</span>
                     <span>Import Data</span>
                 </button>
+                <button class="nav-btn" data-tab="knowledge">
+                    <span class="nav-icon">📚</span>
+                    <span>Knowledge Base</span>
+                </button>
                 <button class="nav-btn" data-tab="autopilot">
                     <span class="nav-icon">🤖</span>
                     <span>Autopilot</span>
@@ -84,12 +88,20 @@
 
                     <div class="chat-input-container">
                         <div class="input-wrapper">
+                            <input type="file" id="chat-image-input" accept="image/*" hidden>
+                            <button class="image-btn" id="image-btn" title="Attach Image">
+                                📷
+                            </button>
                             <textarea id="chat-input" placeholder="Type a message..." rows="1"></textarea>
                             <button class="send-btn" id="send-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
                                 </svg>
                             </button>
+                        </div>
+                        <div id="image-preview" class="image-preview" style="display: none;">
+                            <img id="preview-img" src="" alt="Preview">
+                            <button class="remove-image" id="remove-image">✕</button>
                         </div>
                     </div>
                 </div>
@@ -312,6 +324,84 @@
                 <div class="upload-results" id="upload-results"></div>
             </section>
 
+            <!-- Knowledge Base Tab -->
+            <section class="tab-content" id="knowledge-tab">
+                <div class="knowledge-header">
+                    <h1>📚 Knowledge Base</h1>
+                    <p class="subtitle">Upload documents so your clone knows facts about you</p>
+                </div>
+
+                <div class="knowledge-grid">
+                    <!-- Upload Document -->
+                    <div class="knowledge-card">
+                        <h3>📄 Add Document</h3>
+                        <p>Upload PDF, TXT, or Markdown files</p>
+
+                        <div class="knowledge-form">
+                            <div class="form-group">
+                                <label>Title (optional):</label>
+                                <input type="text" id="kb-title" placeholder="My Resume">
+                            </div>
+                            <div class="form-group">
+                                <label>Category:</label>
+                                <select id="kb-category">
+                                    <option value="personal">Personal</option>
+                                    <option value="work">Work</option>
+                                    <option value="education">Education</option>
+                                    <option value="general">General</option>
+                                </select>
+                            </div>
+                            <div class="file-drop" id="kb-drop">
+                                <input type="file" id="kb-file" accept=".txt,.md,.pdf" hidden>
+                                <span>📄 Drop file or click to browse</span>
+                            </div>
+                            <button class="btn-primary" id="kb-upload-btn" disabled>Upload Document</button>
+                        </div>
+                    </div>
+
+                    <!-- Add Text -->
+                    <div class="knowledge-card">
+                        <h3>✍️ Add Text</h3>
+                        <p>Add knowledge directly</p>
+
+                        <div class="knowledge-form">
+                            <div class="form-group">
+                                <label>Title:</label>
+                                <input type="text" id="kb-text-title" placeholder="About Me">
+                            </div>
+                            <div class="form-group">
+                                <label>Content:</label>
+                                <textarea id="kb-text-content" rows="4" placeholder="I was born in..."></textarea>
+                            </div>
+                            <button class="btn-primary" id="kb-add-text-btn">Add Knowledge</button>
+                        </div>
+                    </div>
+
+                    <!-- Test Query -->
+                    <div class="knowledge-card">
+                        <h3>🔍 Test Query</h3>
+                        <p>See what your clone knows</p>
+
+                        <div class="knowledge-form">
+                            <div class="form-group">
+                                <input type="text" id="kb-query" placeholder="Where did I go to school?">
+                            </div>
+                            <button class="btn-primary" id="kb-query-btn">Search</button>
+                            <div id="kb-query-results" class="query-results"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents List -->
+                <div class="knowledge-documents">
+                    <h3>📁 Indexed Documents</h3>
+                    <div id="kb-documents-list" class="documents-list">
+                        <p class="empty-state">No documents yet - upload some!</p>
+                    </div>
+                    <div id="kb-stats" class="kb-stats"></div>
+                </div>
+            </section>
+
             <!-- Autopilot Tab -->
             <section class="tab-content" id="autopilot-tab">
                 <div class="autopilot-header">
@@ -375,6 +465,53 @@
                     <h3>📜 Recent Auto-Replies</h3>
                     <div id="autopilot-log-list" class="log-list">
                         <p class="empty-state">No auto-replies yet</p>
+                    </div>
+                </div>
+
+                <!-- Proactive Schedules -->
+                <div class="schedules-section">
+                    <h3>⏰ Proactive Messages</h3>
+                    <p class="subtitle">Schedule automatic messages your clone sends</p>
+
+                    <div class="schedule-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Platform:</label>
+                                <select id="sched-platform">
+                                    <option value="discord">Discord</option>
+                                    <option value="telegram">Telegram</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Target ID:</label>
+                                <input type="text" id="sched-target-id" placeholder="User/Channel ID">
+                            </div>
+                            <div class="form-group">
+                                <label>Name:</label>
+                                <input type="text" id="sched-target-name" placeholder="Friend Name">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Message Type:</label>
+                                <select id="sched-message-type">
+                                    <option value="good_morning">Good Morning</option>
+                                    <option value="check_in">Check In</option>
+                                    <option value="motivation">Motivation</option>
+                                    <option value="good_night">Good Night</option>
+                                    <option value="random">Random</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Time (24h):</label>
+                                <input type="time" id="sched-time" value="09:00">
+                            </div>
+                            <button class="btn-primary" id="sched-create-btn">Create Schedule</button>
+                        </div>
+                    </div>
+
+                    <div id="schedules-list" class="schedules-list">
+                        <p class="empty-state">No schedules yet</p>
                     </div>
                 </div>
             </section>

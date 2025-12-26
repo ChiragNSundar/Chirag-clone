@@ -7,7 +7,7 @@ from flask_socketio import SocketIO, emit
 import os
 
 from config import Config
-from routes import chat_bp, training_bp, upload_bp, visualization_bp, autopilot_bp, timeline_bp, analytics_bp
+from routes import chat_bp, training_bp, upload_bp, visualization_bp, autopilot_bp, timeline_bp, analytics_bp, knowledge_bp, proactive_bp
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -27,6 +27,8 @@ app.register_blueprint(visualization_bp)
 app.register_blueprint(autopilot_bp)
 app.register_blueprint(timeline_bp)
 app.register_blueprint(analytics_bp)
+app.register_blueprint(knowledge_bp)
+app.register_blueprint(proactive_bp)
 
 
 # Serve frontend

@@ -15,14 +15,23 @@
       "response_time_ms": 0,
       "confidence": 0.5,
       "is_training": true
+    },
+    {
+      "timestamp": "2025-12-26T16:49:09.114210",
+      "user_message": "Hello!",
+      "bot_response": "API quota exceeded. Please try again later or check your API plan.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
     }
   ],
   "daily_stats": {
     "2025-12-26": {
-      "total_messages": 2,
+      "total_messages": 3,
       "training_messages": 1,
       "hours": {
-        "15": 2
+        "15": 2,
+        "16": 1
       }
     }
   },
@@ -31,10 +40,12 @@
   },
   "response_times": [
     0,
+    0,
     0
   ],
   "quality_scores": [
     0.7,
-    0.5
+    0.5,
+    0.7
   ]
 }

@@ -1294,6 +1294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             loadAutopilotStatus();
             loadAutopilotLogs();
+            loadSchedules();
         }, 100);
     });
 
@@ -1305,6 +1306,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     });
 
+    // Load knowledge when tab is clicked
+    document.querySelector('[data-tab="knowledge"]')?.addEventListener('click', () => {
+        setTimeout(() => {
+            loadKnowledgeDocuments();
+        }, 100);
+    });
+
     // Autopilot button listeners
     document.getElementById('discord-start-btn')?.addEventListener('click', toggleDiscordBot);
     document.getElementById('telegram-start-btn')?.addEventListener('click', toggleTelegramBot);
@@ -1312,4 +1320,426 @@ document.addEventListener('DOMContentLoaded', () => {
     // Backup button listeners
     document.getElementById('create-backup-btn')?.addEventListener('click', createBackup);
     document.getElementById('export-personality-btn')?.addEventListener('click', exportPersonality);
+
+    // Knowledge Base listeners
+    setupKnowledgeListeners();
+
+    // Vision/Image listeners
+    setupImageListeners();
+
+    // Schedule listeners
+    setupScheduleListeners();
 });
+
+// ===================================
+// Knowledge Base Functions
+// ===================================
+
+function setupKnowledgeListeners() {
+    // File drop for knowledge
+    const drop = document.getElementById('kb-drop');
+    const file = document.getElementById('kb-file');
+    const button = document.getElementById('kb-upload-btn');
+
+    if (drop && file) {
+        drop.addEventListener('click', () => file.click());
+        file.addEventListener('change', () => {
+            if (file.files.length) {
+                drop.querySelector('span').textContent = `📄 ${file.files[0].name}`;
+                if (button) button.disabled = false;
+            }
+        });
+    }
+
+    document.getElementById('kb-upload-btn')?.addEventListener('click', uploadKnowledgeDocument);
+    document.getElementById('kb-add-text-btn')?.addEventListener('click', addKnowledgeText);
+    document.getElementById('kb-query-btn')?.addEventListener('click', queryKnowledge);
+}
+
+async function loadKnowledgeDocuments() {
+    try {
+        const response = await fetch(`${API_BASE}/api/knowledge/documents`);
+        const data = await response.json();
+
+        const list = document.getElementById('kb-documents-list');
+        const stats = document.getElementById('kb-stats');
+
+        if (data.documents && data.documents.length > 0) {
+            list.innerHTML = data.documents.map(doc => `
+                <div class="document-item">
+                    <div class="doc-info">
+                        <span class="doc-title">${escapeHtml(doc.title)}</span>
+                        <span class="doc-meta">${doc.category} • ${doc.chunk_count} chunks</span>
+                    </div>
+                    <button class="btn-danger" onclick="deleteKnowledgeDocument('${doc.id}')">✕</button>
+                </div>
+            `).join('');
+        } else {
+            list.innerHTML = '<p class="empty-state">No documents yet - upload some!</p>';
+        }
+
+        if (data.stats) {
+            stats.innerHTML = `${data.stats.total_documents} docs • ${data.stats.total_chunks} chunks`;
+        }
+    } catch (error) {
+        console.error('Failed to load knowledge:', error);
+    }
+}
+
+async function uploadKnowledgeDocument() {
+    const file = document.getElementById('kb-file').files[0];
+    const title = document.getElementById('kb-title').value.trim();
+    const category = document.getElementById('kb-category').value;
+
+    if (!file) {
+        showToast('Please select a file', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    if (title) formData.append('title', title);
+    formData.append('category', category);
+
+    try {
+        const response = await fetch(`${API_BASE}/api/knowledge/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            document.getElementById('kb-file').value = '';
+            document.getElementById('kb-title').value = '';
+            document.getElementById('kb-drop').querySelector('span').textContent = '📄 Drop file or click to browse';
+            document.getElementById('kb-upload-btn').disabled = true;
+            loadKnowledgeDocuments();
+        } else {
+            showToast(data.error || 'Upload failed', 'error');
+        }
+    } catch (error) {
+        showToast('Upload failed', 'error');
+    }
+}
+
+async function addKnowledgeText() {
+    const title = document.getElementById('kb-text-title').value.trim();
+    const content = document.getElementById('kb-text-content').value.trim();
+
+    if (!content) {
+        showToast('Please enter some content', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/api/knowledge/text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title || 'Manual Entry', content })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast(data.message, 'success');
+            document.getElementById('kb-text-title').value = '';
+            document.getElementById('kb-text-content').value = '';
+            loadKnowledgeDocuments();
+        } else {
+            showToast(data.error || 'Failed to add', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to add knowledge', 'error');
+    }
+}
+
+async function queryKnowledge() {
+    const query = document.getElementById('kb-query').value.trim();
+    const resultsDiv = document.getElementById('kb-query-results');
+
+    if (!query) {
+        showToast('Please enter a query', 'error');
+        return;
+    }
+
+    resultsDiv.innerHTML = '<p>Searching...</p>';
+
+    try {
+        const response = await fetch(`${API_BASE}/api/knowledge/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+            resultsDiv.innerHTML = data.results.map(r => `
+                <div class="query-result">
+                    <div class="result-source">${escapeHtml(r.filename)}</div>
+                    <div class="result-content">${escapeHtml(r.content.substring(0, 200))}...</div>
+                </div>
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = '<p class="empty-state">No matching knowledge found</p>';
+        }
+    } catch (error) {
+        resultsDiv.innerHTML = '<p class="error">Search failed</p>';
+    }
+}
+
+async function deleteKnowledgeDocument(docId) {
+    if (!confirm('Delete this document?')) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/knowledge/documents/${docId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Document deleted', 'success');
+            loadKnowledgeDocuments();
+        } else {
+            showToast(data.error || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showToast('Delete failed', 'error');
+    }
+}
+
+// ===================================
+// Vision / Image Upload Functions
+// ===================================
+
+let currentImageData = null;
+let currentImageType = 'image/jpeg';
+
+function setupImageListeners() {
+    const imageBtn = document.getElementById('image-btn');
+    const imageInput = document.getElementById('chat-image-input');
+    const removeBtn = document.getElementById('remove-image');
+
+    imageBtn?.addEventListener('click', () => imageInput?.click());
+
+    imageInput?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                currentImageData = dataUrl.split(',')[1]; // Remove data URL prefix
+                currentImageType = file.type || 'image/jpeg';
+
+                document.getElementById('preview-img').src = dataUrl;
+                document.getElementById('image-preview').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removeBtn?.addEventListener('click', () => {
+        currentImageData = null;
+        document.getElementById('image-preview').style.display = 'none';
+        document.getElementById('chat-image-input').value = '';
+    });
+}
+
+// Override sendMessage to include image
+const originalSendMessage = sendMessage;
+sendMessage = async function () {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+
+    if (!message && !currentImageData) return;
+
+    // Add user message with image preview if present
+    if (currentImageData) {
+        const imgPreview = `<img src="data:${currentImageType};base64,${currentImageData}" style="max-width: 200px; border-radius: 8px; margin-top: 8px;">`;
+        addMessageWithImage(message, 'user', imgPreview);
+    } else {
+        addMessage(message, 'user');
+    }
+    input.value = '';
+    input.style.height = 'auto';
+
+    showTypingIndicator();
+
+    try {
+        const body = {
+            message: message || "What's in this image?",
+            session_id: currentSessionId,
+            image: currentImageData,
+            image_type: currentImageType
+        };
+
+        const response = await fetch(`${API_BASE}/api/chat/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        hideTypingIndicator();
+
+        if (data.response) {
+            addMessage(data.response, 'bot', data.confidence);
+            if (data.mood) updateMood(data.mood);
+        }
+
+        // Clear image after sending
+        currentImageData = null;
+        document.getElementById('image-preview').style.display = 'none';
+        document.getElementById('chat-image-input').value = '';
+    } catch (error) {
+        hideTypingIndicator();
+        showToast('Failed to send message', 'error');
+    }
+};
+
+function addMessageWithImage(text, sender, imageHtml) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const welcome = messagesContainer.querySelector('.welcome-message');
+    if (welcome) welcome.remove();
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${sender}`;
+    msgDiv.innerHTML = `
+        <div class="message-avatar">${sender === 'user' ? '👤' : '🤖'}</div>
+        <div class="message-content">
+            <p class="message-text">${escapeHtml(text)}</p>
+            ${imageHtml}
+            <div class="message-meta">${formatTime(new Date())}</div>
+        </div>
+    `;
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// ===================================
+// Proactive Schedule Functions
+// ===================================
+
+function setupScheduleListeners() {
+    document.getElementById('sched-create-btn')?.addEventListener('click', createSchedule);
+}
+
+async function loadSchedules() {
+    try {
+        const response = await fetch(`${API_BASE}/api/autopilot/schedules`);
+        const data = await response.json();
+
+        const list = document.getElementById('schedules-list');
+
+        if (!data.available) {
+            list.innerHTML = '<p class="empty-state">Scheduler not available. Install APScheduler.</p>';
+            return;
+        }
+
+        if (data.schedules && data.schedules.length > 0) {
+            list.innerHTML = data.schedules.map(s => `
+                <div class="schedule-item ${s.active ? '' : 'paused'}">
+                    <div class="sched-info">
+                        <span class="sched-name">${escapeHtml(s.target_name)}</span>
+                        <span class="sched-meta">${s.platform} • ${s.message_type} • ${s.cron_expression}</span>
+                    </div>
+                    <div class="sched-actions">
+                        <button class="btn-small" onclick="triggerSchedule('${s.id}')">▶ Now</button>
+                        <button class="btn-danger" onclick="deleteSchedule('${s.id}')">✕</button>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            list.innerHTML = '<p class="empty-state">No schedules yet</p>';
+        }
+    } catch (error) {
+        console.error('Failed to load schedules:', error);
+    }
+}
+
+async function createSchedule() {
+    const platform = document.getElementById('sched-platform').value;
+    const targetId = document.getElementById('sched-target-id').value.trim();
+    const targetName = document.getElementById('sched-target-name').value.trim();
+    const messageType = document.getElementById('sched-message-type').value;
+    const time = document.getElementById('sched-time').value;
+
+    if (!targetId || !targetName) {
+        showToast('Please fill in Target ID and Name', 'error');
+        return;
+    }
+
+    // Convert time to cron expression (minute hour * * *)
+    const [hour, minute] = time.split(':');
+    const cron = `${parseInt(minute)} ${parseInt(hour)} * * *`;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/autopilot/schedules`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                platform,
+                target_id: targetId,
+                target_name: targetName,
+                message_type: messageType,
+                cron_expression: cron
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Schedule created!', 'success');
+            document.getElementById('sched-target-id').value = '';
+            document.getElementById('sched-target-name').value = '';
+            loadSchedules();
+        } else {
+            showToast(data.error || 'Failed to create schedule', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to create schedule', 'error');
+    }
+}
+
+async function triggerSchedule(scheduleId) {
+    try {
+        const response = await fetch(`${API_BASE}/api/autopilot/schedules/${scheduleId}/trigger`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Schedule triggered!', 'success');
+        } else {
+            showToast(data.error || 'Trigger failed', 'error');
+        }
+    } catch (error) {
+        showToast('Trigger failed', 'error');
+    }
+}
+
+async function deleteSchedule(scheduleId) {
+    if (!confirm('Delete this schedule?')) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/api/autopilot/schedules/${scheduleId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Schedule deleted', 'success');
+            loadSchedules();
+        } else {
+            showToast(data.error || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showToast('Delete failed', 'error');
+    }
+}
+

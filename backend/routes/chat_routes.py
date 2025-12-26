@@ -1,9 +1,11 @@
 """
 Chat Routes - API endpoints for chat functionality.
+Now supports vision (image) inputs.
 """
 from flask import Blueprint, request, jsonify
 from services.chat_service import get_chat_service
 from services.personality_service import get_personality_service
+from services.vision_service import get_vision_service
 import uuid
 
 chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
@@ -17,7 +19,9 @@ def send_message():
     Request body:
     {
         "message": "Hello!",
-        "session_id": "optional-session-id"
+        "session_id": "optional-session-id",
+        "image": "optional-base64-image-data",
+        "image_type": "image/jpeg"
     }
     """
     data = request.get_json()
@@ -31,10 +35,43 @@ def send_message():
     
     session_id = data.get('session_id', str(uuid.uuid4()))
     training_mode = data.get('training_mode', False)
+    image_data = data.get('image')
+    image_type = data.get('image_type', 'image/jpeg')
+    
+    # If image is provided, analyze it and add context to message
+    image_context = None
+    if image_data and not training_mode:
+        try:
+            vision = get_vision_service()
+            if vision.is_available():
+                result = vision.react_to_image(
+                    image_data=image_data,
+                    user_message=message,
+                    personality_context="Respond naturally as the user's clone.",
+                    mime_type=image_type
+                )
+                if result['success']:
+                    # Use vision response directly
+                    return jsonify({
+                        'response': result['reaction'],
+                        'session_id': session_id,
+                        'confidence': 85,
+                        'mood': None,
+                        'has_image': True
+                    })
+        except Exception as e:
+            print(f"Vision error: {e}")
+            image_context = "[Image attached but could not be analyzed]"
     
     try:
         chat_service = get_chat_service()
-        response, confidence, mood = chat_service.generate_response(message, session_id, training_mode=training_mode)
+        
+        # Include image context in message if vision failed
+        full_message = message
+        if image_context:
+            full_message = f"{message}\n\n{image_context}"
+        
+        response, confidence, mood = chat_service.generate_response(full_message, session_id, training_mode=training_mode)
         
         return jsonify({
             'response': response,

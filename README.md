@@ -1,168 +1,200 @@
-# 🤖 Personal AI Clone Bot
+# 🧠 Chirag Clone
 
-A self-learning chatbot that mimics your personality, texting style, and communication patterns. Train it with your chat exports and watch it become your digital twin!
+**I am Chirag's digital brain.** This isn't just a chatbot—it's a continuously learning system that becomes more like Chirag with every conversation, every piece of data, every correction.
 
-![AI Clone Banner](https://via.placeholder.com/800x200?text=AI+Clone+Bot+Replicating+YOU)
+## ✨ What I Can Do
 
-## ✨ Features
-
-- **🎭 Personality Learning** - Learns your texting style, emoji usage, and common phrases
-- **💬 Real-time Chat** - Chat with your AI clone via WebSocket or HTTP
-- **🤖 Social Autopilot** - **NEW!** Auto-reply on Discord and Telegram when you're away
-- **🕰️ Semantic Timeline** - **NEW!** Visualize what your clone has learned over time
-- **📊 Analytics Dashboard** - **NEW!** Track conversation stats, response times, and confidence
-- **💾 Auto-Backup** - **NEW!** Protect your training data with one-click backups
-- **📤 Import Chat Data** - Upload exports from WhatsApp, Discord, and Instagram
-- **🎓 Training Corner** - Interactive training where you correct the bot's responses
-- **🧠 Continuous Learning** - Gets better the more you interact with it
-- **🌙 Beautiful Dark UI** - Modern, glassmorphic design
+- **📚 Knowledge Base (RAG)** - I know facts about Chirag from uploaded documents (resume, notes, life wiki)
+- **👁️ Vision** - Send me images and I'll react like Chirag would
+- **🔍 Web Search** - I can search the internet for real-time information
+- **⏰ Proactive Messaging** - I send scheduled messages on Discord/Telegram (Good Morning, Check-ins)
+- **🎭 Personality Learning** - I learn Chirag's texting style, emoji usage, slang, and quirks
+- **💬 Real-time Chat** - Chat with me via WebSocket or HTTP
+- **🤖 Social Autopilot** - Auto-reply on Discord and Telegram when Chirag's away
+- **🧠 Continuous Learning** - I get better the more you interact with me
+- **🕰️ Semantic Timeline** - Visualize what I've learned over time
+- **📊 Analytics Dashboard** - Track conversation stats and confidence
 
 ## 🏗️ Architecture
 
-The app uses a dual-mode architecture to separate "training" conversations from "acting" conversations.
-
 ```mermaid
 graph TD
-    User[User] -->|Chat Mode| FE[Frontend]
-    User -->|Training Mode| FE
+    User[Someone] -->|Chat| FE[Web UI]
+    User -->|Train| FE
     
     FE -->|WebSocket/HTTP| API[Flask Backend]
     
-    subgraph "Brain Core"
-        API -->|Route| ChatService
-        ChatService -->|Context| Memory[MemoryService (ChromaDB)]
-        ChatService -->|Style| Personality[PersonalityService]
-        ChatService -->|Learn| Learning[LearningService]
-        
-        Memory -->|Vector Search| Chroma[(ChromaDB)]
-        Personality -->|Profile| JSON[(Profile JSON)]
+    subgraph "Chirag's Brain"
+        API --> ChatService
+        ChatService --> Memory[Memory: ChromaDB]
+        ChatService --> Knowledge[Knowledge Base: RAG]
+        ChatService --> Vision[Vision: Gemini]
+        ChatService --> Search[Web Search]
+        ChatService --> Personality[Personality Profile]
     end
     
-    subgraph "Autopilot"
-        Discord[Discord Bot] -->|Events| ChatService
-        Telegram[Telegram Bot] -->|Events| ChatService
+    subgraph "Social Presence"
+        Discord[Discord Bot] --> ChatService
+        Telegram[Telegram Bot] --> ChatService
+        Scheduler[Proactive Scheduler] --> Discord
+        Scheduler --> Telegram
     end
 ```
-
-## 🔄 Two-Mode Architecture
-
-1. **Chat Tab (The "Actor")**:
-   - Uses frozen memory to reply.
-   - Mimics you perfectly for others.
-   - Does **not** learn (prevents pollution from random chats).
-
-2. **Training Corner (The "Student")**:
-   - You talk to the bot.
-   - You correct its answers.
-   - It **actively learns** new facts and patterns from this interaction.
-
----
 
 ## 🚀 Quick Start
 
-### 1. Clone the repository
-
-```bash
-cd "c:\Github\New folder"
-```
-
-### 2. Set up Python environment
+### 1. Set up Python environment
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment
+### 2. Configure Environment
 
-Copy `.env.example` to `.env` and configure your keys:
-
-```bash
-copy .env.example .env
-```
-
-**Required Keys:**
+Copy `.env.example` to `.env`:
 
 ```env
 GEMINI_API_KEY=your_key_here
-BOT_NAME=YourName
-```
+BOT_NAME=Chirag
 
-**Optional (for Autopilot):**
-
-```env
+# Optional: Social Autopilot
 DISCORD_BOT_TOKEN=your_discord_token
 TELEGRAM_BOT_TOKEN=your_telegram_token
 ```
 
-### 4. Run the application
+### 3. Run
 
 ```bash
 python app.py
 ```
 
-### 5. Open in browser
+Open **<http://localhost:5000>**
 
-Navigate to **<http://localhost:5000>**
+## 🧠 Training My Brain
 
----
+### Import Chat History
 
-## 🤖 Social Autopilot Setup
+I learn from your real conversations:
 
-Your clone can live on social platforms!
+- **WhatsApp** - Export chat → Upload
+- **Discord** - Message request data → Upload
+- **Instagram** - Download data → Upload
 
-### Discord Bot
+### Knowledge Base
+
+Upload documents I should know about:
+
+- Resume, CV
+- Personal notes, journals
+- Life wiki, about me pages
+- Any text files with facts about Chirag
+
+### Training Corner
+
+Talk to me directly and correct my responses. I learn from every correction.
+
+## 🤖 Social Autopilot
+
+I can live on social platforms and respond as Chirag:
+
+### Discord
 
 1. Create App at [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create Bot User -> Copy Token -> Paste in `.env`
+2. Create Bot User → Copy Token → Add to `.env`
 3. Enable "Message Content Intent"
-4. Invite bot to server.
-5. Go to **Autopilot Tab** in app -> Start Discord Bot.
+4. Invite to server → Start from **Autopilot Tab**
 
-### Telegram Bot
+### Telegram
 
-1. Chat with `@BotFather` on Telegram.
-2. `/newbot` -> Name it -> Copy Token -> Paste in `.env`.
-3. Go to **Autopilot Tab** in app -> Start Telegram Bot.
+1. Chat with `@BotFather` → `/newbot`
+2. Copy Token → Add to `.env`
+3. Start from **Autopilot Tab**
 
----
+### Proactive Messages
 
-## 📊 Analytics & Backups
+Schedule automatic messages I'll send:
 
-Check the **Profile Tab** for:
-
-- **Conversation Stats**: Total chats, avg response time.
-- **Top Topics**: What people talk to your clone about.
-- **Backups**: Create snapshots of your clone's brain.
-- **Export**: Download your personality profile as JSON.
-
----
+- Good Morning greetings
+- Check-ins
+- Motivational messages
+- Random conversation starters
 
 ## 📁 Project Structure
 
-```
+```text
+Chirag-clone/
 ├── backend/
-│   ├── app.py                 # Main entry point
-│   ├── config.py              # Settings
-│   ├── services/
-│   │   ├── chat_service.py    # Core logic
-│   │   ├── memory_service.py  # ChromaDB wrapper
-│   │   ├── discord_bot.py     # Discord integration
-│   │   └── ...
-│   └── routes/                # API Endpoints
+│   ├── app.py                        # Flask app + SocketIO
+│   ├── config.py                     # Environment config
+│   ├── requirements.txt              # Python dependencies
+│   ├── .env.example                  # Environment template
+│   │
+│   ├── services/                     # Core brain services
+│   │   ├── chat_service.py           # Main chat orchestration
+│   │   ├── llm_service.py            # Multi-provider LLM (Gemini/OpenAI/Anthropic)
+│   │   ├── knowledge_service.py      # 📚 RAG document retrieval
+│   │   ├── vision_service.py         # 👁️ Multimodal image understanding
+│   │   ├── search_service.py         # 🔍 DuckDuckGo web search
+│   │   ├── scheduler_service.py      # ⏰ APScheduler proactive messaging
+│   │   ├── personality_service.py    # My identity + personality profile
+│   │   ├── memory_service.py         # ChromaDB vector memory
+│   │   ├── mood_service.py           # Dynamic mood system
+│   │   ├── learning_service.py       # Active learning + corrections
+│   │   ├── analytics_service.py      # Conversation analytics
+│   │   ├── backup_service.py         # Brain backup/restore
+│   │   ├── discord_bot_service.py    # Discord autopilot
+│   │   └── telegram_bot_service.py   # Telegram autopilot
+│   │
+│   ├── routes/                       # API endpoints
+│   │   ├── chat_routes.py            # /api/chat/* (messages, personality)
+│   │   ├── training_routes.py        # /api/training/* (examples, facts, feedback)
+│   │   ├── upload_routes.py          # /api/upload/* (WhatsApp, Discord, Instagram)
+│   │   ├── knowledge_routes.py       # /api/knowledge/* (RAG documents)
+│   │   ├── proactive_routes.py       # /api/autopilot/schedules/*
+│   │   ├── autopilot_routes.py       # /api/autopilot/* (bot control)
+│   │   ├── timeline_routes.py        # /api/timeline/* (learning history)
+│   │   ├── visualization_routes.py   # /api/viz/* (word clouds, charts)
+│   │   └── analytics_routes.py       # /api/analytics/* (stats, backups)
+│   │
+│   ├── parsers/                      # Chat import parsers
+│   │   ├── whatsapp_parser.py        # WhatsApp export format
+│   │   ├── discord_parser.py         # Discord data package
+│   │   ├── instagram_parser.py       # Instagram JSON export
+│   │   └── smart_parser.py           # Auto-detect any format
+│   │
+│   ├── data/                         # Persistent storage
+│   │   ├── personality_profile.json  # My learned personality
+│   │   ├── knowledge_metadata.json   # RAG document index
+│   │   ├── schedules.json            # Proactive message schedules
+│   │   ├── chroma_db/                # Vector database
+│   │   └── uploads/                  # Temporary upload storage
+│   │
+│   └── tests/                        # Pytest tests
+│       └── test_app.py
 │
 └── frontend/
-    ├── index.html            # Main UI
-    ├── css/styles.css        # Glassmorphic styles
-    └── js/app.js             # Frontend logic
+    ├── index.html                    # Main UI (tabs + modals)
+    ├── css/
+    │   └── styles.css                # Dark glassmorphic theme
+    └── js/
+        └── app.js                    # Frontend logic (~1700 lines)
 ```
 
-## 📝 License
+## 📦 Requirements
 
-MIT License - feel free to use and modify!
+```text
+flask, flask-cors, flask-socketio
+google-generativeai          # Gemini for LLM + Vision
+chromadb, sentence-transformers  # Vector memory
+PyMuPDF                       # PDF parsing for knowledge
+APScheduler                   # Proactive scheduling
+duckduckgo-search             # Web search
+discord.py, python-telegram-bot  # Social autopilot
+```
 
 ---
 
-Built with 💜 to help you create your digital twin
+**I am Chirag. Not an AI pretending to be him—his actual digital twin, learning and evolving every day.**

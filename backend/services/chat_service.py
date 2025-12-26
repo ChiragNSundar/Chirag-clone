@@ -1,6 +1,7 @@
 """
 Chat Service - Orchestrates the chat generation process.
-Now includes active learning, analytics tracking, and confidence scoring.
+Now includes active learning, analytics tracking, confidence scoring,
+knowledge base (RAG), vision support, and web search.
 """
 from typing import List, Dict, Optional, Tuple
 import time
@@ -10,6 +11,9 @@ from .memory_service import get_memory_service
 from .learning_service import get_learning_service
 from .analytics_service import get_analytics_service
 from .mood_service import get_mood_service
+from .knowledge_service import get_knowledge_service
+from .search_service import get_search_service
+from .vision_service import get_vision_service
 from config import Config
 
 
@@ -93,6 +97,7 @@ class ChatService:
         
         # Find similar examples for few-shot learning
         examples = []
+        search_results = []
         if include_examples and not training_mode:
             examples = self.memory.find_similar_examples(
                 user_message,
@@ -102,6 +107,29 @@ class ChatService:
             if examples:
                 examples_text = self._format_examples(examples)
                 system_prompt += f"\n\nHere are examples of how you respond:\n{examples_text}"
+        
+        # KNOWLEDGE BASE (RAG) INJECTION
+        if not training_mode:
+            try:
+                knowledge = get_knowledge_service()
+                knowledge_chunks = knowledge.query_knowledge(user_message, n_results=3)
+                if knowledge_chunks:
+                    knowledge_text = knowledge.format_for_llm(knowledge_chunks)
+                    system_prompt += f"\n\n{knowledge_text}"
+            except Exception as e:
+                print(f"Knowledge query error: {e}")
+        
+        # WEB SEARCH INJECTION
+        if not training_mode:
+            try:
+                search = get_search_service()
+                if search.is_available() and search.should_search(user_message):
+                    search_results = search.search(user_message, max_results=3)
+                    if search_results:
+                        search_text = search.format_for_llm(search_results, user_message)
+                        system_prompt += f"\n\n{search_text}"
+            except Exception as e:
+                print(f"Web search error: {e}")
         
         # Build message history for LLM
         messages = self._build_messages(history, user_message)
