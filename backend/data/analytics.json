@@ -1,0 +1,40 @@
+{
+  "conversations": [
+    {
+      "timestamp": "2025-12-26T15:56:29.423285",
+      "user_message": "Hello!",
+      "bot_response": "API quota exceeded. Please try again later or check your API plan.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
+    },
+    {
+      "timestamp": "2025-12-26T15:57:00.603800",
+      "user_message": "hey chirag",
+      "bot_response": "API quota exceeded. Please try again later or check your API plan.",
+      "response_time_ms": 0,
+      "confidence": 0.5,
+      "is_training": true
+    }
+  ],
+  "daily_stats": {
+    "2025-12-26": {
+      "total_messages": 2,
+      "training_messages": 1,
+      "hours": {
+        "15": 2
+      }
+    }
+  },
+  "topics": {
+    "chirag": 1
+  },
+  "response_times": [
+    0,
+    0
+  ],
+  "quality_scores": [
+    0.7,
+    0.5
+  ]
+}

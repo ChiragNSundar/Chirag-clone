@@ -1,0 +1,31 @@
+# Core Framework
+flask==3.0.0
+flask-cors==4.0.0
+flask-socketio==5.3.6
+python-dotenv==1.0.0
+
+# LLM & AI
+openai>=1.6.1
+anthropic>=0.8.1
+google-generativeai>=0.3.0,<0.8.0
+tiktoken>=0.5.2
+
+# Vector Database & Embeddings
+chromadb>=0.4.22
+sentence-transformers>=2.2.2
+
+# Data Processing
+pandas>=2.1.4
+numpy>=1.26.2
+
+# Utilities
+python-dateutil==2.8.2
+werkzeug==3.0.1
+eventlet==0.34.2
+
+# Social Bots (optional - for autopilot)
+discord.py>=2.3.2
+python-telegram-bot>=20.7
+
+# Testing
+pytest>=7.0.0
