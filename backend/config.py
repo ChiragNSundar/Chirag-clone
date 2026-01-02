@@ -1,10 +1,14 @@
 """
 Configuration settings for the Personal AI Clone Bot.
+Enhanced with startup validation and robustness settings.
 """
 import os
+import logging
 from dotenv import load_dotenv
+from typing import List
 
 load_dotenv()
+
 
 class Config:
     """Application configuration."""
@@ -12,6 +16,9 @@ class Config:
     # Flask
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+    
+    # Logging
+    LOG_LEVEL = logging.DEBUG if DEBUG else logging.INFO
     
     # LLM Provider Settings
     LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'gemini')  # 'gemini', 'openai', 'anthropic', 'ollama'
@@ -49,6 +56,64 @@ class Config:
     MAX_FEW_SHOT_EXAMPLES = 5
     TEMPERATURE = 0.8
     MAX_TOKENS = 256
+    
+    # Robustness Settings
+    MAX_MESSAGE_LENGTH = 10000           # Max characters per chat message
+    MAX_UPLOAD_SIZE_MB = 5               # Max file upload size in MB
+    MAX_REQUEST_SIZE_MB = 10             # Max total request size in MB
+    LLM_REQUEST_TIMEOUT = 30             # Seconds for LLM API timeout
+    LLM_RETRY_COUNT = 3                  # Number of retries for LLM failures
+    CIRCUIT_BREAKER_THRESHOLD = 5        # Failures before circuit opens
+    CIRCUIT_BREAKER_TIMEOUT = 60         # Seconds before circuit resets
+    
+    # Rate Limiting
+    RATE_LIMIT_ENABLED = os.getenv('RATE_LIMIT_ENABLED', 'True').lower() == 'true'
+    RATE_LIMIT_CHAT = 30                 # Requests per minute for chat
+    RATE_LIMIT_DEFAULT = 100             # Default requests per minute
+
+
+def validate_config() -> List[str]:
+    """
+    Validate configuration at startup.
+    Returns list of warning messages (empty if all OK).
+    """
+    warnings = []
+    
+    # Check API key configuration based on provider
+    if Config.LLM_PROVIDER == 'gemini':
+        if not Config.GEMINI_API_KEY or Config.GEMINI_API_KEY == 'your-gemini-api-key-here':
+            warnings.append("GEMINI_API_KEY not configured - chat will not work")
+    elif Config.LLM_PROVIDER == 'openai':
+        if not Config.OPENAI_API_KEY or Config.OPENAI_API_KEY == 'sk-your-openai-key-here':
+            warnings.append("OPENAI_API_KEY not configured - chat will not work")
+    elif Config.LLM_PROVIDER == 'anthropic':
+        if not Config.ANTHROPIC_API_KEY or Config.ANTHROPIC_API_KEY == 'sk-ant-your-anthropic-key-here':
+            warnings.append("ANTHROPIC_API_KEY not configured - chat will not work")
+    
+    # Check secret key
+    if Config.SECRET_KEY == 'dev-secret-key-change-in-production' and not Config.DEBUG:
+        warnings.append("Using default SECRET_KEY in production mode")
+    
+    # Check data directories exist
+    for dir_name, dir_path in [('DATA_DIR', Config.DATA_DIR), 
+                                ('CHROMA_DB_PATH', Config.CHROMA_DB_PATH),
+                                ('UPLOADS_DIR', Config.UPLOADS_DIR)]:
+        if not os.path.exists(dir_path):
+            try:
+                os.makedirs(dir_path, exist_ok=True)
+            except Exception as e:
+                warnings.append(f"Cannot create {dir_name}: {e}")
+    
+    # Check write permissions
+    try:
+        test_file = os.path.join(Config.DATA_DIR, '.config_test')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except Exception as e:
+        warnings.append(f"DATA_DIR is not writable: {e}")
+    
+    return warnings
 
 
 # Create directories if they don't exist

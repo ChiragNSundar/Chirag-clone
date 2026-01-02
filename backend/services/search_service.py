@@ -1,10 +1,11 @@
 """
 Search Service - Web search integration for real-time information.
-Uses DuckDuckGo for free web search.
+Uses DuckDuckGo for free web search with caching support.
 """
 import re
 from typing import List, Dict, Optional
 from datetime import datetime
+from services.cache_service import get_cache_service
 
 
 class SearchService:
@@ -89,7 +90,7 @@ class SearchService:
         region: str = "wt-wt"
     ) -> List[Dict]:
         """
-        Perform a web search.
+        Perform a web search with caching.
         
         Args:
             query: The search query
@@ -101,6 +102,13 @@ class SearchService:
         """
         if not self._check_ddg():
             return []
+        
+        # Check cache first (10 minute TTL for search results)
+        cache = get_cache_service()
+        cache_key = f"search:{query}:{max_results}:{region}"
+        cached_results = cache.get(cache_key)
+        if cached_results is not None:
+            return cached_results
         
         try:
             from duckduckgo_search import DDGS
@@ -114,6 +122,10 @@ class SearchService:
                         'url': result.get('href', ''),
                         'source': self._extract_domain(result.get('href', ''))
                     })
+            
+            # Cache results for 10 minutes
+            if results:
+                cache.set(cache_key, results, ttl_seconds=600)
             
             return results
             

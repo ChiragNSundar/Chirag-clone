@@ -1,0 +1,37 @@
+# Docker Compose for Chirag Clone
+version: '3.8'
+
+services:
+  chirag-clone:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chirag-clone
+    ports:
+      - "5000:5000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BOT_NAME=${BOT_NAME:-Chirag}
+      - DEBUG=False
+      - LLM_PROVIDER=gemini
+    volumes:
+      - chirag_data:/app/backend/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+volumes:
+  chirag_data:
+    driver: local

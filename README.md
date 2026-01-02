@@ -12,7 +12,7 @@
 - **💬 Real-time Chat** - Chat with me via WebSocket or HTTP
 - **🤖 Social Autopilot** - Auto-reply on Discord and Telegram when Chirag's away
 - **🧠 Continuous Learning** - I get better the more you interact with me
-- **🕰️ Semantic Timeline** - Visualize what I've learned over time
+- **🛡️ Robust Security** - Rate limiting, input validation, and secure headers
 - **📊 Analytics Dashboard** - Track conversation stats and confidence
 
 ## 🏗️ Architecture
@@ -25,12 +25,15 @@ graph TD
     FE -->|WebSocket/HTTP| API[Flask Backend]
     
     subgraph "Chirag's Brain"
-        API --> ChatService
+        API --> RateLimiter[Rate Limiter]
+        RateLimiter --> ChatService
         ChatService --> Memory[Memory: ChromaDB]
         ChatService --> Knowledge[Knowledge Base: RAG]
         ChatService --> Vision[Vision: Gemini]
         ChatService --> Search[Web Search]
         ChatService --> Personality[Personality Profile]
+        
+        API --> Logger[Structured Logger]
     end
     
     subgraph "Social Presence"
@@ -60,12 +63,17 @@ Copy `.env.example` to `.env`:
 GEMINI_API_KEY=your_key_here
 BOT_NAME=Chirag
 
+# Optional: Robustness settings (defaults shown)
+RATE_LIMIT_ENABLED=True
+MAX_MESSAGE_LENGTH=10000
+MAX_UPLOAD_SIZE_MB=5
+
 # Optional: Social Autopilot
 DISCORD_BOT_TOKEN=your_discord_token
 TELEGRAM_BOT_TOKEN=your_telegram_token
 ```
 
-### 3. Run
+### 3. Run (Development)
 
 ```bash
 python app.py
@@ -73,61 +81,74 @@ python app.py
 
 Open **<http://localhost:5000>**
 
-## 🧠 Training My Brain
+### 4. Run (Production with Docker) 🐳
 
-### Import Chat History
+I am ready for production deployment using Docker.
 
-I learn from your real conversations:
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
 
-- **WhatsApp** - Export chat → Upload
-- **Discord** - Message request data → Upload
-- **Instagram** - Download data → Upload
+**Option A: Using Docker Compose (Recommended)**
 
-### Knowledge Base
+This sets up the app with optimized resource limits and persistent storage.
 
-Upload documents I should know about:
+```bash
+# 1. Start the container
+docker-compose up -d
 
-- Resume, CV
-- Personal notes, journals
-- Life wiki, about me pages
-- Any text files with facts about Chirag
+# 2. View logs
+docker-compose logs -f
 
-### Training Corner
+# 3. Stop
+docker-compose down
+```
 
-Talk to me directly and correct my responses. I learn from every correction.
+**Option B: Manual Docker Build**
 
-## 🤖 Social Autopilot
+```bash
+# 1. Build image
+docker build -t chirag-clone .
 
-I can live on social platforms and respond as Chirag:
+# 2. Run container
+docker run -p 5000:5000 --env-file backend/.env chirag-clone
+```
 
-### Discord
+Health check is available at `http://localhost:5000/api/health`.
 
-1. Create App at [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create Bot User → Copy Token → Add to `.env`
-3. Enable "Message Content Intent"
-4. Invite to server → Start from **Autopilot Tab**
+## 🛡️ Robustness Features
 
-### Telegram
+I've been hardened with production-grade reliability features:
 
-1. Chat with `@BotFather` → `/newbot`
-2. Copy Token → Add to `.env`
-3. Start from **Autopilot Tab**
+### ⚡ Rate Limiting
 
-### Proactive Messages
+- **Chat**: 30 requests/minute
+- **Uploads**: 10 requests/minute
+- **General**: Configurable limits to prevent abuse
 
-Schedule automatic messages I'll send:
+### 🛡️ Security
 
-- Good Morning greetings
-- Check-ins
-- Motivational messages
-- Random conversation starters
+- **Input Validation**: Strict length limits and sanitization
+- **File Security**: 5MB limit per file, 10MB per request
+- **Headers**: Production-ready security headers (XSS, Content-Type, etc.)
+
+### 🔄 Resilience
+
+- **Circuit Breaker**: Detects LLM failures and prevents cascading errors
+- **Auto-Retry**: Exponential backoff for transient failures
+- **Graceful Fallback**: Switches to OpenAI if Gemini fails
+
+### 📊 Monitoring
+
+- **Structured Logging**: Request ID tracking for easy debugging
+- **Health Checks**: Comprehensive status at `/api/health`
+- **Performance**: Slow request detection and timing logs
 
 ## 📁 Project Structure
 
 ```text
 Chirag-clone/
 ├── backend/
-│   ├── app.py                        # Flask app + SocketIO
+│   ├── app.py                        # Flask app + SocketIO (Graceful shutdown)
+│   ├── gunicorn.conf.py              # 🚀 Production server config
 │   ├── config.py                     # Environment config
 │   ├── requirements.txt              # Python dependencies
 │   ├── .env.example                  # Environment template
@@ -135,6 +156,10 @@ Chirag-clone/
 │   ├── services/                     # Core brain services
 │   │   ├── chat_service.py           # Main chat orchestration
 │   │   ├── llm_service.py            # Multi-provider LLM (Gemini/OpenAI/Anthropic)
+│   │   ├── rate_limiter.py           # ⚡ Rate limiting service
+│   │   ├── cache_service.py          # 🗃️ LRU Caching service
+│   │   ├── middleware.py             # 🛡️ Request middleware (timeouts)
+│   │   ├── logger.py                 # 📊 Structured logging
 │   │   ├── knowledge_service.py      # 📚 RAG document retrieval
 │   │   ├── vision_service.py         # 👁️ Multimodal image understanding
 │   │   ├── search_service.py         # 🔍 DuckDuckGo web search
@@ -142,58 +167,51 @@ Chirag-clone/
 │   │   ├── personality_service.py    # My identity + personality profile
 │   │   ├── memory_service.py         # ChromaDB vector memory
 │   │   ├── mood_service.py           # Dynamic mood system
-│   │   ├── learning_service.py       # Active learning + corrections
-│   │   ├── analytics_service.py      # Conversation analytics
-│   │   ├── backup_service.py         # Brain backup/restore
-│   │   ├── discord_bot_service.py    # Discord autopilot
-│   │   └── telegram_bot_service.py   # Telegram autopilot
+│   │   └── learning_service.py       # Active learning + corrections
 │   │
 │   ├── routes/                       # API endpoints
 │   │   ├── chat_routes.py            # /api/chat/* (messages, personality)
 │   │   ├── training_routes.py        # /api/training/* (examples, facts, feedback)
 │   │   ├── upload_routes.py          # /api/upload/* (WhatsApp, Discord, Instagram)
 │   │   ├── knowledge_routes.py       # /api/knowledge/* (RAG documents)
-│   │   ├── proactive_routes.py       # /api/autopilot/schedules/*
-│   │   ├── autopilot_routes.py       # /api/autopilot/* (bot control)
-│   │   ├── timeline_routes.py        # /api/timeline/* (learning history)
-│   │   ├── visualization_routes.py   # /api/viz/* (word clouds, charts)
-│   │   └── analytics_routes.py       # /api/analytics/* (stats, backups)
-│   │
-│   ├── parsers/                      # Chat import parsers
-│   │   ├── whatsapp_parser.py        # WhatsApp export format
-│   │   ├── discord_parser.py         # Discord data package
-│   │   ├── instagram_parser.py       # Instagram JSON export
-│   │   └── smart_parser.py           # Auto-detect any format
+│   │   └── autopilot_routes.py       # /api/autopilot/* (bot control)
 │   │
 │   ├── data/                         # Persistent storage
 │   │   ├── personality_profile.json  # My learned personality
-│   │   ├── knowledge_metadata.json   # RAG document index
-│   │   ├── schedules.json            # Proactive message schedules
-│   │   ├── chroma_db/                # Vector database
-│   │   └── uploads/                  # Temporary upload storage
+│   │   └── chroma_db/                # Vector database
 │   │
 │   └── tests/                        # Pytest tests
-│       └── test_app.py
+│       ├── test_app.py               # API endpoint tests
+│       └── test_services.py          # Service unit tests
 │
-└── frontend/
-    ├── index.html                    # Main UI (tabs + modals)
-    ├── css/
-    │   └── styles.css                # Dark glassmorphic theme
-    └── js/
-        └── app.js                    # Frontend logic (~1700 lines)
+├── frontend/
+│   ├── index.html                    # Main UI (tabs + modals)
+│   ├── css/
+│   │   └── styles.css                # Dark glassmorphic theme
+│   └── js/
+│       └── app.js                    # Frontend logic
+│
+├── Dockerfile                        # 🐳 Production image build
+└── docker-compose.yml                # 🚀 Container orchestration
 ```
 
-## 📦 Requirements
+## 🧪 Testing
 
-```text
-flask, flask-cors, flask-socketio
-google-generativeai          # Gemini for LLM + Vision
-chromadb, sentence-transformers  # Vector memory
-PyMuPDF                       # PDF parsing for knowledge
-APScheduler                   # Proactive scheduling
-duckduckgo-search             # Web search
-discord.py, python-telegram-bot  # Social autopilot
+I come with a comprehensive test suite covering 50+ scenarios:
+
+```bash
+# Run all tests
+cd backend
+python -m pytest tests/ -v
 ```
+
+Includes tests for:
+
+- Input validation (length, format)
+- Rate limiting enforcement
+- Circuit breaker states
+- Service resilience and error recovery
+- API endpoint functionality
 
 ---
 

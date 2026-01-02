@@ -226,5 +226,135 @@ class TestMemoryService:
         assert 'total_examples' in stats
 
 
+class TestInputValidation:
+    """Test input validation and error handling."""
+    
+    def test_chat_rejects_long_message(self, client):
+        """Test that chat rejects messages over length limit."""
+        # Create a message longer than 10000 characters
+        long_message = "x" * 15000
+        response = client.post('/api/chat/message',
+                               json={'message': long_message},
+                               content_type='application/json')
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'error' in data
+        assert 'too long' in data['error'].lower()
+    
+    def test_chat_rejects_invalid_session_id(self, client):
+        """Test that chat rejects invalid session IDs."""
+        response = client.post('/api/chat/message',
+                               json={
+                                   'message': 'Hello',
+                                   'session_id': 'invalid;session;id'
+                               },
+                               content_type='application/json')
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'error' in data
+    
+    def test_training_rejects_long_context(self, client):
+        """Test that training rejects long context."""
+        long_context = "x" * 10000
+        response = client.post('/api/training/example',
+                               json={
+                                   'context': long_context,
+                                   'response': 'test'
+                               },
+                               content_type='application/json')
+        assert response.status_code == 400
+    
+    def test_training_rejects_long_fact(self, client):
+        """Test that training rejects long facts."""
+        long_fact = "x" * 1000
+        response = client.post('/api/training/fact',
+                               json={'fact': long_fact},
+                               content_type='application/json')
+        assert response.status_code == 400
+    
+    def test_name_update_rejects_long_name(self, client):
+        """Test that name update rejects long names."""
+        response = client.put('/api/chat/personality/name',
+                             json={'name': 'x' * 100},
+                             content_type='application/json')
+        assert response.status_code == 400
+
+
+class TestSecurityHeaders:
+    """Test security headers on responses."""
+    
+    def test_security_headers_present(self, client):
+        """Test that security headers are present on responses."""
+        response = client.get('/api/health')
+        
+        assert 'X-Content-Type-Options' in response.headers
+        assert response.headers['X-Content-Type-Options'] == 'nosniff'
+        
+        assert 'X-Frame-Options' in response.headers
+        assert response.headers['X-Frame-Options'] == 'DENY'
+        
+        assert 'X-XSS-Protection' in response.headers
+
+
+class TestEnhancedHealthCheck:
+    """Test enhanced health check endpoint."""
+    
+    def test_health_check_includes_checks(self, client):
+        """Test that health check includes dependency checks."""
+        response = client.get('/api/health')
+        data = json.loads(response.data)
+        
+        assert 'checks' in data
+        assert 'chromadb' in data['checks']
+        assert 'llm' in data['checks']
+        assert 'filesystem' in data['checks']
+    
+    def test_health_check_status_field(self, client):
+        """Test that health check includes status field."""
+        response = client.get('/api/health')
+        data = json.loads(response.data)
+        
+        assert 'status' in data
+        assert data['status'] in ['healthy', 'degraded']
+
+
+class TestErrorHandling:
+    """Test error handling and graceful failures."""
+    
+    def test_404_returns_json(self, client):
+        """Test that 404 errors return JSON."""
+        response = client.get('/api/nonexistent')
+        assert response.status_code == 404
+        data = json.loads(response.data)
+        assert 'error' in data
+    
+    def test_invalid_json_handled(self, client):
+        """Test that invalid JSON is handled gracefully."""
+        response = client.post('/api/chat/message',
+                               data='not valid json',
+                               content_type='application/json')
+        assert response.status_code == 400
+    
+    def test_upload_without_file_handled(self, client):
+        """Test that upload without file is handled."""
+        response = client.post('/api/upload/whatsapp',
+                               data={'your_name': 'Test'})
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'error' in data
+
+
+class TestRateLimitHeaders:
+    """Test rate limit headers on responses."""
+    
+    def test_rate_limit_headers_present(self, client):
+        """Test that rate limit headers are present."""
+        response = client.post('/api/chat/new-session')
+        
+        # Rate limit headers should be present
+        assert 'X-RateLimit-Limit' in response.headers
+        assert 'X-RateLimit-Remaining' in response.headers
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
