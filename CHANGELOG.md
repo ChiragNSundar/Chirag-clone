@@ -21,9 +21,12 @@ All notable changes to the "Chirag Clone" project will be documented in this fil
 
 - Added comprehensive test suite for FastAPI endpoints (`tests/test_main.py`).
 - Added robust error handling and logging.
-  - **Source Analysis**: Pie charts showing data provenance (WhatsApp vs Discord vs Manual).
-  - **Learning Velocity**: Area charts tracking knowledge acquisition over time.
-  - **Metric Cards**: At-a-glance stats for Facts, Quirks, and Emojis.
+  - **Enhanced Analytics Dashboard**:
+    - **Source Analysis**: Pie charts showing data provenance (WhatsApp vs Discord vs Manual).
+    - **Learning Velocity**: Area charts tracking knowledge acquisition over time.
+    - **Activity Heatmap**: Visualizing interaction times.
+    - **Metric Cards**: At-a-glance stats for Facts, Quirks, and Emojis.
+    - **Topic Distribution**: Analysis of conversation themes.
 - **Social Autopilot**: Platform integration system.
   - **Discord Bot**: Fully functional bot with DM and mention auto-replies.
   - **Telegram Bot**: Integration for automated chat responses.
@@ -49,7 +52,9 @@ All notable changes to the "Chirag Clone" project will be documented in this fil
 - **CORS Handling**: Configured to support multiple development ports (5173-5177).
 - **Memory Optimization**: Improved vector store (ChromaDB) management.
 - **Robustness**: Added circuit breakers and rate limiting services.
-- **Cleanup**: Removed legacy Flask routes and app entry points (`app.py`).
+- **Cleanup**:
+  - Removed legacy Flask routes and app entry points (`app.py`).
+  - Updated `.gitignore` to strictly exclude sensitive files and build artifacts.
 
 ---
 

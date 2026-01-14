@@ -1,24 +1,34 @@
 """
 Logger Service - Centralized logging configuration with structured output.
+Framework-agnostic implementation (works with Flask, FastAPI, or standalone).
 """
 import logging
 import sys
 import uuid
 from datetime import datetime
 from functools import wraps
-from flask import request, g
 import time
+import threading
+
+# Thread-local storage for request context (framework-agnostic)
+_request_context = threading.local()
+
+
+def set_request_id(request_id: str = None):
+    """Set request ID for current thread."""
+    _request_context.request_id = request_id or str(uuid.uuid4())[:8]
+
+
+def get_request_id() -> str:
+    """Get request ID for current thread."""
+    return getattr(_request_context, 'request_id', 'N/A')
 
 
 class RequestIdFilter(logging.Filter):
     """Add request ID to log records."""
     
     def filter(self, record):
-        try:
-            record.request_id = getattr(g, 'request_id', 'N/A')
-        except RuntimeError:
-            # Outside Flask context
-            record.request_id = 'N/A'
+        record.request_id = get_request_id()
         return True
 
 
@@ -27,7 +37,7 @@ def setup_logging(app=None, level=logging.INFO):
     Configure centralized logging for the application.
     
     Args:
-        app: Flask application instance
+        app: Application instance (optional, for backwards compatibility)
         level: Logging level
     """
     # Create formatter with request ID
@@ -89,7 +99,8 @@ def get_logger(name: str) -> logging.Logger:
 
 def request_logging_middleware(app):
     """
-    Add request logging middleware to Flask app.
+    Add request logging middleware (Legacy Flask support).
+    For FastAPI, use middleware defined in main.py instead.
     
     Logs:
     - Incoming requests with method, path, client IP

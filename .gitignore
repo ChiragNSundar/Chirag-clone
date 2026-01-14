@@ -38,20 +38,28 @@ backend/data/analytics.json
 backend/.env
 
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # OS
 .DS_Store
 Thumbs.db
 
 # Logs
+logs
 *.log
-logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Testing
 .pytest_cache/
@@ -59,7 +67,10 @@ logs/
 htmlcov/
 
 # Node / React
-node_modules/
+node_modules
+dist
+dist-ssr
+*.local
 frontend-react/node_modules/
 frontend-react/dist/
 frontend-react/.vite/
