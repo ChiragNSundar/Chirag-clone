@@ -73,29 +73,29 @@ Let your clone handle your socials when you're away:
 
 ```mermaid
 graph TD
-    User[You] -->|Web UI| Frontend[React + Vite]
+    User["User (You)"] -->|Web UI| Frontend["Frontend (React + Vite)"]
     
     subgraph "Frontend Layer"
-        Frontend --> Dashboard[Analytics Dashboard]
-        Frontend --> Training[Training Center]
-        Frontend --> Autopilot[Autopilot Control]
-        Frontend --> Chat[Chat Interface]
+        Frontend --> Dashboard["Analytics Dashboard"]
+        Frontend --> Training["Training Center"]
+        Frontend --> Autopilot["Autopilot Control"]
+        Frontend --> Chat["Chat Interface"]
     end
     
-    Frontend -->|API/WebSocket| Backend[FastAPI Backend]
+    Frontend -->|"API/WebSocket"| Backend["Backend (FastAPI)"]
     
     subgraph "Backend Services"
-        Backend --> Router[API Router]
-        Router --> ChatService[Chat Service]
-        Router --> TrainingService[Training Service]
-        Router --> AutopilotService[Autopilot Service]
+        Backend --> Router["API Router"]
+        Router --> ChatService["Chat Service"]
+        Router --> TrainingService["Training Service"]
+        Router --> AutopilotService["Autopilot Service"]
         
-        ChatService --> Brain[LLM (Gemini/OpenAI)]
-        ChatService --> Memory[ChromaDB Vector Store]
-        ChatService --> Personality[Personality Profile]
+        ChatService --> Brain["LLM (Gemini/OpenAI)"]
+        ChatService --> Memory["Memory (ChromaDB)"]
+        ChatService --> Personality["Personality Profile"]
         
-        AutopilotService --> Discord[Discord Bot]
-        AutopilotService --> Telegram[Telegram Bot]
+        AutopilotService --> Discord["Discord Bot"]
+        AutopilotService --> Telegram["Telegram Bot"]
     end
 ```
 
@@ -256,19 +256,66 @@ Chirag-clone/
 │   ├── main.py                 # FastAPI Application Entry Point
 │   ├── config.py               # Configuration Settings
 │   │
-│   ├── services/               # Core Business Logic
-│   │   ├── chat_service.py     # Core chat logic
-│   │   ├── llm_service.py      # Gemma/Gemini Integration
-│   │   └── ...
+│   ├── services/                   # Core Business Logic
+│   │   ├── __init__.py
+│   │   ├── analytics_service.py    # Dashboard Metrics
+│   │   ├── async_job_service.py    # Background Tasks
+│   │   ├── backup_service.py       # Data Backup
+│   │   ├── cache_service.py        # Redis/Local Cache
+│   │   ├── chat_service.py         # Main Conversation Logic
+│   │   ├── discord_bot_service.py  # Discord Integration
+│   │   ├── knowledge_service.py    # RAG/Document Handling
+│   │   ├── learning_service.py     # Training Logic
+│   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
+│   │   ├── logger.py               # Structured Logging
+│   │   ├── memory_service.py       # Vector DB Wrapper
+│   │   ├── middleware.py           # Request Processing
+│   │   ├── mood_service.py         # Emotional State
+│   │   ├── personality_service.py  # Identity Management
+│   │   ├── rate_limiter.py         # API Throttling
+│   │   ├── scheduler_service.py    # Cron Jobs
+│   │   ├── search_service.py       # Web Search
+│   │   ├── telegram_bot_service.py # Telegram Integration
+│   │   └── vision_service.py       # Image Processing
 │   │
-│   ├── parsers/                # Chat Log Parsers
-│   └── data/                   # Local Storage (Vector DB, Identity)
+│   ├── parsers/                    # Chat Log Parsers
+│   │   ├── __init__.py
+│   │   ├── discord_parser.py       # Discord JSON Parser
+│   │   ├── instagram_parser.py     # Instagram JSON Parser
+│   │   ├── smart_parser.py         # Auto-format Detector
+│   │   └── whatsapp_parser.py      # WhatsApp Text Parser
+│   │
+│   └── data/                       # Local Storage
+│       ├── chroma_db/              # Vector Database
+│       └── personality_profile.json # Learned Traits
 │
-└── frontend-react/
-    ├── src/
-    │   ├── components/
-    │   └── App.tsx
-    └── package.json
+├── frontend-react/
+│   ├── index.html
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   │
+│   └── src/
+│       ├── main.tsx                # React Entry Point
+│       ├── index.css               # Global Styles/Tailwind
+│       ├── App.tsx                 # Routing & Layout
+│       │
+│       ├── components/             # React Components
+│       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
+│       │   ├── ChatInterface.tsx   # Main Chat UI
+│       │   ├── Dashboard.tsx       # Analytics Home
+│       │   ├── Layout.tsx          # Navigation Wrapper
+│       │   ├── MemoryGraph.tsx     # Knowledge Visualization
+│       │   ├── ProfilePage.tsx     # Bot Profile Settings
+│       │   └── TrainingCenter.tsx  # Interactive Training UI
+│       │
+│       └── services/
+│           └── api.ts              # API Client
+│
+├── Dockerfile                      # Production Build Definition
+└── docker-compose.yml              # Container Orchestration
 ```
 
 ---
