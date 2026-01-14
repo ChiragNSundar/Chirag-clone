@@ -134,12 +134,14 @@ sequenceDiagram
 #### Backend Setup
 
 ```bash
-cd backend
-python -m venv venv
 # Activate venv:
 # Windows: venv\Scripts\activate
 # Linux/Mac: source venv/bin/activate
 
+cd backend
+python -m venv venv
+# Back to root for installation
+cd ..
 pip install -r requirements.txt
 cp .env.example .env  # Configure your keys in .env
 ```
@@ -181,8 +183,8 @@ This sets up optimized containers for backend and frontend.
 
 ```bash
 # 1. Configure environment
-cp backend/.env.example backend/.env
-# Edit backend/.env with your API keys
+cp .env.example .env
+# Edit .env with your API keys
 
 # 2. Start services
 docker-compose up -d --build
@@ -198,8 +200,11 @@ Access app at `http://localhost:5173` (Frontend) and `http://localhost:8000` (Ba
 To verify the installation and backend logic:
 
 ```bash
+# Install dependencies from root
+pip install -r requirements.txt
+pip install pytest httpx
+
 cd backend
-python -m pip install pytest httpx
 python -m pytest tests/test_main.py
 ```
 

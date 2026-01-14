@@ -30,7 +30,13 @@ env/
 .venv/
 
 # Data & Database
-data/uploads/
+backend/data/chroma_db/
+backend/data/uploads/
+backend/data/backups/
+backend/data/analytics.json
+# backend/data/personality_profile.json # Uncomment if you want to keep your profile private
+backend/.env
+
 
 # IDE
 .idea/
