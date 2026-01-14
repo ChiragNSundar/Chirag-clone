@@ -25,16 +25,23 @@ class Config:
     
     # Gemini (Primary)
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
+    
+    # Model Hierarchy (Strictly V2+)
+    # Order: Gemma 2 27b -> Gemini 2.0 Flash Lite -> Gemini 2.0 Flash -> Gemini 2.0 Pro
+    GEMINI_MODELS = [
+        "gemma-2-27b-it",                  # Efficient open model
+        "gemini-2.0-flash-lite-preview-02-05", # Fast & cheap
+        "gemini-2.0-flash",                # Balanced
+        "gemini-2.0-pro-exp-02-05",        # High intelligence
+        "gemini-2.0-flash-thinking-exp-1219" # Reasoning model
+    ]
     
     # OpenAI (Fallback)
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
-    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
     OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
     
     # Model Settings
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
-    ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'claude-3-haiku-20240307')
     OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2')
     
     # Personality Settings

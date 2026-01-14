@@ -132,15 +132,6 @@ class LLMService:
             self.model = Config.OPENAI_MODEL
             self.fallback_client = None
             
-        elif self.provider == 'anthropic':
-            if not Config.ANTHROPIC_API_KEY or Config.ANTHROPIC_API_KEY == 'sk-ant-your-anthropic-key-here':
-                raise ValueError("Anthropic API key not configured. Please set ANTHROPIC_API_KEY in .env file.")
-            
-            import anthropic
-            self.client = anthropic.Anthropic(api_key=Config.ANTHROPIC_API_KEY)
-            self.model = Config.ANTHROPIC_MODEL
-            self.fallback_client = None
-            
         elif self.provider == 'ollama':
             self.client = None  # Use requests for Ollama
             self.model = Config.OLLAMA_MODEL
@@ -241,8 +232,6 @@ class LLMService:
                 return self._gemini_generate(system_prompt, messages, temperature, max_tokens)
             elif self.provider == 'openai':
                 return self._openai_generate(system_prompt, messages, temperature, max_tokens)
-            elif self.provider == 'anthropic':
-                return self._anthropic_generate(system_prompt, messages, temperature, max_tokens)
             elif self.provider == 'ollama':
                 return self._ollama_generate(system_prompt, messages, temperature, max_tokens)
         
@@ -345,23 +334,7 @@ class LLMService:
         
         return response.choices[0].message.content
     
-    def _anthropic_generate(
-        self,
-        system_prompt: str,
-        messages: List[Dict[str, str]],
-        temperature: float,
-        max_tokens: int
-    ) -> str:
-        """Generate using Anthropic API."""
-        response = self.client.messages.create(
-            model=self.model,
-            system=system_prompt,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        
-        return response.content[0].text
+
     
     def _ollama_generate(
         self,

@@ -13,6 +13,9 @@ from config import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import rate limiter
+from services.rate_limiter import rate_limit
+
 app = FastAPI(
     title="Chirag Clone API",
     description="Personal AI Clone Bot API",
@@ -71,6 +74,7 @@ async def health_check():
     return {"status": "healthy", "version": "2.0.0", "framework": "FastAPI"}
 
 @app.post("/api/chat/message")
+@rate_limit
 async def chat_message(data: ChatMessage):
     """Handle chat messages"""
     try:
@@ -97,6 +101,7 @@ async def chat_message(data: ChatMessage):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/training/feedback")
+@rate_limit
 async def training_feedback(data: TrainingFeedback):
     """Handle training feedback"""
     try:

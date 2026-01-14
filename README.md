@@ -17,7 +17,7 @@
 ### Backend
 
 - **Framework**: FastAPI (Python 3.11)
-- **AI/LLM**: Google Gemini 1.5 Flash (Primary), OpenAI (Fallback)
+- **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
 - **Vector DB**: ChromaDB (Local persistence)
 - **Task Management**: AsyncIO + threading
 - **PDF Processing**: PyMuPDF
@@ -192,6 +192,16 @@ docker-compose logs -f
 ```
 
 Access app at `http://localhost:5173` (Frontend) and `http://localhost:8000` (Backend API).
+
+### 🧪 Running Tests
+
+To verify the installation and backend logic:
+
+```bash
+cd backend
+python -m pip install pytest httpx
+python -m pytest tests/test_main.py
+```
 
 ### Option B: Manual Docker Run
 

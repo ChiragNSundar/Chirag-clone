@@ -12,8 +12,15 @@ All notable changes to the "Chirag Clone" project will be documented in this fil
   - **Document Support**: RAG implementation for PDF and text file uploads.
   - **Journal System**: Dedicated interface for day-to-day thought recording.
   - **PIN Security**: Protected training routes (default PIN: 1234).
-- **Analytics Dashboard**: Complete visualization of the digital brain.
-  - **Progress Ring**: Visual indicator of personality model completion.
+- **Advanced Model Switching**:
+  - Implemented cascading fallback: Gemma 2 27b -> Gemini 2.0 (Flash Lite/Flash/Pro).
+  - OpenAI fallback support.
+  - Removed Anthropic/Claude support.
+
+### 🧪 Testing
+
+- Added comprehensive test suite for FastAPI endpoints (`tests/test_main.py`).
+- Added robust error handling and logging.
   - **Source Analysis**: Pie charts showing data provenance (WhatsApp vs Discord vs Manual).
   - **Learning Velocity**: Area charts tracking knowledge acquisition over time.
   - **Metric Cards**: At-a-glance stats for Facts, Quirks, and Emojis.
