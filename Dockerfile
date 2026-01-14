@@ -1,29 +1,29 @@
-# Chirag Clone - Production Dockerfile
-# Multi-stage build for smaller final image
+# Chirag Clone v2.0 - Production Dockerfile
+# Multi-stage build for FastAPI backend and React frontend
 
-# Stage 1: Build stage
-FROM python:3.11-slim as builder
+# Stage 1: Build frontend
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend-react/package*.json ./
+RUN npm ci
+COPY frontend-react/ ./
+RUN npm run build
 
+# Stage 2: Build Python wheels
+FROM python:3.11-slim AS python-builder
 WORKDIR /build
-
-# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install dependencies
 COPY backend/requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
-
-# Stage 2: Production stage
+# Stage 3: Production
 FROM python:3.11-slim
-
-# Labels
 LABEL maintainer="Chirag"
-LABEL description="Chirag Clone - Personal AI Digital Twin"
-LABEL version="1.0"
+LABEL description="Chirag Clone - Personal AI Digital Twin v2.0"
+LABEL version="2.0"
 
 # Security: Create non-root user
 RUN groupadd -r chirag && useradd -r -g chirag chirag
@@ -35,13 +35,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy wheels from builder stage
-COPY --from=builder /wheels /wheels
+# Copy wheels from builder stage and install
+COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache /wheels/*
 
 # Copy application code
 COPY backend/ ./backend/
-COPY frontend/ ./frontend/
+
+# Copy frontend build from frontend-builder
+COPY --from=frontend-builder /app/frontend/dist ./frontend/
 
 # Create data directories
 RUN mkdir -p /app/backend/data/chroma_db \
@@ -56,13 +58,13 @@ ENV PYTHONPATH=/app/backend
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Expose port
-EXPOSE 5000
+# Expose FastAPI port
+EXPOSE 8000
 
-# Health check
+# Health check for FastAPI
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || exit 1
 
-# Run with gunicorn
+# Run with uvicorn
 WORKDIR /app/backend
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

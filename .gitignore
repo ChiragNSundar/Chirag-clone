@@ -30,8 +30,6 @@ env/
 .venv/
 
 # Data & Database
-# NOTE: Training data IS committed to git so your clone works everywhere
-# Only ignoring temporary uploads folder
 data/uploads/
 
 # IDE
@@ -54,5 +52,15 @@ logs/
 .coverage
 htmlcov/
 
-# Node (for frontend if using npm)
+# Node / React
 node_modules/
+frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.vite/
+
+# Legacy frontend (kept for reference, will be removed)
+# frontend/
+
+# Misc
+*.bak
+*.tmp
