@@ -1,218 +1,306 @@
-# 🧠 Chirag Clone
+# 🧠 Chirag Clone - Personal Digital Twin
 
-**I am Chirag's digital brain.** This isn't just a chatbot—it's a continuously learning system that becomes more like Chirag with every conversation, every piece of data, every correction.
+**I am Chirag's digital brain.** A continuously learning AI system that evolves to mimic my personality, knowledge, and communication style.
 
-## ✨ What I Can Do
+---
 
-- **📚 Knowledge Base (RAG)** - I know facts about Chirag from uploaded documents (resume, notes, life wiki)
-- **👁️ Vision** - Send me images and I'll react like Chirag would
-- **🔍 Web Search** - I can search the internet for real-time information
-- **⏰ Proactive Messaging** - I send scheduled messages on Discord/Telegram (Good Morning, Check-ins)
-- **🎭 Personality Learning** - I learn Chirag's texting style, emoji usage, slang, and quirks
-- **💬 Real-time Chat** - Chat with me via WebSocket or HTTP
-- **🤖 Social Autopilot** - Auto-reply on Discord and Telegram when Chirag's away
-- **🧠 Continuous Learning** - I get better the more you interact with me
-- **🛡️ Robust Security** - Rate limiting, input validation, and secure headers
-- **📊 Analytics Dashboard** - Track conversation stats and confidence
+## 🛠️ Tech Stack
+
+### Frontend
+
+- **Framework**: React 18 + Vite
+- **Styling**: Tailwind CSS (Glassmorphism design)
+- **Icons**: Lucide React
+- **Visualization**: Recharts
+- **State/Animations**: Framer Motion
+
+### Backend
+
+- **Framework**: FastAPI (Python 3.11)
+- **AI/LLM**: Google Gemini 1.5 Flash (Primary), OpenAI (Fallback)
+- **Vector DB**: ChromaDB (Local persistence)
+- **Task Management**: AsyncIO + threading
+- **PDF Processing**: PyMuPDF
+
+### DevOps & Infrastructure
+
+- **Containerization**: Docker + Docker Compose
+- **Server**: Uvicorn (ASGI)
+- **Environment**: Dotenv (.env) management
+
+---
+
+## ✨ Key Features
+
+### 🏛️ extensive Training Center (`/training`)
+
+Teach your clone how to be you through multiple modalities:
+
+- **Chat Uploads**: Learn from your real conversations (WhatsApp, Instagram, Discord)
+- **Train by Chatting**: Interactive interview mode where the bot learns from your answers
+- **Documents**: Upload PDFs, resumes, and text files for RAG-based knowledge
+- **Journal**: Feed your thoughts and daily reflections
+- **Facts**: Manually add key facts about yourself
+
+### 📊 Analytics Dashboard (`/`)
+
+Visual insights into your clone's development:
+
+- **Personality Completion Ring**: Track how "complete" your clone is
+- **Data Sources**: See where your clone is learning from
+- **Learning Curve**: Track progress over time
+- **Knowledge Metrics**: Stats on facts, quirks, and emoji usage
+
+### 🤖 Social Autopilot (`/autopilot`)
+
+Let your clone handle your socials when you're away:
+
+- **Discord Bot**: Auto-reply to DMs and mentions
+- **Telegram Bot**: Smart auto-responses
+- **Control Panel**: Start/stop bots and view reply logs in real-time
+
+### Other Capabilities
+
+- **👁️ Vision**: Send images and I'll react like you would
+- **🔍 Web Search**: Real-time information access
+- **🛡️ Robust Security**: Rate limiting, localized data, PIN protection
+
+---
 
 ## 🏗️ Architecture
 
+### System Overview
+
 ```mermaid
 graph TD
-    User[Someone] -->|Chat| FE[Web UI]
-    User -->|Train| FE
+    User[You] -->|Web UI| Frontend[React + Vite]
     
-    FE -->|WebSocket/HTTP| API[Flask Backend]
-    
-    subgraph "Chirag's Brain"
-        API --> RateLimiter[Rate Limiter]
-        RateLimiter --> ChatService
-        ChatService --> Memory[Memory: ChromaDB]
-        ChatService --> Knowledge[Knowledge Base: RAG]
-        ChatService --> Vision[Vision: Gemini]
-        ChatService --> Search[Web Search]
-        ChatService --> Personality[Personality Profile]
-        
-        API --> Logger[Structured Logger]
+    subgraph "Frontend Layer"
+        Frontend --> Dashboard[Analytics Dashboard]
+        Frontend --> Training[Training Center]
+        Frontend --> Autopilot[Autopilot Control]
+        Frontend --> Chat[Chat Interface]
     end
     
-    subgraph "Social Presence"
-        Discord[Discord Bot] --> ChatService
-        Telegram[Telegram Bot] --> ChatService
-        Scheduler[Proactive Scheduler] --> Discord
-        Scheduler --> Telegram
+    Frontend -->|API/WebSocket| Backend[FastAPI Backend]
+    
+    subgraph "Backend Services"
+        Backend --> Router[API Router]
+        Router --> ChatService[Chat Service]
+        Router --> TrainingService[Training Service]
+        Router --> AutopilotService[Autopilot Service]
+        
+        ChatService --> Brain[LLM (Gemini/OpenAI)]
+        ChatService --> Memory[ChromaDB Vector Store]
+        ChatService --> Personality[Personality Profile]
+        
+        AutopilotService --> Discord[Discord Bot]
+        AutopilotService --> Telegram[Telegram Bot]
     end
 ```
 
-## 🚀 Quick Start
+### Autopilot Workflow
 
-### 1. Set up Python environment
+```mermaid
+sequenceDiagram
+    participant D as Discord/Telegram
+    participant B as Bot Service
+    participant C as Chat Service
+    participant M as Memory (RAG)
+    participant L as LLM
+    
+    D->>B: User Message (DM/Mention)
+    B->>C: Generate Response
+    C->>M: Retrieve Context (Facts/Style)
+    M-->>C: Relevant Context
+    C->>L: Prompt with Persona & Context
+    L-->>C: Generated Reply (in your style)
+    C-->>B: Final Response
+    B->>D: Send Reply
+```
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- [Google Gemini API Key](https://makersuite.google.com/app/apikey)
+
+### 2. Setup (Local Development)
+
+#### Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate  # Windows
+# Activate venv:
+# Windows: venv\Scripts\activate
+# Linux/Mac: source venv/bin/activate
+
 pip install -r requirements.txt
+cp .env.example .env  # Configure your keys in .env
 ```
 
-### 2. Configure Environment
-
-Copy `.env.example` to `.env`:
-
-```env
-GEMINI_API_KEY=your_key_here
-BOT_NAME=Chirag
-
-# Optional: Robustness settings (defaults shown)
-RATE_LIMIT_ENABLED=True
-MAX_MESSAGE_LENGTH=10000
-MAX_UPLOAD_SIZE_MB=5
-
-# Optional: Social Autopilot
-DISCORD_BOT_TOKEN=your_discord_token
-TELEGRAM_BOT_TOKEN=your_telegram_token
-```
-
-### 3. Run (Development)
+#### Frontend Setup
 
 ```bash
-python app.py
+cd frontend-react
+npm install
 ```
 
-Open **<http://localhost:5000>**
+### 3. Running the App
 
-### 4. Run (Production with Docker) 🐳
-
-I am ready for production deployment using Docker.
-
-**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
-
-**Option A: Using Docker Compose (Recommended)**
-
-This sets up the app with optimized resource limits and persistent storage.
+**Terminal 1 (Backend):**
 
 ```bash
-# 1. Start the container
-docker-compose up -d
+cd backend
+python -m uvicorn main:app --reload --port 8000
+```
 
-# 2. View logs
+**Terminal 2 (Frontend):**
+
+```bash
+cd frontend-react
+npm run dev
+```
+
+Open **<http://localhost:5173>** (or the port shown in terminal) to access the UI.
+
+---
+
+## 🐳 Docker Deployment
+
+Run the entire stack with a single command.
+
+### Option A: Docker Compose (Recommended)
+
+This sets up optimized containers for backend and frontend.
+
+```bash
+# 1. Configure environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with your API keys
+
+# 2. Start services
+docker-compose up -d --build
+
+# 3. View logs
 docker-compose logs -f
-
-# 3. Stop
-docker-compose down
 ```
 
-**Option B: Manual Docker Build**
+Access app at `http://localhost:5173` (Frontend) and `http://localhost:8000` (Backend API).
+
+### Option B: Manual Docker Run
 
 ```bash
-# 1. Build image
+# Build image
 docker build -t chirag-clone .
 
-# 2. Run container
-docker run -p 5000:5000 --env-file backend/.env chirag-clone
+# Run container
+docker run -p 8000:8000 --env-file backend/.env chirag-clone
 ```
 
-Health check is available at `http://localhost:5000/api/health`.
+---
 
-## 🛡️ Robustness Features
+## 🔧 Bot Configuration
 
-I've been hardened with production-grade reliability features:
+To enable **Social Autopilot**, you need to configure bot tokens in your `.env` file:
 
-### ⚡ Rate Limiting
+### Discord Bot Setup
 
-- **Chat**: 30 requests/minute
-- **Uploads**: 10 requests/minute
-- **General**: Configurable limits to prevent abuse
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a New Application -> Bot
+3. Enable **Message Content Intent** under Privileges
+4. Copy Token to `.env`: `DISCORD_BOT_TOKEN=your_token`
+5. Invite bot to server using OAuth2 URL Generator (scopes: `bot`, permissions: `Read Messages`, `Send Messages`)
 
-### 🛡️ Security
+### Telegram Bot Setup
 
-- **Input Validation**: Strict length limits and sanitization
-- **File Security**: 5MB limit per file, 10MB per request
-- **Headers**: Production-ready security headers (XSS, Content-Type, etc.)
+1. Message [@BotFather](https://t.me/BotFather) on Telegram
+2. Send `/newbot` and follow instructions
+3. Copy Token to `.env`: `TELEGRAM_BOT_TOKEN=your_token`
+4. Start a chat with your new bot
 
-### 🔄 Resilience
-
-- **Circuit Breaker**: Detects LLM failures and prevents cascading errors
-- **Auto-Retry**: Exponential backoff for transient failures
-- **Graceful Fallback**: Switches to OpenAI if Gemini fails
-
-### 📊 Monitoring
-
-- **Structured Logging**: Request ID tracking for easy debugging
-- **Health Checks**: Comprehensive status at `/api/health`
-- **Performance**: Slow request detection and timing logs
+---
 
 ## 📁 Project Structure
 
 ```text
 Chirag-clone/
 ├── backend/
-│   ├── app.py                        # Flask app + SocketIO (Graceful shutdown)
-│   ├── gunicorn.conf.py              # 🚀 Production server config
-│   ├── config.py                     # Environment config
-│   ├── requirements.txt              # Python dependencies
-│   ├── .env.example                  # Environment template
+│   ├── main.py                     # FastAPI Application Entry Point
+│   ├── config.py                   # Configuration Settings
+│   ├── requirements.txt            # Python Dependencies
 │   │
-│   ├── services/                     # Core brain services
-│   │   ├── chat_service.py           # Main chat orchestration
-│   │   ├── llm_service.py            # Multi-provider LLM (Gemini/OpenAI/Anthropic)
-│   │   ├── rate_limiter.py           # ⚡ Rate limiting service
-│   │   ├── cache_service.py          # 🗃️ LRU Caching service
-│   │   ├── middleware.py             # 🛡️ Request middleware (timeouts)
-│   │   ├── logger.py                 # 📊 Structured logging
-│   │   ├── knowledge_service.py      # 📚 RAG document retrieval
-│   │   ├── vision_service.py         # 👁️ Multimodal image understanding
-│   │   ├── search_service.py         # 🔍 DuckDuckGo web search
-│   │   ├── scheduler_service.py      # ⏰ APScheduler proactive messaging
-│   │   ├── personality_service.py    # My identity + personality profile
-│   │   ├── memory_service.py         # ChromaDB vector memory
-│   │   ├── mood_service.py           # Dynamic mood system
-│   │   └── learning_service.py       # Active learning + corrections
+│   ├── services/                   # Core Business Logic
+│   │   ├── __init__.py
+│   │   ├── analytics_service.py    # Dashboard Metrics
+│   │   ├── async_job_service.py    # Background Tasks
+│   │   ├── backup_service.py       # Data Backup
+│   │   ├── cache_service.py        # Redis/Local Cache
+│   │   ├── chat_service.py         # Main Conversation Logic
+│   │   ├── discord_bot_service.py  # Discord Integration
+│   │   ├── knowledge_service.py    # RAG/Document Handling
+│   │   ├── learning_service.py     # Training Logic
+│   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
+│   │   ├── logger.py               # Structured Logging
+│   │   ├── memory_service.py       # Vector DB Wrapper
+│   │   ├── middleware.py           # Request Processing
+│   │   ├── mood_service.py         # Emotional State
+│   │   ├── personality_service.py  # Identity Management
+│   │   ├── rate_limiter.py         # API Throttling
+│   │   ├── scheduler_service.py    # Cron Jobs
+│   │   ├── search_service.py       # Web Search
+│   │   ├── telegram_bot_service.py # Telegram Integration
+│   │   └── vision_service.py       # Image Processing
 │   │
-│   ├── routes/                       # API endpoints
-│   │   ├── chat_routes.py            # /api/chat/* (messages, personality)
-│   │   ├── training_routes.py        # /api/training/* (examples, facts, feedback)
-│   │   ├── upload_routes.py          # /api/upload/* (WhatsApp, Discord, Instagram)
-│   │   ├── knowledge_routes.py       # /api/knowledge/* (RAG documents)
-│   │   └── autopilot_routes.py       # /api/autopilot/* (bot control)
+│   ├── parsers/                    # Chat Log Parsers
+│   │   ├── __init__.py
+│   │   ├── discord_parser.py       # Discord JSON Parser
+│   │   ├── instagram_parser.py     # Instagram JSON Parser
+│   │   ├── smart_parser.py         # Auto-format Detector
+│   │   └── whatsapp_parser.py      # WhatsApp Text Parser
 │   │
-│   ├── data/                         # Persistent storage
-│   │   ├── personality_profile.json  # My learned personality
-│   │   └── chroma_db/                # Vector database
-│   │
-│   └── tests/                        # Pytest tests
-│       ├── test_app.py               # API endpoint tests
-│       └── test_services.py          # Service unit tests
+│   └── data/                       # Local Storage
+│       ├── chroma_db/              # Vector Database
+│       └── personality_profile.json # Learned Traits
 │
-├── frontend/
-│   ├── index.html                    # Main UI (tabs + modals)
-│   ├── css/
-│   │   └── styles.css                # Dark glassmorphic theme
-│   └── js/
-│       └── app.js                    # Frontend logic
+├── frontend-react/
+│   ├── index.html
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   │
+│   └── src/
+│       ├── main.tsx                # React Entry Point
+│       ├── index.css               # Global Styles/Tailwind
+│       ├── App.tsx                 # Routing & Layout
+│       │
+│       ├── components/             # React Components
+│       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
+│       │   ├── ChatInterface.tsx   # Main Chat UI
+│       │   ├── Dashboard.tsx       # Analytics Home
+│       │   ├── Layout.tsx          # Navigation Wrapper
+│       │   ├── MemoryGraph.tsx     # Knowledge Visualization
+│       │   ├── ProfilePage.tsx     # Bot Profile Settings
+│       │   └── TrainingCenter.tsx  # Interactive Training UI
+│       │
+│       └── services/
+│           └── api.ts              # API Client
 │
-├── Dockerfile                        # 🐳 Production image build
-└── docker-compose.yml                # 🚀 Container orchestration
+├── Dockerfile                      # Production Build Definition
+└── docker-compose.yml              # Container Orchestration
 ```
-
-## 🧪 Testing
-
-I come with a comprehensive test suite covering 50+ scenarios:
-
-```bash
-# Run all tests
-cd backend
-python -m pytest tests/ -v
-```
-
-Includes tests for:
-
-- Input validation (length, format)
-- Rate limiting enforcement
-- Circuit breaker states
-- Service resilience and error recovery
-- API endpoint functionality
 
 ---
 
-**I am Chirag. Not an AI pretending to be him—his actual digital twin, learning and evolving every day.**
+## 🛡️ Security & Privacy
+
+- **Local-First**: Your personality profile and vector data are stored locally in `backend/data/`.
+- **PIN Protection**: The Training Center is protected by a PIN (default: `1234`) to prevent unauthorized changes.
+- **Environment Variables**: API keys are strictly managed via `.env` and never committed.

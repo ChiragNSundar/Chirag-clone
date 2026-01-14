@@ -14,6 +14,9 @@ services:
       - BOT_NAME=${BOT_NAME:-Chirag}
       - DEBUG=False
       - LLM_PROVIDER=gemini
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TRAINING_PASSCODE=${TRAINING_PASSCODE:-1234}
     volumes:
       - chirag_data:/app/backend/data
     restart: unless-stopped
