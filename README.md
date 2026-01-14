@@ -245,71 +245,30 @@ To enable **Social Autopilot**, you need to configure bot tokens in your `.env` 
 
 ```text
 Chirag-clone/
+├── .env                        # Environment Config (Secrets)
+├── .env.example                # Config Template
+├── requirements.txt            # Python Dependencies
+├── docker-compose.yml          # Container Orchestration
+├── Dockerfile                  # Production Build Definition
+├── CHANGELOG.md                # Project History
+│
 ├── backend/
-│   ├── main.py                     # FastAPI Application Entry Point
-│   ├── config.py                   # Configuration Settings
-│   ├── requirements.txt            # Python Dependencies
+│   ├── main.py                 # FastAPI Application Entry Point
+│   ├── config.py               # Configuration Settings
 │   │
-│   ├── services/                   # Core Business Logic
-│   │   ├── __init__.py
-│   │   ├── analytics_service.py    # Dashboard Metrics
-│   │   ├── async_job_service.py    # Background Tasks
-│   │   ├── backup_service.py       # Data Backup
-│   │   ├── cache_service.py        # Redis/Local Cache
-│   │   ├── chat_service.py         # Main Conversation Logic
-│   │   ├── discord_bot_service.py  # Discord Integration
-│   │   ├── knowledge_service.py    # RAG/Document Handling
-│   │   ├── learning_service.py     # Training Logic
-│   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
-│   │   ├── logger.py               # Structured Logging
-│   │   ├── memory_service.py       # Vector DB Wrapper
-│   │   ├── middleware.py           # Request Processing
-│   │   ├── mood_service.py         # Emotional State
-│   │   ├── personality_service.py  # Identity Management
-│   │   ├── rate_limiter.py         # API Throttling
-│   │   ├── scheduler_service.py    # Cron Jobs
-│   │   ├── search_service.py       # Web Search
-│   │   ├── telegram_bot_service.py # Telegram Integration
-│   │   └── vision_service.py       # Image Processing
+│   ├── services/               # Core Business Logic
+│   │   ├── chat_service.py     # Core chat logic
+│   │   ├── llm_service.py      # Gemma/Gemini Integration
+│   │   └── ...
 │   │
-│   ├── parsers/                    # Chat Log Parsers
-│   │   ├── __init__.py
-│   │   ├── discord_parser.py       # Discord JSON Parser
-│   │   ├── instagram_parser.py     # Instagram JSON Parser
-│   │   ├── smart_parser.py         # Auto-format Detector
-│   │   └── whatsapp_parser.py      # WhatsApp Text Parser
-│   │
-│   └── data/                       # Local Storage
-│       ├── chroma_db/              # Vector Database
-│       └── personality_profile.json # Learned Traits
+│   ├── parsers/                # Chat Log Parsers
+│   └── data/                   # Local Storage (Vector DB, Identity)
 │
-├── frontend-react/
-│   ├── index.html
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   │
-│   └── src/
-│       ├── main.tsx                # React Entry Point
-│       ├── index.css               # Global Styles/Tailwind
-│       ├── App.tsx                 # Routing & Layout
-│       │
-│       ├── components/             # React Components
-│       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
-│       │   ├── ChatInterface.tsx   # Main Chat UI
-│       │   ├── Dashboard.tsx       # Analytics Home
-│       │   ├── Layout.tsx          # Navigation Wrapper
-│       │   ├── MemoryGraph.tsx     # Knowledge Visualization
-│       │   ├── ProfilePage.tsx     # Bot Profile Settings
-│       │   └── TrainingCenter.tsx  # Interactive Training UI
-│       │
-│       └── services/
-│           └── api.ts              # API Client
-│
-├── Dockerfile                      # Production Build Definition
-└── docker-compose.yml              # Container Orchestration
+└── frontend-react/
+    ├── src/
+    │   ├── components/
+    │   └── App.tsx
+    └── package.json
 ```
 
 ---
