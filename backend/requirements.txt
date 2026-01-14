@@ -24,9 +24,9 @@ durationpy==0.10
 eventlet==0.34.2
 fastapi==0.127.0
 filelock==3.20.1
-Flask==3.0.0
-Flask-Cors==4.0.0
-Flask-SocketIO==5.3.6
+discord.py==2.3.2
+python-telegram-bot==20.7
+python-multipart==0.0.6
 flatbuffers==25.12.19
 fsspec==2025.12.0
 google-ai-generativelanguage==0.6.6
