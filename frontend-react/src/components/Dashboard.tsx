@@ -1,49 +1,70 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-    MessageSquare,
-    Brain,
-    Smile,
-    Zap,
-    TrendingUp,
-    RefreshCcw
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, Area, AreaChart
+} from 'recharts';
+import {
+    Brain, MessageSquare, Zap, Smile, TrendingUp, Database,
+    Activity, Users, FileText, Clock, Target, Award
 } from 'lucide-react';
-import { api, type DashboardStats } from '../services/api';
-import clsx from 'clsx';
 
-const StatCard = ({
-    icon: Icon,
-    label,
-    value,
-    color,
-    delay = 0
-}: {
+interface AnalyticsData {
+    training: {
+        total_examples: number;
+        sources: Record<string, number>;
+        recent_activity: any[];
+    };
+    personality: {
+        facts_count: number;
+        quirks_count: number;
+        emoji_count: number;
+        avg_message_length: number;
+        tone_markers: Record<string, number>;
+        common_phrases: string[];
+        top_emojis: Record<string, number>;
+    };
+    learning_progress: {
+        personality_score: number;
+        data_sources_count: number;
+    };
+}
+
+const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
+
+const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', trend }: {
     icon: React.ElementType;
-    label: string;
+    title: string;
     value: string | number;
-    color: string;
-    delay?: number;
+    subtitle?: string;
+    color?: string;
+    trend?: number;
 }) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay, duration: 0.5 }}
-        className="glass-panel p-6 hover:scale-[1.02] transition-transform cursor-default"
+        className="glass-panel p-5"
     >
         <div className="flex items-start justify-between">
-            <div>
-                <p className="text-zinc-400 text-sm mb-1">{label}</p>
-                <p className="text-3xl font-bold">{value}</p>
+            <div className={`p-3 rounded-xl bg-${color === 'primary' ? 'primary' : color}/20`}>
+                <Icon size={22} className={`text-${color === 'primary' ? 'primary' : color}`} />
             </div>
-            <div className={clsx("p-3 rounded-xl", color)}>
-                <Icon size={24} />
-            </div>
+            {trend !== undefined && (
+                <span className={`text-sm ${trend >= 0 ? 'text-green-400' : 'text-red-400'} flex items-center gap-1`}>
+                    <TrendingUp size={14} className={trend < 0 ? 'rotate-180' : ''} />
+                    {Math.abs(trend)}%
+                </span>
+            )}
+        </div>
+        <div className="mt-4">
+            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-sm text-zinc-400">{title}</p>
+            {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
         </div>
     </motion.div>
 );
 
-const ProgressRing = ({ progress, size = 120 }: { progress: number; size?: number }) => {
-    const strokeWidth = 8;
+const ProgressRing = ({ progress, size = 120, strokeWidth = 8 }: { progress: number; size?: number; strokeWidth?: number }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (progress / 100) * circumference;
@@ -51,26 +72,12 @@ const ProgressRing = ({ progress, size = 120 }: { progress: number; size?: numbe
     return (
         <div className="relative" style={{ width: size, height: size }}>
             <svg width={size} height={size} className="-rotate-90">
+                <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} stroke="#27272a" fill="none" />
                 <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    strokeWidth={strokeWidth}
-                    stroke="rgba(255,255,255,0.1)"
-                    fill="none"
-                />
-                <motion.circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    strokeWidth={strokeWidth}
-                    stroke="url(#gradient)"
-                    fill="none"
-                    strokeLinecap="round"
-                    initial={{ strokeDashoffset: circumference }}
-                    animate={{ strokeDashoffset: offset }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                    style={{ strokeDasharray: circumference }}
+                    cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth}
+                    stroke="url(#gradient)" fill="none"
+                    strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+                    className="transition-all duration-1000"
                 />
                 <defs>
                     <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -81,138 +88,310 @@ const ProgressRing = ({ progress, size = 120 }: { progress: number; size?: numbe
             </svg>
             <div className="absolute inset-0 flex items-center justify-center flex-col">
                 <span className="text-2xl font-bold">{progress}%</span>
-                <span className="text-xs text-zinc-500">Complete</span>
+                <span className="text-xs text-zinc-400">Complete</span>
             </div>
         </div>
     );
 };
 
 export const Dashboard = () => {
-    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const fetchStats = async () => {
-        setLoading(true);
-        try {
-            const data = await api.getDashboardStats();
-            setStats(data);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchStats();
+        const fetchData = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/api/analytics/detailed');
+                const result = await res.json();
+                setData(result);
+            } catch (e) {
+                console.error('Failed to fetch analytics:', e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
+
+    // Prepare chart data
+    const sourceChartData = data ? Object.entries(data.training.sources).map(([name, value]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value
+    })) : [];
+
+    const emojiChartData = data ? Object.entries(data.personality.top_emojis).map(([emoji, count]) => ({
+        emoji,
+        count
+    })) : [];
+
+    const metricsData = [
+        { name: 'Facts', value: data?.personality.facts_count || 0 },
+        { name: 'Quirks', value: data?.personality.quirks_count || 0 },
+        { name: 'Emojis', value: data?.personality.emoji_count || 0 },
+        { name: 'Examples', value: data?.training.total_examples || 0 },
+    ];
+
+    const learningProgressData = [
+        { name: 'Week 1', value: 10 },
+        { name: 'Week 2', value: 25 },
+        { name: 'Week 3', value: 45 },
+        { name: 'Week 4', value: data?.learning_progress.personality_score || 0 },
+    ];
 
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center">
-                <RefreshCcw className="animate-spin text-primary" size={32} />
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center"
+                >
+                    <Brain className="w-16 h-16 mx-auto text-primary animate-pulse" />
+                    <p className="mt-4 text-zinc-400">Loading analytics...</p>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 max-w-6xl mx-auto space-y-6">
+        <div className="p-6 space-y-6 max-w-7xl mx-auto">
+            {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
             >
-                <div>
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-zinc-500">Overview of your Digital Twin's learning progress</p>
-                </div>
-                <button
-                    onClick={fetchStats}
-                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                >
-                    <RefreshCcw size={20} />
-                </button>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                    <Activity className="text-primary" />
+                    Analytics Dashboard
+                </h1>
+                <p className="text-zinc-400">Your Digital Twin's learning progress and personality insights</p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard
-                    icon={MessageSquare}
-                    label="Training Examples"
-                    value={stats?.total_training_examples || 0}
-                    color="bg-blue-500/20 text-blue-400"
-                    delay={0.1}
+                    icon={Database}
+                    title="Training Examples"
+                    value={data?.training.total_examples || 0}
+                    subtitle="Total data points"
+                    color="primary"
                 />
                 <StatCard
-                    icon={Brain}
-                    label="Facts Learned"
-                    value={stats?.facts_count || 0}
-                    color="bg-purple-500/20 text-purple-400"
-                    delay={0.2}
+                    icon={FileText}
+                    title="Personal Facts"
+                    value={data?.personality.facts_count || 0}
+                    subtitle="Stored knowledge"
+                    color="green"
                 />
                 <StatCard
                     icon={Zap}
-                    label="Quirks Detected"
-                    value={stats?.quirks_count || 0}
-                    color="bg-amber-500/20 text-amber-400"
-                    delay={0.3}
+                    title="Unique Quirks"
+                    value={data?.personality.quirks_count || 0}
+                    subtitle="Communication patterns"
+                    color="purple"
                 />
                 <StatCard
                     icon={Smile}
-                    label="Unique Emojis"
-                    value={stats?.emoji_count || 0}
-                    color="bg-green-500/20 text-green-400"
-                    delay={0.4}
+                    title="Emoji Patterns"
+                    value={data?.personality.emoji_count || 0}
+                    subtitle="Expression styles"
+                    color="yellow"
                 />
             </div>
 
+            {/* Main Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Personality Completion */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="glass-panel p-6 flex flex-col items-center justify-center lg:col-span-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-panel p-6"
                 >
-                    <h3 className="text-lg font-semibold mb-4">Personality Completion</h3>
-                    <ProgressRing progress={stats?.personality_completion || 0} />
-                    <p className="text-sm text-zinc-400 mt-4 text-center">
-                        Upload more chats or add facts to improve accuracy
-                    </p>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Target size={20} className="text-primary" />
+                        Personality Completion
+                    </h3>
+                    <div className="flex flex-col items-center">
+                        <ProgressRing progress={data?.learning_progress.personality_score || 0} size={160} />
+                        <p className="mt-4 text-sm text-zinc-400 text-center">
+                            {data?.learning_progress.personality_score || 0 < 30 ? 'Just getting started! Upload more data.' :
+                                data?.learning_progress.personality_score || 0 < 70 ? 'Making good progress on learning you.' :
+                                    'Excellent! Your clone knows you well.'}
+                        </p>
+                    </div>
                 </motion.div>
 
+                {/* Data Sources Pie Chart */}
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="glass-panel p-6 lg:col-span-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-panel p-6"
+                >
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Users size={20} className="text-primary" />
+                        Data Sources Distribution
+                    </h3>
+                    {sourceChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={200}>
+                            <PieChart>
+                                <Pie
+                                    data={sourceChartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    label={({ name }) => name}
+                                >
+                                    {sourceChartData.map((_, i) => (
+                                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-48 flex items-center justify-center text-zinc-500">
+                            No data sources yet. Start training!
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Learning Progress Area Chart */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-panel p-6"
                 >
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <TrendingUp size={20} className="text-primary" />
-                        Data Sources
+                        Learning Progress
                     </h3>
-                    <div className="space-y-3">
-                        {stats?.sources && Object.keys(stats.sources).length > 0 ? (
-                            Object.entries(stats.sources).map(([source, count]) => (
-                                <div key={source} className="flex items-center justify-between">
-                                    <span className="capitalize text-zinc-300">{source.replace('_', ' ')}</span>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${Math.min(100, (count / (stats?.total_training_examples || 1)) * 100)}%` }}
-                                                transition={{ duration: 1 }}
-                                                className="h-full bg-gradient-to-r from-primary to-accent"
-                                            />
-                                        </div>
-                                        <span className="text-sm text-zinc-500 w-8">{count}</span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-zinc-500 text-sm">No data sources yet. Start by uploading chats!</p>
-                        )}
-                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <AreaChart data={learningProgressData}>
+                            <defs>
+                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                            <XAxis dataKey="name" stroke="#71717a" fontSize={12} />
+                            <YAxis stroke="#71717a" fontSize={12} />
+                            <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} />
+                            <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </motion.div>
             </div>
+
+            {/* Bottom Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Metrics Bar Chart */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-panel p-6"
+                >
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Award size={20} className="text-primary" />
+                        Knowledge Metrics
+                    </h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={metricsData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                            <XAxis dataKey="name" stroke="#71717a" fontSize={12} />
+                            <YAxis stroke="#71717a" fontSize={12} />
+                            <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                {metricsData.map((_, i) => (
+                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </motion.div>
+
+                {/* Top Emojis */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="glass-panel p-6"
+                >
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Smile size={20} className="text-primary" />
+                        Top Emoji Patterns
+                    </h3>
+                    {emojiChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={250}>
+                            <BarChart data={emojiChartData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                                <XAxis type="number" stroke="#71717a" fontSize={12} />
+                                <YAxis dataKey="emoji" type="category" stroke="#71717a" fontSize={18} width={40} />
+                                <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} />
+                                <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-64 flex items-center justify-center text-zinc-500 flex-col gap-2">
+                            <Smile size={40} className="opacity-30" />
+                            <p>No emoji patterns detected yet</p>
+                        </div>
+                    )}
+                </motion.div>
+            </div>
+
+            {/* Common Phrases */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass-panel p-6"
+            >
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <MessageSquare size={20} className="text-primary" />
+                    Your Signature Phrases
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                    {(data?.personality.common_phrases || []).length > 0 ? (
+                        data?.personality.common_phrases.map((phrase, i) => (
+                            <span
+                                key={i}
+                                className="px-3 py-1.5 rounded-full text-sm"
+                                style={{
+                                    background: `${CHART_COLORS[i % CHART_COLORS.length]}20`,
+                                    color: CHART_COLORS[i % CHART_COLORS.length],
+                                    border: `1px solid ${CHART_COLORS[i % CHART_COLORS.length]}40`
+                                }}
+                            >
+                                "{phrase}"
+                            </span>
+                        ))
+                    ) : (
+                        <p className="text-zinc-500">No phrases detected yet. Chat or upload more data!</p>
+                    )}
+                </div>
+            </motion.div>
+
+            {/* Quick Stats Footer */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="glass-panel p-4 flex items-center justify-between"
+            >
+                <div className="flex items-center gap-4">
+                    <Clock size={16} className="text-zinc-500" />
+                    <span className="text-sm text-zinc-400">
+                        Avg message length: <span className="text-white font-medium">{data?.personality.avg_message_length || 0} characters</span>
+                    </span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <Brain size={16} className="text-zinc-500" />
+                    <span className="text-sm text-zinc-400">
+                        Data sources: <span className="text-white font-medium">{data?.learning_progress.data_sources_count || 0} platforms</span>
+                    </span>
+                </div>
+            </motion.div>
         </div>
     );
 };

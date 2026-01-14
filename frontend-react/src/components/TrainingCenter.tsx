@@ -12,7 +12,7 @@ interface TrainingCenterProps {
     onAuthenticate: () => void;
 }
 
-type TabType = 'chats' | 'journal' | 'facts' | 'examples';
+type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts';
 
 const UploadCard = ({
     title,
@@ -131,8 +131,6 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const [journalText, setJournalText] = useState('');
     const [factText, setFactText] = useState('');
     const [facts, setFacts] = useState<string[]>([]);
-    const [exampleContext, setExampleContext] = useState('');
-    const [exampleResponse, setExampleResponse] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -183,45 +181,98 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         }
     };
 
-    const addExample = async () => {
-        if (!exampleContext.trim() || !exampleResponse.trim()) return;
-        setLoading(true);
-        try {
-            await api.addTrainingExample(exampleContext, exampleResponse);
-            setMessage({ type: 'success', text: 'Example added!' });
-            setExampleContext('');
-            setExampleResponse('');
-        } catch {
-            setMessage({ type: 'error', text: 'Failed to add example' });
-        } finally {
-            setLoading(false);
-        }
-    };
-
     if (!isAuthenticated) {
         return <TrainingAuth onSuccess={onAuthenticate} />;
     }
 
     const tabs = [
         { id: 'chats', label: 'Chat Uploads', icon: Upload },
+        { id: 'train_chat', label: 'Train by Chatting', icon: MessageSquare },
         { id: 'journal', label: 'Journal', icon: PenLine },
+        { id: 'documents', label: 'Documents', icon: BookOpen },
         { id: 'facts', label: 'Facts', icon: BookOpen },
-        { id: 'examples', label: 'Examples', icon: MessageSquare },
     ];
+
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+    const resetAllLearning = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/training/reset', { method: 'DELETE' });
+            if (res.ok) {
+                setMessage({ type: 'success', text: 'All learning data has been reset!' });
+                setFacts([]);
+            } else {
+                setMessage({ type: 'error', text: 'Failed to reset' });
+            }
+        } catch {
+            setMessage({ type: 'error', text: 'Connection error' });
+        } finally {
+            setShowResetConfirm(false);
+        }
+    };
 
     return (
         <div className="p-6 max-w-5xl mx-auto">
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
+                className="mb-6 flex items-start justify-between"
             >
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Lock size={24} className="text-primary" />
-                    Training Center
-                </h1>
-                <p className="text-zinc-500">Teach your digital twin how to be you</p>
+                <div>
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <Lock size={24} className="text-primary" />
+                        Training Center
+                    </h1>
+                    <p className="text-zinc-500">Teach your digital twin how to be you</p>
+                </div>
+                <button
+                    onClick={() => setShowResetConfirm(true)}
+                    className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm flex items-center gap-2"
+                >
+                    <Trash2 size={16} />
+                    Reset All
+                </button>
             </motion.div>
+
+            {/* Reset Confirmation Modal */}
+            <AnimatePresence>
+                {showResetConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                        onClick={() => setShowResetConfirm(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                            className="glass-panel p-6 max-w-sm mx-4"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 className="text-lg font-bold text-red-400 mb-2">Reset All Learning?</h3>
+                            <p className="text-sm text-zinc-400 mb-4">
+                                This will permanently delete all training data, facts, quirks, and personality data. This cannot be undone.
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowResetConfirm(false)}
+                                    className="flex-1 py-2 bg-white/10 hover:bg-white/20 rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={resetAllLearning}
+                                    className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                >
+                                    Reset Everything
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -367,51 +418,195 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                 </motion.div>
             )}
 
-            {activeTab === 'examples' && (
+            {activeTab === 'train_chat' && (
+                <TrainByChattingTab />
+            )}
+
+            {activeTab === 'documents' && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="glass-panel p-6 max-w-2xl"
                 >
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <MessageSquare size={20} className="text-primary" />
-                        Training Examples
+                        <BookOpen size={20} className="text-primary" />
+                        Upload Documents
                     </h3>
                     <p className="text-sm text-zinc-400 mb-4">
-                        Provide example conversations showing how you'd respond to messages.
+                        Upload PDFs, text files, or any documents that reflect how you write and think.
                     </p>
-                    <div className="space-y-3">
-                        <div>
-                            <label className="text-sm text-zinc-400 mb-1 block">Someone says:</label>
-                            <input
-                                type="text"
-                                value={exampleContext}
-                                onChange={(e) => setExampleContext(e.target.value)}
-                                placeholder="e.g. 'Hey, what's up?'"
-                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm text-zinc-400 mb-1 block">You respond:</label>
-                            <input
-                                type="text"
-                                value={exampleResponse}
-                                onChange={(e) => setExampleResponse(e.target.value)}
-                                placeholder="e.g. 'Not much, just chilling. You?'"
-                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
-                            />
-                        </div>
-                        <button
-                            onClick={addExample}
-                            disabled={loading || !exampleContext.trim() || !exampleResponse.trim()}
-                            className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            {loading ? <RefreshCcw className="animate-spin" size={16} /> : <Plus size={16} />}
-                            Add Example
-                        </button>
-                    </div>
+                    <DocumentUpload />
                 </motion.div>
             )}
+        </div>
+    );
+};
+
+// Train by Chatting component - Bot asks, you answer
+const TrainByChattingTab = () => {
+    const [prompt, setPrompt] = useState('');
+    const [response, setResponse] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [learned, setLearned] = useState(0);
+
+    const fetchPrompt = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/training/chat/prompt');
+            const data = await res.json();
+            setPrompt(data.prompt);
+            setResponse('');
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const submitResponse = async () => {
+        if (!response.trim() || !prompt) return;
+        setLoading(true);
+        try {
+            const res = await fetch('http://localhost:8000/api/training/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bot_message: prompt, user_response: response })
+            });
+            if (res.ok) {
+                setLearned(prev => prev + 1);
+                fetchPrompt(); // Get next prompt
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch initial prompt
+    if (!prompt) fetchPrompt();
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="glass-panel p-6 max-w-2xl"
+        >
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <MessageSquare size={20} className="text-primary" />
+                Train by Chatting
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+                I'll ask you something, and you respond how YOU would. I'll learn from your answers!
+            </p>
+
+            {learned > 0 && (
+                <div className="mb-4 p-2 bg-green-500/20 text-green-400 rounded-lg text-sm text-center">
+                    ✓ {learned} responses learned this session
+                </div>
+            )}
+
+            <div className="space-y-4">
+                <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                    <p className="text-sm text-zinc-400 mb-1">Someone asks you:</p>
+                    <p className="text-lg">{prompt || 'Loading...'}</p>
+                </div>
+
+                <div>
+                    <label className="text-sm text-zinc-400 mb-1 block">Your response:</label>
+                    <textarea
+                        value={response}
+                        onChange={(e) => setResponse(e.target.value)}
+                        placeholder="How would you respond?"
+                        className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary resize-none"
+                    />
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        onClick={submitResponse}
+                        disabled={loading || !response.trim()}
+                        className="flex-1 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {loading ? <RefreshCcw className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                        Submit & Learn
+                    </button>
+                    <button
+                        onClick={fetchPrompt}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg"
+                    >
+                        <RefreshCcw size={16} />
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+// Document Upload component
+const DocumentUpload = () => {
+    const [uploading, setUploading] = useState(false);
+    const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const handleUpload = async () => {
+        const file = fileRef.current?.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        setResult(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('http://localhost:8000/api/training/upload/document', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setResult({ success: true, message: `Processed ${data.characters_processed} characters` });
+                if (fileRef.current) fileRef.current.value = '';
+            } else {
+                setResult({ success: false, message: data.detail || 'Upload failed' });
+            }
+        } catch (e) {
+            setResult({ success: false, message: 'Upload failed' });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.txt,.md,.doc,.docx"
+                className="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white hover:file:bg-primary/90 file:cursor-pointer"
+            />
+            <button
+                onClick={handleUpload}
+                disabled={uploading}
+                className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+                {uploading ? <RefreshCcw className="animate-spin" size={16} /> : <Upload size={16} />}
+                {uploading ? 'Processing...' : 'Upload & Learn'}
+            </button>
+
+            <AnimatePresence>
+                {result && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className={`p-3 rounded-lg flex items-center gap-2 text-sm ${result.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            }`}
+                    >
+                        {result.success ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                        {result.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

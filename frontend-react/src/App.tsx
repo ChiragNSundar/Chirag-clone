@@ -6,6 +6,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { MemoryGraph } from './components/MemoryGraph';
 import { ProfilePage } from './components/ProfilePage';
 import { TrainingCenter } from './components/TrainingCenter';
+import { AutopilotPage } from './components/AutopilotPage';
 
 function App() {
   const [isTrainingAuthenticated, setIsTrainingAuthenticated] = useState(false);
@@ -27,6 +28,7 @@ function App() {
               />
             }
           />
+          <Route path="autopilot" element={<AutopilotPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
