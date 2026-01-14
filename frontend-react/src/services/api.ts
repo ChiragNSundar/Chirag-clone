@@ -74,6 +74,50 @@ export const api = {
         const res = await fetch(`${API_BASE}/dashboard/stats`);
         if (!res.ok) throw new Error('Failed to fetch dashboard stats');
         return res.json();
+    },
+
+    async addJournalEntry(content: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/training/journal`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+        if (!res.ok) throw new Error('Failed to add journal entry');
+        return res.json();
+    },
+
+    async addFact(fact: string): Promise<{ success: boolean; facts: string[] }> {
+        const res = await fetch(`${API_BASE}/training/fact`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fact })
+        });
+        if (!res.ok) throw new Error('Failed to add fact');
+        return res.json();
+    },
+
+    async getFacts(): Promise<{ facts: string[] }> {
+        const res = await fetch(`${API_BASE}/training/facts`);
+        if (!res.ok) throw new Error('Failed to get facts');
+        return res.json();
+    },
+
+    async deleteFact(index: number): Promise<{ success: boolean; facts: string[] }> {
+        const res = await fetch(`${API_BASE}/training/facts/${index}`, {
+            method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Failed to delete fact');
+        return res.json();
+    },
+
+    async addTrainingExample(context: string, response: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/training/example`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ context, response })
+        });
+        if (!res.ok) throw new Error('Failed to add example');
+        return res.json();
     }
 };
 

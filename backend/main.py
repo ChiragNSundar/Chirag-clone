@@ -240,5 +240,228 @@ async def get_dashboard_stats():
             "personality_completion": 0
         }
 
+# Training PIN (simple auth - in production use proper auth)
+TRAINING_PIN = os.environ.get("TRAINING_PIN", "1234")
+
+class JournalEntry(BaseModel):
+    content: str
+    
+class FactEntry(BaseModel):
+    fact: str
+
+class TrainingExample(BaseModel):
+    context: str
+    response: str
+
+@app.post("/api/training/auth")
+async def verify_training_auth(pin: str = Form(...)):
+    """Verify training PIN"""
+    if pin == TRAINING_PIN:
+        return {"success": True, "message": "Authenticated"}
+    raise HTTPException(status_code=401, detail="Invalid PIN")
+
+@app.post("/api/training/upload/whatsapp")
+async def upload_whatsapp(
+    file: UploadFile = File(...),
+    your_name: str = Form(...)
+):
+    """Upload WhatsApp chat export"""
+    try:
+        import asyncio
+        from parsers import WhatsAppParser
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        content = await file.read()
+        content_str = content.decode('utf-8', errors='replace')
+        
+        parser = WhatsAppParser(your_name)
+        result = await asyncio.to_thread(parser.parse_content, content_str)
+        
+        memory = get_memory_service()
+        personality = get_personality_service()
+        
+        added = memory.add_training_examples_batch(result['conversation_pairs'], source='whatsapp')
+        personality.analyze_messages(result['your_texts'])
+        
+        return {
+            "success": True,
+            "total_messages": result['total_messages'],
+            "your_messages": result['your_messages'],
+            "training_examples_added": added
+        }
+    except Exception as e:
+        logger.error(f"WhatsApp upload error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/training/upload/instagram")
+async def upload_instagram(
+    file: UploadFile = File(...),
+    your_username: str = Form(...)
+):
+    """Upload Instagram DM export"""
+    try:
+        import asyncio
+        from parsers import InstagramParser
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        content = await file.read()
+        content_str = content.decode('utf-8', errors='replace')
+        
+        parser = InstagramParser(your_username)
+        result = await asyncio.to_thread(parser.parse_content, content_str)
+        
+        memory = get_memory_service()
+        personality = get_personality_service()
+        
+        added = memory.add_training_examples_batch(result['conversation_pairs'], source='instagram')
+        personality.analyze_messages(result['your_texts'])
+        
+        return {
+            "success": True,
+            "total_messages": result['total_messages'],
+            "your_messages": result['your_messages'],
+            "training_examples_added": added
+        }
+    except Exception as e:
+        logger.error(f"Instagram upload error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/training/upload/discord")
+async def upload_discord(
+    file: UploadFile = File(...),
+    your_username: str = Form(...)
+):
+    """Upload Discord chat export"""
+    try:
+        import asyncio
+        from parsers import DiscordParser
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        content = await file.read()
+        content_str = content.decode('utf-8', errors='replace')
+        
+        parser = DiscordParser(your_user_id=None, your_username=your_username)
+        result = await asyncio.to_thread(parser.parse_content, content_str, 'json')
+        
+        memory = get_memory_service()
+        personality = get_personality_service()
+        
+        added = memory.add_training_examples_batch(result['conversation_pairs'], source='discord')
+        personality.analyze_messages(result['your_texts'])
+        
+        return {
+            "success": True,
+            "total_messages": result['total_messages'],
+            "your_messages": result['your_messages'],
+            "training_examples_added": added
+        }
+    except Exception as e:
+        logger.error(f"Discord upload error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/training/journal")
+async def add_journal_entry(entry: JournalEntry):
+    """Add a journal/thought entry"""
+    try:
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        memory = get_memory_service()
+        personality = get_personality_service()
+        
+        # Store as training example with generic context
+        memory.add_training_example(
+            context="What are you thinking about?",
+            response=entry.content,
+            source="journal"
+        )
+        personality.analyze_messages([entry.content])
+        
+        return {"success": True, "message": "Journal entry saved"}
+    except Exception as e:
+        logger.error(f"Journal error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/training/fact")
+async def add_fact(entry: FactEntry):
+    """Add a personal fact"""
+    try:
+        from services.personality_service import get_personality_service
+        personality = get_personality_service()
+        personality.add_fact(entry.fact)
+        return {"success": True, "facts": personality.get_profile().facts}
+    except Exception as e:
+        logger.error(f"Add fact error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/training/facts")
+async def get_facts():
+    """Get all stored facts"""
+    try:
+        from services.personality_service import get_personality_service
+        personality = get_personality_service()
+        return {"facts": personality.get_profile().facts}
+    except Exception as e:
+        logger.error(f"Get facts error: {e}")
+        return {"facts": []}
+
+@app.delete("/api/training/facts/{index}")
+async def delete_fact(index: int):
+    """Delete a fact by index"""
+    try:
+        from services.personality_service import get_personality_service
+        personality = get_personality_service()
+        facts = personality.get_profile().facts
+        if 0 <= index < len(facts):
+            facts.pop(index)
+            personality.save_profile()
+            return {"success": True, "facts": facts}
+        raise HTTPException(status_code=400, detail="Invalid index")
+    except Exception as e:
+        logger.error(f"Delete fact error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/training/example")
+async def add_training_example(example: TrainingExample):
+    """Add a direct training example"""
+    try:
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        memory = get_memory_service()
+        personality = get_personality_service()
+        
+        memory.add_training_example(example.context, example.response, source='manual')
+        personality.add_example(example.context, example.response)
+        
+        return {"success": True, "message": "Example added"}
+    except Exception as e:
+        logger.error(f"Add example error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/training/stats")
+async def get_training_stats():
+    """Get training statistics"""
+    try:
+        from services.memory_service import get_memory_service
+        from services.personality_service import get_personality_service
+        
+        memory = get_memory_service()
+        personality = get_personality_service().get_profile()
+        stats = memory.get_training_stats()
+        
+        return {
+            "total_examples": stats.get('total_examples', 0),
+            "sources": stats.get('sources', {}),
+            "facts_count": len(personality.facts),
+            "quirks_count": len(personality.typing_quirks)
+        }
+    except Exception as e:
+        logger.error(f"Get stats error: {e}")
+        return {"total_examples": 0, "sources": {}, "facts_count": 0, "quirks_count": 0}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

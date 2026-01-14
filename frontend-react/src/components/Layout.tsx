@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Network, User } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Network, User, GraduationCap } from 'lucide-react';
 import clsx from 'clsx';
 
 const NavItem = ({ to, icon: Icon, label }: { to: string; icon: React.ElementType; label: string }) => (
@@ -50,6 +50,7 @@ export const Layout = () => {
                     <NavItem to="/chat" icon={MessageSquare} label="Chat" />
                     <NavItem to="/memory" icon={Network} label="Memory Graph" />
                     <NavItem to="/profile" icon={User} label="About Me" />
+                    <NavItem to="/training" icon={GraduationCap} label="Training" />
                 </nav>
 
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
