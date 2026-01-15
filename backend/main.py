@@ -813,5 +813,243 @@ async def get_autopilot_logs():
         logger.error(f"Autopilot logs error: {e}")
         return {"logs": []}
 
+# ============= COGNITIVE ENHANCEMENT ENDPOINTS =============
+
+class ActiveLearningAnswer(BaseModel):
+    question: str
+    answer: str
+    domain: str = ""
+
+@app.get("/api/cognitive/core-memories")
+async def get_core_memories(category: Optional[str] = None, limit: int = 50):
+    """Get all stored core memories."""
+    try:
+        from services.core_memory_service import get_core_memory_service
+        service = get_core_memory_service()
+        memories = service.get_core_memories(category=category, limit=limit)
+        stats = service.get_stats()
+        return {"memories": memories, "stats": stats}
+    except Exception as e:
+        logger.error(f"Core memories error: {e}")
+        return {"memories": [], "stats": {}}
+
+@app.delete("/api/cognitive/core-memories/{memory_id}")
+async def delete_core_memory(memory_id: str):
+    """Delete a core memory by ID."""
+    try:
+        from services.core_memory_service import get_core_memory_service
+        service = get_core_memory_service()
+        success = service.delete_core_memory(memory_id)
+        return {"success": success}
+    except Exception as e:
+        logger.error(f"Delete core memory error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/cognitive/trigger-summarization")
+async def trigger_memory_summarization(days_back: int = 1):
+    """Manually trigger memory summarization."""
+    try:
+        import asyncio
+        from services.core_memory_service import get_core_memory_service
+        service = get_core_memory_service()
+        
+        # Run in threadpool to avoid blocking
+        new_memories = await asyncio.to_thread(
+            service.summarize_recent_conversations,
+            days_back=days_back
+        )
+        
+        return {
+            "success": True,
+            "new_memories_count": len(new_memories),
+            "new_memories": new_memories
+        }
+    except Exception as e:
+        logger.error(f"Summarization error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/cognitive/active-learning/suggestions")
+async def get_active_learning_suggestions(max_questions: int = 3):
+    """Get proactive questions to fill knowledge gaps."""
+    try:
+        from services.active_learning_service import get_active_learning_service
+        service = get_active_learning_service()
+        questions = service.generate_proactive_questions(max_questions=max_questions)
+        stats = service.get_learning_stats()
+        return {"questions": questions, "stats": stats}
+    except Exception as e:
+        logger.error(f"Active learning error: {e}")
+        return {"questions": [], "stats": {}}
+
+@app.post("/api/cognitive/active-learning/answer")
+async def submit_active_learning_answer(data: ActiveLearningAnswer):
+    """Submit an answer to a proactive question."""
+    try:
+        import asyncio
+        from services.active_learning_service import get_active_learning_service
+        service = get_active_learning_service()
+        
+        result = await asyncio.to_thread(
+            service.process_answer,
+            data.question,
+            data.answer,
+            data.domain
+        )
+        
+        return result
+    except Exception as e:
+        logger.error(f"Active learning answer error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/cognitive/learning-stats")
+async def get_cognitive_learning_stats():
+    """Get comprehensive learning statistics."""
+    try:
+        from services.active_learning_service import get_active_learning_service
+        from services.core_memory_service import get_core_memory_service
+        
+        active_service = get_active_learning_service()
+        core_service = get_core_memory_service()
+        
+        return {
+            "active_learning": active_service.get_learning_stats(),
+            "core_memories": core_service.get_stats()
+        }
+    except Exception as e:
+        logger.error(f"Learning stats error: {e}")
+        return {"active_learning": {}, "core_memories": {}}
+
+# ============= NEW AUTOPILOT INTEGRATIONS =============
+
+class DraftRequest(BaseModel):
+    text: str
+    topic: str = ""
+
+# Twitter/X Endpoints
+@app.get("/api/autopilot/twitter/status")
+async def get_twitter_status():
+    """Get Twitter autopilot status."""
+    try:
+        from services.twitter_bot_service import get_twitter_bot_service
+        service = get_twitter_bot_service()
+        return service.get_status()
+    except Exception as e:
+        logger.error(f"Twitter status error: {e}")
+        return {"platform": "twitter", "configured": False, "error": str(e)}
+
+@app.get("/api/autopilot/twitter/drafts")
+async def get_twitter_drafts(status: Optional[str] = None):
+    """Get Twitter draft queue."""
+    try:
+        from services.twitter_bot_service import get_twitter_bot_service
+        service = get_twitter_bot_service()
+        return {"drafts": service.get_drafts(status)}
+    except Exception as e:
+        logger.error(f"Twitter drafts error: {e}")
+        return {"drafts": []}
+
+@app.post("/api/autopilot/twitter/generate-tweet")
+async def generate_tweet_draft(request: DraftRequest):
+    """Generate a tweet draft."""
+    try:
+        from services.twitter_bot_service import get_twitter_bot_service
+        service = get_twitter_bot_service()
+        draft = service.generate_tweet_draft(request.topic)
+        return draft
+    except Exception as e:
+        logger.error(f"Generate tweet error: {e}")
+        return {"error": str(e)}
+
+@app.post("/api/autopilot/twitter/generate-reply")
+async def generate_twitter_reply(request: DraftRequest):
+    """Generate a reply draft."""
+    try:
+        from services.twitter_bot_service import get_twitter_bot_service
+        service = get_twitter_bot_service()
+        draft = service.generate_reply_draft(request.text)
+        return draft
+    except Exception as e:
+        logger.error(f"Generate reply error: {e}")
+        return {"error": str(e)}
+
+# LinkedIn Endpoints
+@app.get("/api/autopilot/linkedin/status")
+async def get_linkedin_status():
+    """Get LinkedIn autopilot status."""
+    try:
+        from services.linkedin_bot_service import get_linkedin_bot_service
+        service = get_linkedin_bot_service()
+        return service.get_status()
+    except Exception as e:
+        logger.error(f"LinkedIn status error: {e}")
+        return {"platform": "linkedin", "configured": False, "error": str(e)}
+
+@app.get("/api/autopilot/linkedin/drafts")
+async def get_linkedin_drafts(status: Optional[str] = None):
+    """Get LinkedIn draft queue."""
+    try:
+        from services.linkedin_bot_service import get_linkedin_bot_service
+        service = get_linkedin_bot_service()
+        return {"drafts": service.get_drafts(status)}
+    except Exception as e:
+        logger.error(f"LinkedIn drafts error: {e}")
+        return {"drafts": []}
+
+@app.post("/api/autopilot/linkedin/generate-reply")
+async def generate_linkedin_reply(request: DraftRequest):
+    """Generate a LinkedIn reply draft."""
+    try:
+        from services.linkedin_bot_service import get_linkedin_bot_service
+        service = get_linkedin_bot_service()
+        draft = service.generate_reply_draft(request.text)
+        return draft
+    except Exception as e:
+        logger.error(f"Generate LinkedIn reply error: {e}")
+        return {"error": str(e)}
+
+# Gmail Endpoints
+@app.get("/api/autopilot/gmail/status")
+async def get_gmail_status():
+    """Get Gmail autopilot status."""
+    try:
+        from services.gmail_bot_service import get_gmail_bot_service
+        service = get_gmail_bot_service()
+        return service.get_status()
+    except Exception as e:
+        logger.error(f"Gmail status error: {e}")
+        return {"platform": "gmail", "configured": False, "error": str(e)}
+
+@app.get("/api/autopilot/gmail/drafts")
+async def get_gmail_drafts(status: Optional[str] = None):
+    """Get Gmail draft queue."""
+    try:
+        from services.gmail_bot_service import get_gmail_bot_service
+        service = get_gmail_bot_service()
+        return {"drafts": service.get_drafts(status)}
+    except Exception as e:
+        logger.error(f"Gmail drafts error: {e}")
+        return {"drafts": []}
+
+class EmailReplyRequest(BaseModel):
+    subject: str
+    body: str
+    sender_name: str = "Someone"
+
+@app.post("/api/autopilot/gmail/generate-reply")
+async def generate_gmail_reply(request: EmailReplyRequest):
+    """Generate an email reply draft."""
+    try:
+        from services.gmail_bot_service import get_gmail_bot_service
+        service = get_gmail_bot_service()
+        draft = service.generate_reply_draft(
+            email_subject=request.subject,
+            email_body=request.body,
+            sender_name=request.sender_name
+        )
+        return draft
+    except Exception as e:
+        logger.error(f"Generate email reply error: {e}")
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

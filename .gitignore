@@ -81,3 +81,10 @@ frontend-react/.vite/
 # Misc
 *.bak
 *.tmp
+# Desktop Widget
+desktop-widget/node_modules/
+desktop-widget/dist/
+desktop-widget/out/
+
+# Gmail Credentials
+backend/data/gmail_token.pickle

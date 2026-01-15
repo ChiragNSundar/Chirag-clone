@@ -1,0 +1,38 @@
+{
+    "name": "chirag-clone-widget",
+    "version": "1.0.0",
+    "description": "Desktop widget for Chirag Clone - quick chat without opening browser",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder",
+        "build:mac": "electron-builder --mac"
+    },
+    "author": "Chirag",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^28.0.0",
+        "electron-builder": "^24.9.1"
+    },
+    "dependencies": {
+        "electron-store": "^8.1.0"
+    },
+    "build": {
+        "appId": "com.chirag.clone-widget",
+        "productName": "Chirag Clone Widget",
+        "mac": {
+            "category": "public.app-category.productivity",
+            "target": [
+                "dmg",
+                "zip"
+            ]
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "index.html",
+            "renderer.js",
+            "styles.css"
+        ]
+    }
+}

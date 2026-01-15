@@ -2,6 +2,164 @@
 
 All notable changes to the "Chirag Clone" project will be documented in this file.
 
+## [2.1.0] - 2026-01-15
+
+### 🎭 3D Avatar with Lip-Sync
+
+A new interactive 3D avatar that speaks with you:
+
+- **Avatar3D Component**: Three.js-powered 3D avatar using React Three Fiber
+- **Ready Player Me Integration**: Load any Ready Player Me GLB model
+- **Real-time Lip-Sync**: Viseme-based mouth animation synced to responses
+- **Expandable View**: Toggle between compact and full avatar modes
+- **Customizable**: Settings panel to change avatar URL
+- **Backend Support**: `avatar_service.py` for text-to-viseme conversion
+
+### 🧠 Cognitive Enhancements (Deep Brain)
+
+Three new intelligent systems for smarter interactions:
+
+#### Long-term Memory Summarization
+- **Core Memory Service**: Summarizes conversations into lasting facts
+- **Example outputs**: "User hates spinach", "User's favorite movie is Inception"
+- **Dedicated ChromaDB collection**: `core_memories` for persistent storage
+- **7 Categories**: preferences, facts, relationships, experiences, opinions, habits, goals
+- **Nightly processing**: Automatic summarization via scheduler
+
+#### Recursive Thinking (Inner Monologue)
+- **Thinking Service**: Chain-of-thought reasoning before complex answers
+- **Complexity Detection**: Automatically triggers for difficult questions
+- **Structured Steps**: Returns thinking process in numbered steps
+- **Keywords**: Triggers on "why", "how", "explain", "compare", "should I", etc.
+
+#### Active Learning
+- **Knowledge Gap Detection**: Analyzes 8 domain areas for missing info
+- **Proactive Questions**: Generates targeted questions to fill gaps
+- **Priority Scoring**: Ranks questions by importance and domain weight
+- **Fact Extraction**: Automatically extracts facts from user answers
+- **Progress Tracking**: Coverage percentages per domain
+
+### 🖥️ Desktop Widget (Electron)
+
+A new floating desktop app for quick access:
+
+- **Floating Window**: 320x450px always-on-top widget
+- **Frameless Design**: Modern glassmorphism dark theme
+- **Global Shortcut**: `Cmd+Shift+C` (macOS) to toggle visibility
+- **System Tray**: Icon with context menu for show/hide/settings/quit
+- **Quick Chat**: Full chat functionality without opening browser
+- **Configurable Backend**: Settings panel for custom API URL
+- **Electron Store**: Persists window position and preferences
+- **macOS Packaging**: Build script for `.dmg` distribution
+
+**Files Created:**
+- `desktop-widget/package.json` - Electron dependencies
+- `desktop-widget/main.js` - Main process (window, tray, shortcuts)
+- `desktop-widget/preload.js` - Secure IPC bridge
+- `desktop-widget/index.html` - Widget HTML structure
+- `desktop-widget/renderer.js` - Frontend chat logic
+- `desktop-widget/styles.css` - Glassmorphism CSS theme
+
+### 🤖 New Autopilot Integrations
+
+Three new platforms for your digital clone:
+
+#### Twitter/X Integration
+- **Draft Tweets**: Generate tweets in your style on any topic
+- **Draft Replies**: Respond to tweets authentically
+- **Draft Queue**: Review before posting (no auto-posting)
+- **Tweepy Library**: Official Twitter API v2 support
+- **Credentials**: `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`
+
+#### LinkedIn Integration
+- **DM Responses**: Professional reply drafting
+- **Connection Notes**: Generate personalized connection requests
+- **Draft Queue**: Approve/reject before sending
+- **linkedin-api Library**: Unofficial API integration
+- **Credentials**: `LINKEDIN_EMAIL`, `LINKEDIN_PASSWORD`
+
+#### Gmail Integration
+- **Email Reply Drafts**: Generate replies in your voice
+- **OAuth 2.0**: Secure Google authentication
+- **Gmail API**: Official Google API support
+- **Actual Drafts**: Can create drafts directly in Gmail
+- **Credentials**: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`
+
+### 📡 New API Endpoints
+
+15+ new endpoints added:
+
+**Cognitive Endpoints:**
+- `GET /api/cognitive/core-memories` - List core memories
+- `DELETE /api/cognitive/core-memories/{id}` - Delete a memory
+- `POST /api/cognitive/trigger-summarization` - Manual summarization
+- `GET /api/cognitive/active-learning/suggestions` - Get proactive questions
+- `POST /api/cognitive/active-learning/answer` - Submit an answer
+- `GET /api/cognitive/learning-stats` - Comprehensive stats
+
+**Twitter Endpoints:**
+- `GET /api/autopilot/twitter/status` - Service status
+- `GET /api/autopilot/twitter/drafts` - Draft queue
+- `POST /api/autopilot/twitter/generate-tweet` - Create tweet draft
+- `POST /api/autopilot/twitter/generate-reply` - Create reply draft
+
+**LinkedIn Endpoints:**
+- `GET /api/autopilot/linkedin/status` - Service status
+- `GET /api/autopilot/linkedin/drafts` - Draft queue
+- `POST /api/autopilot/linkedin/generate-reply` - Create reply draft
+
+**Gmail Endpoints:**
+- `GET /api/autopilot/gmail/status` - Service status
+- `GET /api/autopilot/gmail/drafts` - Draft queue
+- `POST /api/autopilot/gmail/generate-reply` - Create email draft
+
+### 📦 New Dependencies
+
+**Backend (requirements.txt):**
+- `tweepy>=4.14.0` - Twitter API
+- `linkedin-api>=2.0.0` - LinkedIn API
+- `google-auth-oauthlib>=1.0.0` - Gmail OAuth
+
+**Frontend (package.json):**
+- `three` - 3D rendering engine
+- `@react-three/fiber` - React renderer for Three.js
+- `@react-three/drei` - Useful helpers for R3F
+- `@types/three` - TypeScript definitions
+
+**Desktop Widget (package.json):**
+- `electron` - Desktop app framework
+- `electron-builder` - Packaging and distribution
+- `electron-store` - Persistent settings
+
+### 🔧 Configuration Updates
+
+**New .env variables:**
+```bash
+# Twitter/X
+TWITTER_CLIENT_ID=
+TWITTER_CLIENT_SECRET=
+TWITTER_ACCESS_TOKEN=
+TWITTER_ACCESS_TOKEN_SECRET=
+
+# LinkedIn
+LINKEDIN_EMAIL=
+LINKEDIN_PASSWORD=
+
+# Gmail
+GMAIL_CLIENT_ID=
+GMAIL_CLIENT_SECRET=
+```
+
+### 📚 Documentation
+
+- **README.md**: Completely updated with new features
+- **Mermaid Diagrams**: New architecture diagrams including cognitive flow
+- **Project Structure**: Updated with all new files (marked with NEW)
+- **Setup Instructions**: Added desktop widget installation
+- **Bot Configuration**: Added Twitter, LinkedIn, Gmail setup guides
+
+---
+
 ## [2.0.0] - 2026-01-14
 
 ### 🚀 Major Features

@@ -8,9 +8,10 @@
 
 ### Frontend
 
-- **Framework**: React 18 + Vite
+- **Framework**: React 19 + Vite
 - **Styling**: Tailwind CSS (Glassmorphism design)
 - **Icons**: Lucide React
+- **3D Avatar**: Three.js + React Three Fiber
 - **Visualization**: Recharts
 - **State/Animations**: Framer Motion
 
@@ -19,8 +20,13 @@
 - **Framework**: FastAPI (Python 3.11)
 - **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
 - **Vector DB**: ChromaDB (Local persistence)
-- **Task Management**: AsyncIO + threading
+- **Task Management**: AsyncIO + APScheduler
 - **PDF Processing**: PyMuPDF
+
+### Desktop Widget
+
+- **Framework**: Electron
+- **Features**: Floating window, system tray, global shortcuts
 
 ### DevOps & Infrastructure
 
@@ -32,7 +38,7 @@
 
 ## ✨ Key Features
 
-### 🏛️ extensive Training Center (`/training`)
+### 🏛️ Extensive Training Center (`/training`)
 
 Teach your clone how to be you through multiple modalities:
 
@@ -57,7 +63,33 @@ Let your clone handle your socials when you're away:
 
 - **Discord Bot**: Auto-reply to DMs and mentions
 - **Telegram Bot**: Smart auto-responses
+- **Twitter/X**: Draft tweets and replies in your style
+- **LinkedIn**: Professional DM response drafting
+- **Gmail**: Email reply drafting with your voice
 - **Control Panel**: Start/stop bots and view reply logs in real-time
+
+### 🧠 Cognitive Enhancements
+
+Deep brain features for smarter interactions:
+
+- **Core Memories**: Nightly summarization of conversations into key facts (e.g., "User hates spinach")
+- **Recursive Thinking**: Chain-of-thought reasoning for complex questions
+- **Active Learning**: Proactive questions to fill knowledge gaps
+
+### 🎭 3D Avatar with Lip-Sync
+
+- **Ready Player Me** integration for customizable 3D avatars
+- **Real-time lip-sync** when the clone speaks
+- **Expandable view** with settings panel
+
+### 🖥️ Desktop Widget
+
+A floating mini-app for quick access:
+
+- **Always-on-top** floating window
+- **Global shortcut**: `Cmd+Shift+C` (macOS) to toggle
+- **System tray** icon for show/hide
+- **Quick chat** without opening a browser
 
 ### Other Capabilities
 
@@ -74,14 +106,16 @@ Let your clone handle your socials when you're away:
 ```mermaid
 graph TD
     User["User (You)"] -->|Web UI| Frontend["Frontend (React + Vite)"]
+    User -->|Desktop| Widget["Desktop Widget (Electron)"]
     
     subgraph "Frontend Layer"
         Frontend --> Dashboard["Analytics Dashboard"]
         Frontend --> Training["Training Center"]
         Frontend --> Autopilot["Autopilot Control"]
-        Frontend --> Chat["Chat Interface"]
+        Frontend --> Chat["Chat Interface + 3D Avatar"]
     end
     
+    Widget -->|API| Backend
     Frontend -->|"API/WebSocket"| Backend["Backend (FastAPI)"]
     
     subgraph "Backend Services"
@@ -89,13 +123,38 @@ graph TD
         Router --> ChatService["Chat Service"]
         Router --> TrainingService["Training Service"]
         Router --> AutopilotService["Autopilot Service"]
+        Router --> CognitiveService["Cognitive Services"]
         
         ChatService --> Brain["LLM (Gemini/OpenAI)"]
         ChatService --> Memory["Memory (ChromaDB)"]
         ChatService --> Personality["Personality Profile"]
+        ChatService --> Thinking["Thinking Service"]
+        
+        CognitiveService --> CoreMemory["Core Memories"]
+        CognitiveService --> ActiveLearning["Active Learning"]
         
         AutopilotService --> Discord["Discord Bot"]
         AutopilotService --> Telegram["Telegram Bot"]
+        AutopilotService --> Twitter["Twitter/X"]
+        AutopilotService --> LinkedIn["LinkedIn"]
+        AutopilotService --> Gmail["Gmail"]
+    end
+```
+
+### Cognitive Architecture
+
+```mermaid
+graph LR
+    subgraph "Cognitive Loop"
+        Input["User Message"] --> Thinking["Thinking Service"]
+        Thinking --> |"Complex Query"| CoT["Chain-of-Thought"]
+        CoT --> Response
+        Thinking --> |"Simple Query"| Response["Generate Response"]
+        
+        Response --> CoreMem["Core Memory Service"]
+        CoreMem --> |"Nightly"| Summarize["Summarize to Facts"]
+        
+        ActiveLearn["Active Learning"] --> |"Detect Gaps"| Questions["Proactive Questions"]
     end
 ```
 
@@ -103,20 +162,20 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant D as Discord/Telegram
+    participant P as Platform (Discord/Telegram/Twitter/LinkedIn/Gmail)
     participant B as Bot Service
     participant C as Chat Service
     participant M as Memory (RAG)
     participant L as LLM
     
-    D->>B: User Message (DM/Mention)
+    P->>B: Incoming Message/Email
     B->>C: Generate Response
-    C->>M: Retrieve Context (Facts/Style)
+    C->>M: Retrieve Context (Facts/Style/Core Memories)
     M-->>C: Relevant Context
     C->>L: Prompt with Persona & Context
     L-->>C: Generated Reply (in your style)
-    C-->>B: Final Response
-    B->>D: Send Reply
+    C-->>B: Final Response/Draft
+    B->>P: Send Reply or Queue Draft
 ```
 
 ---
@@ -153,6 +212,13 @@ cd frontend-react
 npm install
 ```
 
+#### Desktop Widget Setup (Optional)
+
+```bash
+cd desktop-widget
+npm install
+```
+
 ### 3. Running the App
 
 **Terminal 1 (Backend):**
@@ -169,7 +235,49 @@ cd frontend-react
 npm run dev
 ```
 
+**Terminal 3 (Desktop Widget - Optional):**
+
+```bash
+cd desktop-widget
+npm start
+```
+
 Open **<http://localhost:5173>** (or the port shown in terminal) to access the UI.
+
+---
+
+## 🖥️ Desktop Widget
+
+A floating desktop widget for quick access to your Chirag Clone without opening a browser.
+
+### Features
+
+- 🪟 Floating always-on-top window
+- ⌨️ Global shortcut: `Cmd+Shift+C` (macOS) to toggle
+- 🔧 System tray icon for show/hide
+- 💬 Quick chat interface
+- ⚙️ Configurable backend URL
+
+### Installation & Running
+
+```bash
+cd desktop-widget
+npm install
+npm start
+```
+
+### Building for macOS
+
+```bash
+npm run build:mac
+```
+
+This creates a `.dmg` file in the `dist/` directory.
+
+### Configuration
+
+Right-click the tray icon and select **Settings** to change the backend URL.
+Default: `http://localhost:8000`
 
 ---
 
@@ -239,6 +347,31 @@ To enable **Social Autopilot**, you need to configure bot tokens in your `.env` 
 3. Copy Token to `.env`: `TELEGRAM_BOT_TOKEN=your_token`
 4. Start a chat with your new bot
 
+### Twitter/X Setup
+
+1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+2. Create an App with OAuth 2.0
+3. Copy credentials to `.env`:
+   - `TWITTER_CLIENT_ID`
+   - `TWITTER_CLIENT_SECRET`
+   - `TWITTER_ACCESS_TOKEN`
+   - `TWITTER_ACCESS_TOKEN_SECRET`
+
+### LinkedIn Setup
+
+Uses unofficial API with your LinkedIn credentials:
+- `LINKEDIN_EMAIL`
+- `LINKEDIN_PASSWORD`
+
+### Gmail Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create OAuth 2.0 credentials
+3. Enable Gmail API
+4. Copy to `.env`:
+   - `GMAIL_CLIENT_ID`
+   - `GMAIL_CLIENT_SECRET`
+
 ---
 
 ## 📁 Project Structure
@@ -260,12 +393,16 @@ Chirag-clone/
 │   │   ├── __init__.py
 │   │   ├── analytics_service.py    # Dashboard Metrics
 │   │   ├── async_job_service.py    # Background Tasks
+│   │   ├── avatar_service.py       # 3D Avatar Lip-Sync (NEW)
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
 │   │   ├── chat_service.py         # Main Conversation Logic
+│   │   ├── core_memory_service.py  # Long-term Memory (NEW)
 │   │   ├── discord_bot_service.py  # Discord Integration
+│   │   ├── gmail_bot_service.py    # Gmail Integration (NEW)
 │   │   ├── knowledge_service.py    # RAG/Document Handling
 │   │   ├── learning_service.py     # Training Logic
+│   │   ├── linkedin_bot_service.py # LinkedIn Integration (NEW)
 │   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
 │   │   ├── logger.py               # Structured Logging
 │   │   ├── memory_service.py       # Vector DB Wrapper
@@ -276,6 +413,9 @@ Chirag-clone/
 │   │   ├── scheduler_service.py    # Cron Jobs
 │   │   ├── search_service.py       # Web Search
 │   │   ├── telegram_bot_service.py # Telegram Integration
+│   │   ├── thinking_service.py     # Recursive Thinking (NEW)
+│   │   ├── twitter_bot_service.py  # Twitter/X Integration (NEW)
+│   │   ├── active_learning_service.py # Proactive Learning (NEW)
 │   │   └── vision_service.py       # Image Processing
 │   │
 │   ├── parsers/                    # Chat Log Parsers
@@ -284,6 +424,11 @@ Chirag-clone/
 │   │   ├── instagram_parser.py     # Instagram JSON Parser
 │   │   ├── smart_parser.py         # Auto-format Detector
 │   │   └── whatsapp_parser.py      # WhatsApp Text Parser
+│   │
+│   ├── tests/                      # Test Suite
+│   │   ├── test_main.py            # API Tests
+│   │   ├── test_services.py        # Service Tests
+│   │   └── ...
 │   │
 │   └── data/                       # Local Storage
 │       ├── chroma_db/              # Vector Database
@@ -304,7 +449,8 @@ Chirag-clone/
 │       │
 │       ├── components/             # React Components
 │       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
-│       │   ├── ChatInterface.tsx   # Main Chat UI
+│       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync (NEW)
+│       │   ├── ChatInterface.tsx   # Main Chat UI + Avatar
 │       │   ├── Dashboard.tsx       # Analytics Home
 │       │   ├── Layout.tsx          # Navigation Wrapper
 │       │   ├── MemoryGraph.tsx     # Knowledge Visualization
@@ -313,6 +459,14 @@ Chirag-clone/
 │       │
 │       └── services/
 │           └── api.ts              # API Client
+│
+├── desktop-widget/                 # Electron Desktop App (NEW)
+│   ├── package.json                # Electron Dependencies
+│   ├── main.js                     # Main Process
+│   ├── preload.js                  # Secure IPC Bridge
+│   ├── index.html                  # Widget UI
+│   ├── renderer.js                 # Frontend Logic
+│   └── styles.css                  # Glassmorphism Theme
 │
 ├── Dockerfile                      # Production Build Definition
 └── docker-compose.yml              # Container Orchestration
@@ -325,3 +479,4 @@ Chirag-clone/
 - **Local-First**: Your personality profile and vector data are stored locally in `backend/data/`.
 - **PIN Protection**: The Training Center is protected by a PIN (default: `1234`) to prevent unauthorized changes.
 - **Environment Variables**: API keys are strictly managed via `.env` and never committed.
+- **Draft-Only Social**: Twitter/LinkedIn/Gmail create drafts for review, not auto-posts.
