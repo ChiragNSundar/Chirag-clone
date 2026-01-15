@@ -1,5 +1,16 @@
 const API_BASE = 'http://localhost:8000/api';
 
+export interface ThinkingStep {
+    step: number;
+    content: string;
+}
+
+export interface ThinkingData {
+    thinking: string;
+    steps: ThinkingStep[];
+    has_thinking: boolean;
+}
+
 export interface ChatResponse {
     response: string;
     session_id: string;
@@ -8,6 +19,12 @@ export interface ChatResponse {
         mood: string;
         emoji: string;
         prompt: string;
+    };
+    thinking?: ThinkingData;
+    emotion?: {
+        emotion: string;
+        emoji: string;
+        intensity: number;
     };
 }
 

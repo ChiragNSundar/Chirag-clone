@@ -88,3 +88,11 @@ desktop-widget/out/
 
 # Gmail Credentials
 backend/data/gmail_token.pickle
+backend/data/calendar_token.pickle
+backend/data/personality_history.json
+
+# Audio/Voice Cache
+*.wav
+*.mp3
+*.webm
+elevenlabs_cache/

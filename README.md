@@ -68,19 +68,47 @@ Let your clone handle your socials when you're away:
 - **Gmail**: Email reply drafting with your voice
 - **Control Panel**: Start/stop bots and view reply logs in real-time
 
+### 🗣️ Voice Copilot (`/chat`)
+
+- **Voice I/O**: Talk to your clone with real-time speech-to-text
+- **Text-to-Speech**: ElevenLabs integration for natural voice responses
+- **Lip-Sync**: 3D Avatar mouth movement synced to voice audio
+
 ### 🧠 Cognitive Enhancements
 
 Deep brain features for smarter interactions:
 
-- **Core Memories**: Nightly summarization of conversations into key facts (e.g., "User hates spinach")
-- **Recursive Thinking**: Chain-of-thought reasoning for complex questions
+- **Thinking Process**: Visible chain-of-thought reasoning logic
+- **Emotion Detection**: Adopts tone based on your emotional state
+- **Core Memories**: Automatic nightly summarization of key facts
 - **Active Learning**: Proactive questions to fill knowledge gaps
 
-### 🎭 3D Avatar with Lip-Sync
+### 📚 Advanced Memory & Knowledge
 
-- **Ready Player Me** integration for customizable 3D avatars
-- **Real-time lip-sync** when the clone speaks
-- **Expandable view** with settings panel
+- **Memory Search**: Full-text search across all conversations and documents
+- **Personality Timeline**: Track how your digital twin evolves over time
+- **Multi-Modal**: Learns from images, PDFs, and chat logs
+
+### 🤖 Expanded Autopilot
+
+- **WhatsApp**: Auto-reply drafts for WhatsApp Business
+- **Calendar**: AI scheduling assistant and daily summaries
+- **Unified Dashboard**: Manage drafts from Twitter, LinkedIn, Gmail, and WhatsApp
+- **Smart Drafts**: Approve/edit/reject workflow
+
+### 🎨 Creative Studio
+
+- **Dream Mode**: Generate poems, stories, and journals in your style
+- **Clone Accuracy**: Logic quizzes and A/B testing to verify authenticity
+
+### 📊 Analytics Dashboard (`/`)
+
+Visual insights into your clone's development:
+
+- **Conversation Analytics**: Topic heatmaps and activity trends
+- **Personality Completion**: Track how "complete" your clone is
+- **Learning Curve**: Track progress over time
+
 
 ### 🖥️ Desktop Widget
 

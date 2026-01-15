@@ -82,7 +82,7 @@ async def chat_message(data: ChatMessage):
         
         # Run synchronous service in threadpool to avoid blocking event loop
         import asyncio
-        response, confidence, mood_data = await asyncio.to_thread(
+        response, confidence, mood_data, thinking_data = await asyncio.to_thread(
             service.generate_response, 
             data.message, 
             data.session_id,
@@ -94,7 +94,8 @@ async def chat_message(data: ChatMessage):
             "response": response,
             "session_id": data.session_id,
             "confidence": confidence,
-            "mood": mood_data
+            "mood": mood_data,
+            "thinking": thinking_data
         }
     except Exception as e:
         logger.error(f"Chat error: {e}")
@@ -1050,6 +1051,341 @@ async def generate_gmail_reply(request: EmailReplyRequest):
     except Exception as e:
         logger.error(f"Generate email reply error: {e}")
         return {"error": str(e)}
+
+# ============= VOICE ENDPOINTS =============
+
+class TTSRequest(BaseModel):
+    text: str
+    voice_id: Optional[str] = None
+
+class STTRequest(BaseModel):
+    audio_base64: str
+    audio_format: str = "webm"
+
+@app.get("/api/voice/status")
+async def get_voice_status():
+    """Get voice service status."""
+    try:
+        from services.voice_service import get_voice_service
+        service = get_voice_service()
+        return service.get_status()
+    except Exception as e:
+        logger.error(f"Voice status error: {e}")
+        return {"tts_enabled": False, "stt_enabled": False, "error": str(e)}
+
+@app.post("/api/voice/speak")
+async def text_to_speech(request: TTSRequest):
+    """Convert text to speech audio."""
+    try:
+        import asyncio
+        from services.voice_service import get_voice_service
+        service = get_voice_service()
+        
+        result = await asyncio.to_thread(
+            service.text_to_speech,
+            request.text,
+            request.voice_id
+        )
+        return result
+    except Exception as e:
+        logger.error(f"TTS error: {e}")
+        return {"error": str(e)}
+
+@app.post("/api/voice/listen")
+async def speech_to_text(request: STTRequest):
+    """Convert speech audio to text."""
+    try:
+        import asyncio
+        from services.voice_service import get_voice_service
+        service = get_voice_service()
+        
+        result = await asyncio.to_thread(
+            service.speech_to_text_base64,
+            request.audio_base64,
+            request.audio_format
+        )
+        return result
+    except Exception as e:
+        logger.error(f"STT error: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/voice/voices")
+async def get_available_voices():
+    """Get list of available TTS voices."""
+    try:
+        from services.voice_service import get_voice_service
+        service = get_voice_service()
+        voices = service.get_available_voices()
+        return {"voices": voices}
+    except Exception as e:
+        logger.error(f"Voices list error: {e}")
+        return {"voices": []}
+
+# ============= MEMORY SEARCH ENDPOINTS =============
+
+@app.get("/api/memory/search")
+async def search_memories(query: str, limit: int = 20, collection: Optional[str] = None):
+    """Search across all memories."""
+    try:
+        from services.memory_search_service import get_memory_search_service
+        service = get_memory_search_service()
+        return service.search(query, limit, collection)
+    except Exception as e:
+        logger.error(f"Memory search error: {e}")
+        return {"error": str(e), "results": []}
+
+@app.get("/api/memory/stats")
+async def get_memory_stats():
+    """Get memory statistics."""
+    try:
+        from services.memory_search_service import get_memory_search_service
+        service = get_memory_search_service()
+        return service.get_memory_stats()
+    except Exception as e:
+        return {"total_memories": 0, "error": str(e)}
+
+# ============= CREATIVE STUDIO ENDPOINTS =============
+
+class CreativeRequest(BaseModel):
+    content_type: str
+    topic: str = ""
+    custom_prompt: Optional[str] = None
+
+@app.get("/api/creative/types")
+async def get_creative_types():
+    """Get available creative content types."""
+    try:
+        from services.creative_service import get_creative_service
+        service = get_creative_service()
+        return {"types": service.get_content_types()}
+    except Exception as e:
+        return {"types": []}
+
+@app.post("/api/creative/generate")
+async def generate_creative_content(request: CreativeRequest):
+    """Generate creative content."""
+    try:
+        import asyncio
+        from services.creative_service import get_creative_service
+        service = get_creative_service()
+        result = await asyncio.to_thread(
+            service.generate,
+            request.content_type,
+            request.topic,
+            request.custom_prompt
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Creative generation error: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/creative/prompt")
+async def get_daily_prompt():
+    """Get daily creative writing prompt."""
+    try:
+        from services.creative_service import get_creative_service
+        service = get_creative_service()
+        return {"prompt": service.generate_daily_prompt()}
+    except Exception as e:
+        return {"prompt": "Write about something meaningful to you."}
+
+# ============= PERSONALITY HISTORY ENDPOINTS =============
+
+@app.post("/api/personality/snapshot")
+async def take_personality_snapshot(note: str = ""):
+    """Take a snapshot of current personality."""
+    try:
+        from services.personality_history_service import get_personality_history_service
+        service = get_personality_history_service()
+        return service.take_snapshot(note)
+    except Exception as e:
+        logger.error(f"Snapshot error: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/personality/history")
+async def get_personality_history(limit: int = 20):
+    """Get personality snapshot history."""
+    try:
+        from services.personality_history_service import get_personality_history_service
+        service = get_personality_history_service()
+        return {"snapshots": service.get_snapshots(limit)}
+    except Exception as e:
+        return {"snapshots": []}
+
+@app.get("/api/personality/evolution")
+async def get_personality_evolution():
+    """Get personality evolution trend."""
+    try:
+        from services.personality_history_service import get_personality_history_service
+        service = get_personality_history_service()
+        return service.get_evolution_trend()
+    except Exception as e:
+        return {"error": str(e)}
+
+# ============= ANALYTICS ENDPOINTS =============
+
+@app.get("/api/analytics/conversations")
+async def get_conversation_analytics():
+    """Get comprehensive conversation analytics."""
+    try:
+        from services.conversation_analytics_service import get_conversation_analytics_service
+        service = get_conversation_analytics_service()
+        return service.get_comprehensive_analytics()
+    except Exception as e:
+        logger.error(f"Analytics error: {e}")
+        return {"error": str(e)}
+
+@app.get("/api/analytics/topics")
+async def get_topic_distribution(limit: int = 20):
+    """Get topic distribution from conversations."""
+    try:
+        from services.conversation_analytics_service import get_conversation_analytics_service
+        service = get_conversation_analytics_service()
+        return {"topics": service.get_topic_distribution(limit)}
+    except Exception as e:
+        return {"topics": []}
+
+# ============= CALENDAR ENDPOINTS =============
+
+@app.get("/api/calendar/status")
+async def get_calendar_status():
+    """Get calendar service status."""
+    try:
+        from services.calendar_service import get_calendar_service
+        service = get_calendar_service()
+        return service.get_status()
+    except Exception as e:
+        return {"platform": "google_calendar", "connected": False, "error": str(e)}
+
+@app.get("/api/calendar/events")
+async def get_calendar_events(days: int = 7):
+    """Get upcoming calendar events."""
+    try:
+        from services.calendar_service import get_calendar_service
+        service = get_calendar_service()
+        return {"events": service.get_upcoming_events(days)}
+    except Exception as e:
+        return {"events": []}
+
+@app.get("/api/calendar/summary")
+async def get_today_summary():
+    """Get AI-generated summary of today's schedule."""
+    try:
+        import asyncio
+        from services.calendar_service import get_calendar_service
+        service = get_calendar_service()
+        summary = await asyncio.to_thread(service.get_today_summary)
+        return {"summary": summary}
+    except Exception as e:
+        return {"summary": "Unable to get calendar summary."}
+
+# ============= WHATSAPP ENDPOINTS =============
+
+@app.get("/api/autopilot/whatsapp/status")
+async def get_whatsapp_status():
+    """Get WhatsApp autopilot status."""
+    try:
+        from services.whatsapp_bot_service import get_whatsapp_bot_service
+        service = get_whatsapp_bot_service()
+        return service.get_status()
+    except Exception as e:
+        return {"platform": "whatsapp", "configured": False, "error": str(e)}
+
+@app.get("/api/autopilot/whatsapp/drafts")
+async def get_whatsapp_drafts(status: Optional[str] = None):
+    """Get WhatsApp draft queue."""
+    try:
+        from services.whatsapp_bot_service import get_whatsapp_bot_service
+        service = get_whatsapp_bot_service()
+        return {"drafts": service.get_drafts(status)}
+    except Exception as e:
+        return {"drafts": []}
+
+@app.post("/api/autopilot/whatsapp/generate-reply")
+async def generate_whatsapp_reply(request: DraftRequest):
+    """Generate a WhatsApp reply draft."""
+    try:
+        from services.whatsapp_bot_service import get_whatsapp_bot_service
+        service = get_whatsapp_bot_service()
+        return service.generate_reply_draft(request.text)
+    except Exception as e:
+        return {"error": str(e)}
+
+# ============= ACCURACY/QUIZ ENDPOINTS =============
+
+@app.get("/api/accuracy/quiz")
+async def generate_accuracy_quiz(num_questions: int = 5):
+    """Generate a clone accuracy quiz."""
+    try:
+        import asyncio
+        from services.accuracy_service import get_accuracy_service
+        service = get_accuracy_service()
+        quiz = await asyncio.to_thread(service.generate_quiz, num_questions)
+        return quiz
+    except Exception as e:
+        logger.error(f"Quiz generation error: {e}")
+        return {"error": str(e)}
+
+class QuizAnswers(BaseModel):
+    quiz_id: str
+    answers: Dict[str, str]
+
+@app.post("/api/accuracy/submit")
+async def submit_quiz_answers(request: QuizAnswers):
+    """Submit quiz answers and get score."""
+    try:
+        from services.accuracy_service import get_accuracy_service
+        service = get_accuracy_service()
+        return service.submit_quiz_answers(request.quiz_id, request.answers)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/api/accuracy/stats")
+async def get_accuracy_stats():
+    """Get accuracy statistics."""
+    try:
+        from services.accuracy_service import get_accuracy_service
+        service = get_accuracy_service()
+        return service.get_accuracy_stats()
+    except Exception as e:
+        return {"quizzes_taken": 0, "error": str(e)}
+
+# ============= UNIFIED DRAFTS ENDPOINT =============
+
+@app.get("/api/drafts/all")
+async def get_all_drafts():
+    """Get all pending drafts from all platforms."""
+    all_drafts = {
+        'twitter': [],
+        'linkedin': [],
+        'gmail': [],
+        'whatsapp': [],
+        'total': 0
+    }
+    
+    try:
+        from services.twitter_bot_service import get_twitter_bot_service
+        all_drafts['twitter'] = get_twitter_bot_service().get_drafts('pending')
+    except: pass
+    
+    try:
+        from services.linkedin_bot_service import get_linkedin_bot_service
+        all_drafts['linkedin'] = get_linkedin_bot_service().get_drafts('pending')
+    except: pass
+    
+    try:
+        from services.gmail_bot_service import get_gmail_bot_service
+        all_drafts['gmail'] = get_gmail_bot_service().get_drafts('pending')
+    except: pass
+    
+    try:
+        from services.whatsapp_bot_service import get_whatsapp_bot_service
+        all_drafts['whatsapp'] = get_whatsapp_bot_service().get_drafts('pending')
+    except: pass
+    
+    all_drafts['total'] = sum(len(v) for k, v in all_drafts.items() if k != 'total')
+    
+    return all_drafts
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

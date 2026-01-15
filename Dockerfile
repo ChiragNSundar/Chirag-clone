@@ -1,5 +1,6 @@
-# Chirag Clone v2.0 - Production Dockerfile
+# Chirag Clone v2.2 - Production Dockerfile
 # Multi-stage build for FastAPI backend and React frontend
+# Includes Voice (ElevenLabs/Whisper), Calendar, and WhatsApp integrations
 
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-builder
@@ -22,17 +23,18 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 # Stage 3: Production
 FROM python:3.11-slim
 LABEL maintainer="Chirag"
-LABEL description="Chirag Clone - Personal AI Digital Twin v2.0"
-LABEL version="2.0"
+LABEL description="Chirag Clone - Personal AI Digital Twin v2.2"
+LABEL version="2.2"
 
 # Security: Create non-root user
 RUN groupadd -r chirag && useradd -r -g chirag chirag
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies (including audio support for voice features)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy wheels from builder stage and install
@@ -48,6 +50,7 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/
 # Create data directories
 RUN mkdir -p /app/backend/data/chroma_db \
     && mkdir -p /app/backend/data/uploads \
+    && mkdir -p /app/backend/data/audio_cache \
     && chown -R chirag:chirag /app
 
 # Switch to non-root user

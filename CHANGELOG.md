@@ -2,6 +2,46 @@
 
 All notable changes to the "Chirag Clone" project will be documented in this file.
 
+## [2.2.0] - 2026-01-15
+
+### 🚀 Major Enhancements
+
+#### Voice & Emotion
+- **Voice I/O**: Integrated ElevenLabs TTS and OpenAI Whisper STT for full voice conversations.
+- **Thinking Process UI**: Visual "Chain of Thought" bubble showing the AI's reasoning steps before responding.
+- **Emotion Detection**: Real-time sentiment analysis (14 categories) that adapts the bot's response tone.
+- **VoiceChat Component**: Reactive UI with microphone recording, audio visualization, and playback controls.
+
+#### Memory & Knowledge
+- **Memory Search**: Full-text search engine across all stored memories, documents, and conversations.
+- **Personality Timeline**: Tracks evolution of the clone's personality profile with snapshot comparisons.
+- **Growth Metrics**: Analytics for knowledge acquisition rate and personality drift.
+
+#### 🎨 Creative Studio
+- **Generative Modes**: specialized engines for Poems, Haikus, Stories, Journal Entries, and Dreams in user's style.
+- **Accuracy Service**: A/B testing framework and self-assessment quizzes to measure clone authenticity.
+- **Daily Prompts**: AI-generated writing prompts to fuel the creative engine.
+
+#### 🤖 Integrations Expansion
+- **WhatsApp Autopilot**: Business API integration for generating auto-reply drafts.
+- **Calendar Assistant**: Google Calendar integration for schedule summaries and meeting suggestions.
+- **Unified Drafts Dashboard**: Single view for managing Twitter, LinkedIn, Gmail, and WhatsApp drafts.
+- **Conversation Analytics**: Topic extraction, activity heatmaps, and response time tracking.
+
+### 📡 New Microservices
+- `voice_service.py`: Handling audio stream processing.
+- `emotion_service.py`: NLP classification for emotional context.
+- `memory_search_service.py`: Advanced ChromaDB querying.
+- `creative_service.py`: Specialized LLM prompting for creative content.
+- `accuracy_service.py`: Statistical verification of clone quality.
+- `calendar_service.py`: Google Workspace integration logic.
+
+### 🔧 Configuration
+- Added keys for ElevenLabs, Google Calendar, and WhatsApp to `.env.example`.
+- Updated API types for `ThinkingData` and `Emotion` in frontend.
+
+---
+
 ## [2.1.0] - 2026-01-15
 
 ### 🎭 3D Avatar with Lip-Sync

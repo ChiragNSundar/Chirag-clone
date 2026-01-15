@@ -57,8 +57,9 @@ class ChatService:
         user_message: str,
         session_id: str = "default",
         include_examples: bool = True,
-        training_mode: bool = False
-    ) -> Tuple[str, float]:
+        training_mode: bool = False,
+        enable_thinking: bool = True
+    ) -> Tuple[str, float, dict, dict]:
         """
         Generate a response as the user's clone.
         
@@ -67,9 +68,10 @@ class ChatService:
             session_id: Conversation session ID for context
             include_examples: Whether to include few-shot examples
             training_mode: If true, asks probing questions to learn
+            enable_thinking: Whether to use thinking service for complex queries
             
         Returns:
-            Generated response text
+            Tuple of (response, confidence, mood, thinking_data)
         """
         # Get conversation history
         history = self.memory.get_conversation_history(
@@ -134,6 +136,31 @@ class ChatService:
         # Build message history for LLM
         messages = self._build_messages(history, user_message)
         
+        # THINKING PROCESS - Chain-of-thought for complex queries
+        thinking_data = {'thinking': '', 'steps': [], 'has_thinking': False}
+        if enable_thinking and not training_mode:
+            try:
+                from .thinking_service import get_thinking_service
+                thinking_service = get_thinking_service()
+                
+                if thinking_service.should_think(user_message):
+                    personality_context = f"You are {self.personality.get_profile().name}'s clone."
+                    thinking_text, thinking_steps = thinking_service.generate_thinking(
+                        message=user_message,
+                        personality_context=personality_context
+                    )
+                    thinking_data = {
+                        'thinking': thinking_text,
+                        'steps': thinking_steps,
+                        'has_thinking': bool(thinking_text or thinking_steps)
+                    }
+                    
+                    # Inject thinking into prompt for better response
+                    if thinking_text:
+                        system_prompt += f"\n\nBefore responding, you thought: {thinking_text}"
+            except Exception as e:
+                print(f"Thinking service error: {e}")
+        
         # Generate response
         response = self.llm.generate_response(
             system_prompt=system_prompt,
@@ -193,7 +220,7 @@ class ChatService:
         # Store the response
         self.memory.add_conversation_message(session_id, "assistant", response)
         
-        return response, confidence, current_mood if 'current_mood' in locals() else None
+        return response, confidence, current_mood if 'current_mood' in locals() else None, thinking_data
     
     def _calculate_confidence(self, examples: List[Dict], response: str) -> float:
         """Calculate confidence score based on available context."""
