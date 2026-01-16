@@ -82,3 +82,29 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
     config.addinivalue_line("markers", "integration: marks tests as integration tests")
     config.addinivalue_line("markers", "unit: marks tests as unit tests")
+    config.addinivalue_line("markers", "voice: marks tests as voice-related")
+    config.addinivalue_line("markers", "vision: marks tests as vision-related")
+    config.addinivalue_line("markers", "knowledge: marks tests as knowledge/brain station related")
+
+
+@pytest.fixture
+def sample_base64_image():
+    """Provide a minimal 1x1 PNG image as base64."""
+    return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+
+@pytest.fixture
+def sample_knowledge_document():
+    """Provide sample knowledge document for testing."""
+    return {
+        "content": "Python is a high-level programming language. It was created by Guido van Rossum.",
+        "title": "Python Facts",
+        "source": "test"
+    }
+
+
+@pytest.fixture
+def sample_voice_text():
+    """Provide sample text for voice synthesis."""
+    return "Hello, this is a test of the voice synthesis system."
+
