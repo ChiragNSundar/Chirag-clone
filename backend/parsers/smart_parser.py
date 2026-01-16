@@ -1,9 +1,10 @@
 """
 Smart Parser - LLM-powered parser for unstructured text.
-Extracts conversation pairs from messy, unformatted text.
+Extracts conversation pairs from messy, unformatted text or direct copy-pastes.
 """
 from typing import List, Tuple, Dict
 import re
+import json
 
 
 class SmartParser:
@@ -11,10 +12,12 @@ class SmartParser:
     
     # Common conversation indicators
     SPEAKER_PATTERNS = [
-        r'^([A-Za-z0-9_]+)\s*:\s*(.+)$',  # "Name: message"
-        r'^([A-Za-z0-9_]+)\s*>\s*(.+)$',  # "Name> message"
-        r'^\[([A-Za-z0-9_]+)\]\s*(.+)$',  # "[Name] message"
-        r'^<([A-Za-z0-9_]+)>\s*(.+)$',    # "<Name> message"
+        re.compile(r'^([A-Za-z0-9_ ]{1,20})\s*:\s*(.+)$'),        # "Name: message"
+        re.compile(r'^([A-Za-z0-9_ ]{1,20})\s*>\s*(.+)$'),        # "Name> message"
+        re.compile(r'^\[([A-Za-z0-9_ ]{1,20})\]\s*(.+)$'),        # "[Name] message"
+        re.compile(r'^<([A-Za-z0-9_ ]{1,20})>\s*(.+)$'),          # "<Name> message"
+        # Timestamped variations
+        re.compile(r'^\[?\d{2}:\d{2}\]?\s*([A-Za-z0-9_ ]{1,20})\s*:\s*(.+)$'),  # "10:00 Name: message"
     ]
     
     def __init__(self, your_identifier: str = None):
@@ -36,6 +39,9 @@ class SmartParser:
         Returns:
             Dict with messages and conversation pairs
         """
+        # Clean basic copy-paste artifacts
+        content = content.replace('\r\n', '\n').strip()
+        
         # Try structured parsing first
         messages = self._try_structured_parse(content)
         
@@ -60,51 +66,55 @@ class SmartParser:
     def parse_with_llm(self, content: str, llm_service) -> Dict:
         """
         Use LLM to extract conversation pairs from very messy text.
-        
-        Args:
-            content: Raw text content
-            llm_service: LLM service for parsing
-            
-        Returns:
-            Dict with extracted data
+        Robustly handles LLM output issues.
         """
-        # Truncate if too long
-        max_chars = 8000
+        # Truncate if too long (token limit safety)
+        max_chars = 12000
         if len(content) > max_chars:
             content = content[:max_chars] + "\n...(truncated)"
         
-        prompt = f"""Extract conversation pairs from this text. The user's name/identifier is: {self.your_identifier or 'unknown'}
+        prompt = f"""Extract meaningful conversation Q&A pairs from this text.
+The user (me) is identified as: {self.your_identifier or 'unknown/implicit'}.
 
-Find messages where someone says something and the user responds. Output as JSON array:
-[{{"context": "what someone said to user", "response": "what user replied"}}]
+Format as a JSON ARRAY of objects:
+[{{"context": "what was said to me", "response": "what I replied"}}]
 
-Only include clear Q&A pairs. If you can identify the user's messages, include them.
-If the format is unclear, do your best to extract meaningful exchanges.
+Rules:
+1. Ignore empty chatter or system messages.
+2. Only include pairs where the user is clearly responding.
+3. If user is unknown, infer from context (e.g. 'me', 'I').
 
 TEXT:
 {content}
 
-JSON OUTPUT (just the array, no explanation):"""
+JSON OUTPUT:"""
 
         try:
             result = llm_service.generate_response(
-                system_prompt="You are a conversation parser. Output only valid JSON.",
+                system_prompt="You are a data extractor. Output ONLY valid JSON array.",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1
             )
             
-            # Parse JSON from response
-            import json
-            
             # Clean up response - find JSON array
-            result = result.strip()
-            if result.startswith('```'):
-                result = re.sub(r'^```\w*\n?', '', result)
-                result = re.sub(r'\n?```$', '', result)
+            result_clean = self._clean_json_block(result)
             
-            pairs_data = json.loads(result)
+            try:
+                pairs_data = json.loads(result_clean)
+            except json.JSONDecodeError:
+                # Try simple repair - close brackets
+                if result_clean.strip().startswith('[') and not result_clean.strip().endswith(']'):
+                    pairs_data = json.loads(result_clean + ']')
+                else:
+                    raise
             
-            pairs = [(p['context'], p['response']) for p in pairs_data if 'context' in p and 'response' in p]
+            if not isinstance(pairs_data, list):
+                pairs_data = [] # Invalid format
+            
+            pairs = []
+            for p in pairs_data:
+                if isinstance(p, dict) and 'context' in p and 'response' in p:
+                    pairs.append((str(p['context']), str(p['response'])))
             
             return {
                 'total_messages': len(pairs) * 2,
@@ -120,6 +130,22 @@ JSON OUTPUT (just the array, no explanation):"""
             # Fall back to heuristic
             return self.parse_content(content)
     
+    def _clean_json_block(self, text: str) -> str:
+        """Extract JSON block from markdown or mess text."""
+        text = text.strip()
+        # Remove markdown code block
+        if text.startswith('```'):
+            text = re.sub(r'^```\w*\n?', '', text)
+            text = re.sub(r'\n?```$', '', text)
+        
+        # Find first [ and last ]
+        start = text.find('[')
+        end = text.rfind(']')
+        
+        if start != -1 and end != -1:
+            return text[start:end+1]
+        return text
+    
     def _try_structured_parse(self, content: str) -> List[Dict]:
         """Try to parse using common structured formats."""
         messages = []
@@ -131,56 +157,69 @@ JSON OUTPUT (just the array, no explanation):"""
                 continue
             
             for pattern in self.SPEAKER_PATTERNS:
-                match = re.match(pattern, line)
+                match = pattern.match(line)
                 if match:
-                    speaker = match.group(1).strip()
-                    text = match.group(2).strip()
-                    
-                    is_you = False
-                    if self.your_identifier:
-                        speaker_lower = speaker.lower()
-                        if (speaker_lower == self.your_identifier or 
-                            self.your_identifier in speaker_lower or
-                            speaker_lower in ['me', 'you', 'myself']):
-                            is_you = True
-                    
-                    messages.append({
-                        'sender': speaker,
-                        'content': text,
-                        'is_you': is_you
-                    })
-                    break
+                    if len(match.groups()) == 2:
+                        speaker = match.group(1).strip()
+                        text = match.group(2).strip()
+                        
+                        is_you = self._check_is_you(speaker)
+                        
+                        messages.append({
+                            'sender': speaker,
+                            'content': text,
+                            'is_you': is_you
+                        })
+                        break
         
         return messages
+    
+    def _check_is_you(self, speaker: str) -> bool:
+        """Check if speaker is the user."""
+        if not self.your_identifier:
+            return False
+            
+        speaker_lower = speaker.lower()
+        if (speaker_lower == self.your_identifier or 
+            self.your_identifier in speaker_lower or
+            speaker_lower in ['me', 'you', 'myself']):
+            return True
+        return False
     
     def _heuristic_parse(self, content: str) -> List[Dict]:
         """
         Parse using heuristics for completely unstructured text.
-        Looks for alternating patterns, quotes, etc.
         """
         messages = []
         
-        # Try to find quoted responses
-        # Pattern: "question" -> "answer" or "question" "answer"
+        # Try quoted "Q" -> "A" pattern
         quote_pattern = r'"([^"]+)"\s*(?:->|:|\n)\s*"([^"]+)"'
         matches = re.findall(quote_pattern, content)
         
         for q, a in matches:
             messages.append({'sender': 'other', 'content': q, 'is_you': False})
             messages.append({'sender': 'you', 'content': a, 'is_you': True})
-        
-        # If no quotes found, split by sentences and alternate
-        if not messages:
-            sentences = re.split(r'[.!?]+', content)
-            sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
             
-            for i, sentence in enumerate(sentences[:20]):  # Limit
-                messages.append({
-                    'sender': 'other' if i % 2 == 0 else 'you',
-                    'content': sentence,
-                    'is_you': i % 2 == 1
-                })
+        if matches:
+            return messages
         
+        # Fallback: Split by lines, assume alternating
+        lines = [line.strip() for line in content.split('\n') if len(line.strip()) > 2]
+        
+        # Heuristic: If lines look like "User: Message", skip heuristic
+        if any(':' in line for line in lines[:5]):
+            return [] # Let structured parse handle it (or fail)
+        
+        # Otherwise, assume strict alternation
+        for i, line in enumerate(lines):
+            # Simple alternating logic
+            is_you = (i % 2 != 0) # Assume user is second
+            messages.append({
+                'sender': 'other' if not is_you else 'you',
+                'content': line,
+                'is_you': is_you
+            })
+            
         return messages
     
     def _extract_pairs(self, messages: List[Dict]) -> List[Tuple[str, str]]:
@@ -192,9 +231,18 @@ JSON OUTPUT (just the array, no explanation):"""
                 # Get previous non-you messages as context
                 context_parts = []
                 j = i - 1
+                
+                # Skip consecutive user messages
+                while j >= 0 and messages[j].get('is_you', False):
+                    j -= 1
+                
+                if j < 0:
+                    continue
+                    
                 while j >= 0 and len(context_parts) < 3:
-                    if not messages[j].get('is_you', False):
-                        context_parts.insert(0, messages[j]['content'])
+                    if messages[j].get('is_you', False):
+                        break
+                    context_parts.insert(0, messages[j]['content'])
                     j -= 1
                 
                 if context_parts:

@@ -21,33 +21,14 @@ class InstagramParser:
         self.your_username = your_username.lower()
     
     def parse_file(self, file_path: str) -> Dict:
-        """
-        Parse an Instagram messages JSON file.
-        
-        The file structure from Instagram export:
-        {
-            "participants": [...],
-            "messages": [
-                {
-                    "sender_name": "username",
-                    "timestamp_ms": 1234567890000,
-                    "content": "message text",
-                    "type": "Generic"
-                },
-                ...
-            ]
-        }
-        
-        Args:
-            file_path: Path to the messages JSON file
-            
-        Returns:
-            Dict with messages, your_messages, and conversation_pairs
-        """
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        
-        return self.parse_data(data)
+        """Parse an Instagram messages JSON file."""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return self.parse_data(data)
+        except Exception as e:
+            print(f"Error parsing Instagram file {file_path}: {e}")
+            return self._empty_result()
     
     def parse_data(self, data: Dict) -> Dict:
         """Parse Instagram messages data structure."""
@@ -56,21 +37,21 @@ class InstagramParser:
         for msg in data.get('messages', []):
             content = msg.get('content', '')
             
-            # Skip non-text messages
-            if not content or self._should_skip(msg):
+            # Handle media only messages
+            if not content:
+                if msg.get('photos') or msg.get('videos'):
+                    content = "[Media]"
+                elif msg.get('audio_files'):
+                    content = "[Audio]"
+                elif msg.get('share'):
+                    content = "[Shared Post]"
+            
+            # Skip empty or invalid content
+            if not content or self._should_skip(msg, content):
                 continue
             
-            # Decode Instagram's UTF-8 encoding issues
-            try:
-                content = content.encode('latin1').decode('utf-8')
-            except:
-                pass  # Keep original if encoding fails
-            
-            sender = msg.get('sender_name', 'Unknown')
-            try:
-                sender = sender.encode('latin1').decode('utf-8')
-            except:
-                pass
+            content = self._fix_encoding(content)
+            sender = self._fix_encoding(msg.get('sender_name', 'Unknown'))
             
             is_you = self._is_your_message(sender)
             
@@ -86,8 +67,11 @@ class InstagramParser:
                 'type': msg.get('type', 'Generic')
             })
         
-        # Instagram exports are in reverse chronological order, so reverse them
+        # Instagram exports are in reverse chronological order
         messages.reverse()
+        
+        # Sort just in case
+        messages.sort(key=lambda x: x.get('timestamp_ms', 0))
         
         your_messages = [m for m in messages if m['is_you']]
         conversation_pairs = self._extract_conversation_pairs(messages)
@@ -101,18 +85,29 @@ class InstagramParser:
             'participants': data.get('participants', [])
         }
     
+    def _fix_encoding(self, text: str) -> str:
+        """Fix Instagram's broken UTF-8 encoding (mojibake)."""
+        if not text:
+            return ""
+        try:
+            # Common Instagram export issue: UTF-8 bytes interpreted as Latin-1
+            return text.encode('latin1').decode('utf-8')
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return text
+    
     def parse_content(self, content: str) -> Dict:
-        """
-        Parse Instagram JSON content directly.
-        
-        Args:
-            content: The raw JSON content
-            
-        Returns:
-            Dict with parsed data
-        """
-        data = json.loads(content)
-        return self.parse_data(data)
+        """Parse Instagram JSON content directly."""
+        try:
+            data = json.loads(content)
+            return self.parse_data(data)
+        except json.JSONDecodeError:
+            return self._empty_result()
+    
+    def _empty_result(self) -> Dict:
+        return {
+            'total_messages': 0, 'your_messages': 0, 'messages': [], 
+            'conversation_pairs': [], 'your_texts': [], 'participants': []
+        }
     
     def _is_your_message(self, sender: str) -> bool:
         """Check if a message was sent by you."""
@@ -121,42 +116,31 @@ class InstagramParser:
         if sender_lower == self.your_username:
             return True
         
-        # Handle variations
         if self.your_username in sender_lower:
             return True
         
         return False
     
-    def _should_skip(self, msg: Dict) -> bool:
+    def _should_skip(self, msg: Dict, content: str) -> bool:
         """Check if a message should be skipped."""
         msg_type = msg.get('type', '')
         
-        # Skip non-text message types
-        skip_types = ['Share', 'Call', 'MediaShare']
-        if msg_type in skip_types:
+        # Skip calls and notifications
+        if msg_type in ['Call', 'VideoCall']:
             return True
-        
-        # Skip if it's a reaction
-        if 'reactions' in msg and not msg.get('content'):
+            
+        # Skip reactions if that's all there is
+        if 'reactions' in msg and not content:
             return True
-        
-        # Skip media-only messages
-        if msg.get('photos') or msg.get('videos') or msg.get('audio_files'):
-            if not msg.get('content'):
-                return True
-        
-        # Skip shared posts without text
-        if msg.get('share') and not msg.get('content'):
+            
+        # Skip generic generic empty messages
+        if not content.strip():
             return True
         
         return False
     
     def _extract_conversation_pairs(self, messages: List[Dict]) -> List[Tuple[str, str]]:
-        """
-        Extract context-response pairs where you responded.
-        
-        Returns pairs of (context, your_response)
-        """
+        """Extract context-response pairs where you responded."""
         pairs = []
         
         for i, msg in enumerate(messages):
@@ -165,9 +149,18 @@ class InstagramParser:
                 context_parts = []
                 j = i - 1
                 
+                # Skip consecutive 'you' messages
+                while j >= 0 and messages[j]['is_you']:
+                    j -= 1
+                    
+                if j < 0:
+                    continue
+                
+                # Collect context
                 while j >= 0 and len(context_parts) < 3:
-                    if not messages[j]['is_you']:
-                        context_parts.insert(0, messages[j]['content'])
+                    if messages[j]['is_you']:
+                        break
+                    context_parts.insert(0, messages[j]['content'])
                     j -= 1
                 
                 if context_parts:
@@ -177,28 +170,16 @@ class InstagramParser:
         return pairs
     
     def parse_inbox_folder(self, inbox_path: str) -> Dict:
-        """
-        Parse all conversation files in an Instagram inbox folder.
-        
-        The inbox structure from Instagram export:
-        inbox/
-            conversation_1/
-                message_1.json
-            conversation_2/
-                message_1.json
-        
-        Args:
-            inbox_path: Path to the inbox folder
-            
-        Returns:
-            Combined dict with all messages
-        """
+        """Parse all conversation files in an Instagram inbox folder."""
         import os
         
         all_messages = []
         all_pairs = []
         all_your_texts = []
         
+        if not os.path.exists(inbox_path):
+            return self._empty_result()
+            
         for conv_folder in os.listdir(inbox_path):
             conv_path = os.path.join(inbox_path, conv_folder)
             
@@ -211,11 +192,15 @@ class InstagramParser:
                     file_path = os.path.join(conv_path, filename)
                     try:
                         result = self.parse_file(file_path)
-                        all_messages.extend(result['messages'])
-                        all_pairs.extend(result['conversation_pairs'])
-                        all_your_texts.extend(result['your_texts'])
+                        if result['total_messages'] > 0:
+                            all_messages.extend(result['messages'])
+                            all_pairs.extend(result['conversation_pairs'])
+                            all_your_texts.extend(result['your_texts'])
                     except Exception as e:
                         print(f"Error parsing {file_path}: {e}")
+        
+        # Re-sort combined messages if needed, though usually extensive
+        # all_messages.sort(key=lambda x: x.get('timestamp_ms', 0))
         
         your_messages = [m for m in all_messages if m['is_you']]
         

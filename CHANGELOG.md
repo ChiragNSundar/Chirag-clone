@@ -2,7 +2,28 @@
 
 All notable changes to the "Chirag Clone" project will be documented in this file.
 
-## [2.3.0] - 2026-01-16
+## [2.3.1] - 2026-01-16
+
+### 🛡️ Robustness & Parsing
+
+- **Advanced Chat Parsers**:
+  - **WhatsApp**: Compiled Regex for 4x speed, improved partial multi-line handling, and removal of invisible control characters (LTR/RTL marks).
+  - **Discord**: Robust JSON/CSV handling, attachment placeholders (instead of skipping), and strict timestamps.
+  - **Instagram**: Automatic fix for "Mojibake" (Latin-1/UTF-8 encoding errors) and proper handling of shared media/posts.
+  - **Smart Parser (LLM)**: Self-healing JSON logic to repair broken LLM outputs and improved heuristics for unformatted text.
+
+### 🐳 Infrastructure Updates
+
+- **Production Dockerfile**:
+  - Switched from `python:3.11` to `python:3.11-slim` (reduced image size).
+  - Added `curl` for reliable healthchecks.
+  - **Performance Tuning**: Added `uvloop` (Linux/Mac) and `httptools` for faster asyncio event loop.
+  - **Memory Safety**: Tuned `MALLOC_ARENA_MAX=2` to prevent memory fragmentation in long-running containers.
+
+### ⚡ Performance
+
+- **Optimized Uvicorn**: Enabled `uvloop` for 2-3x throughput increase on Linux.
+- **Logging**: Added structured JSON logging via Docker options for better observability.
 
 ### 🧠 Major Update: The "Brain Station" Release
 

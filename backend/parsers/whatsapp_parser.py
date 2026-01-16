@@ -9,39 +9,44 @@ from datetime import datetime
 class WhatsAppParser:
     """Parser for WhatsApp chat exports."""
     
-    # Common WhatsApp export formats
+    # Compiled common WhatsApp export formats
+    # Note: Using compiled regex for performance
     PATTERNS = [
-        # Format: [DD/MM/YY, HH:MM:SS] Name: Message
-        r'\[(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\]\s*([^:]+):\s*(.*)',
-        # Format: DD/MM/YY, HH:MM - Name: Message
-        r'(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\s*-\s*([^:]+):\s*(.*)',
-        # Format: MM/DD/YY, HH:MM - Name: Message (US format)
-        r'(\d{1,2}/\d{1,2}/\d{2,4}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\s*-\s*([^:]+):\s*(.*)',
+        # Format: [DD/MM/YY, HH:MM:SS] Name: Message (iOS/modern)
+        re.compile(r'^\[(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\]\s*([^:]+):\s*(.*)', re.IGNORECASE),
+        # Format: DD/MM/YY, HH:MM - Name: Message (Android/classic)
+        re.compile(r'^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\s*-\s*([^:]+):\s*(.*)', re.IGNORECASE),
+        # Format: YYYY-MM-DD, HH:MM - Name: Message
+        re.compile(r'^(\d{4}[/.-]\d{1,2}[/.-]\d{1,2}),?\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[AP]M)?)\s*-\s*([^:]+):\s*(.*)', re.IGNORECASE),
     ]
     
-    # Messages to skip
+    # Messages to skip (system messages, encryption notices, etc.)
     SKIP_PATTERNS = [
-        r'<Media omitted>',
-        r'<image omitted>',
-        r'<video omitted>',
-        r'<audio omitted>',
-        r'<sticker omitted>',
-        r'<GIF omitted>',
-        r'<Contact card omitted>',
-        r'<document omitted>',
-        r'Missed voice call',
-        r'Missed video call',
-        r'deleted this message',
-        r'This message was deleted',
-        r'You deleted this message',
-        r'Messages and calls are end-to-end encrypted',
-        r'created group',
-        r'added you',
-        r'left the group',
-        r'changed the subject',
-        r'changed this group\'s icon',
-        r'changed the group description',
+        re.compile(r'<Media omitted>', re.IGNORECASE),
+        re.compile(r'<image omitted>', re.IGNORECASE),
+        re.compile(r'<video omitted>', re.IGNORECASE),
+        re.compile(r'<audio omitted>', re.IGNORECASE),
+        re.compile(r'<sticker omitted>', re.IGNORECASE),
+        re.compile(r'<GIF omitted>', re.IGNORECASE),
+        re.compile(r'<Contact card omitted>', re.IGNORECASE),
+        re.compile(r'<document omitted>', re.IGNORECASE),
+        re.compile(r'Missed voice call', re.IGNORECASE),
+        re.compile(r'Missed video call', re.IGNORECASE),
+        re.compile(r'deleted this message', re.IGNORECASE),
+        re.compile(r'This message was deleted', re.IGNORECASE),
+        re.compile(r'You deleted this message', re.IGNORECASE),
+        re.compile(r'Messages and calls are end-to-end encrypted', re.IGNORECASE),
+        re.compile(r'created group', re.IGNORECASE),
+        re.compile(r'added you', re.IGNORECASE),
+        re.compile(r'left the group', re.IGNORECASE),
+        re.compile(r'changed the subject', re.IGNORECASE),
+        re.compile(r'changed this group\'s icon', re.IGNORECASE),
+        re.compile(r'changed the group description', re.IGNORECASE),
+        re.compile(r'waiting for this message', re.IGNORECASE),
     ]
+    
+    # Control characters to strip (LTR/RTL marks often found in WhatsApp exports)
+    CONTROL_CHARS = dict.fromkeys(range(0x200E, 0x2010), None)
     
     def __init__(self, your_name: str):
         """
@@ -62,8 +67,13 @@ class WhatsAppParser:
         Returns:
             Dict with messages, your_messages, and conversation_pairs
         """
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            # Fallback for older exports or different locales
+            with open(file_path, 'r', encoding='utf-8-sig') as f:
+                content = f.read()
         
         return self.parse_content(content)
     
@@ -77,6 +87,9 @@ class WhatsAppParser:
         Returns:
             Dict with parsed data
         """
+        # Pre-clean content - remove BIDs and other control chars
+        content = content.translate(self.CONTROL_CHARS)
+        
         messages = self._extract_messages(content)
         your_messages = [m for m in messages if m['is_you']]
         conversation_pairs = self._extract_conversation_pairs(messages)
@@ -97,28 +110,44 @@ class WhatsAppParser:
         current_message = None
         
         for line in lines:
+            # Skip empty lines immediately
+            if not line.strip():
+                continue
+                
             parsed = self._parse_line(line)
             
             if parsed:
                 if current_message:
-                    messages.append(current_message)
+                    # Validate previous message before adding
+                    if current_message['content'].strip():
+                        messages.append(current_message)
                 current_message = parsed
-            elif current_message and line.strip():
-                # Continuation of previous message
+            elif current_message:
+                # Continuation of previous message (multi-line)
                 current_message['content'] += '\n' + line.strip()
         
-        if current_message:
+        # Add final message
+        if current_message and current_message['content'].strip():
             messages.append(current_message)
         
-        # Filter out system messages and media
-        messages = [m for m in messages if not self._should_skip(m['content'])]
+        # Filter out system messages and media using strict checking
+        valid_messages = []
+        for m in messages:
+            cleaned_content = m['content'].strip()
+            if cleaned_content and not self._should_skip(cleaned_content):
+                m['content'] = cleaned_content
+                valid_messages.append(m)
         
-        return messages
+        return valid_messages
     
     def _parse_line(self, line: str) -> Optional[Dict]:
         """Parse a single line to extract message data."""
+        # Fast fail if line is too short to contain timestamp
+        if len(line) < 10:
+            return None
+            
         for pattern in self.PATTERNS:
-            match = re.match(pattern, line.strip())
+            match = pattern.match(line.strip())
             if match:
                 groups = match.groups()
                 date_str = groups[0]
@@ -144,16 +173,16 @@ class WhatsAppParser:
         sender_lower = sender.lower().strip()
         your_name_lower = self.your_name.lower().strip()
         
-        # Direct match
+        # Exact match
         if sender_lower == your_name_lower:
             return True
         
-        # Partial match (name might be saved differently)
-        if your_name_lower in sender_lower or sender_lower in your_name_lower:
+        # Handle "You" (WhatsApp sometimes exports as "You")
+        if sender_lower == "you":
             return True
-        
-        # Common variations
-        if sender_lower in ['you', 'me']:
+            
+        # Partial match if name is long (e.g. "Chirag Sundar" vs "Chirag")
+        if len(your_name_lower) > 3 and (your_name_lower in sender_lower or sender_lower in your_name_lower):
             return True
         
         return False
@@ -161,7 +190,7 @@ class WhatsAppParser:
     def _should_skip(self, content: str) -> bool:
         """Check if a message should be skipped."""
         for pattern in self.SKIP_PATTERNS:
-            if re.search(pattern, content, re.IGNORECASE):
+            if pattern.search(content):
                 return True
         return False
     
@@ -176,13 +205,24 @@ class WhatsAppParser:
         for i, msg in enumerate(messages):
             if msg['is_you'] and i > 0:
                 # Find the previous message(s) as context
+                # We want the immediate previous block from OTHER person
+                
+                # Scan backwards for non-you messages
                 context_parts = []
                 j = i - 1
                 
-                # Get up to 3 previous messages as context
+                # Skip your own previous messages (consecutive messages)
+                while j >= 0 and messages[j]['is_you']:
+                    j -= 1
+                
+                if j < 0:
+                    continue
+                    
+                # Now collect up to 3 messages from the other person
                 while j >= 0 and len(context_parts) < 3:
-                    if not messages[j]['is_you']:
-                        context_parts.insert(0, messages[j]['content'])
+                    if messages[j]['is_you']:
+                        break # Stop if we hit another one of our messages
+                    context_parts.insert(0, messages[j]['content'])
                     j -= 1
                 
                 if context_parts:
