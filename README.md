@@ -300,7 +300,99 @@ Chirag-clone/
 │   └── styles.css                  # Glassmorphism Theme
 ```
 
-## 🛡️ Security
+## � API Reference
+
+### Health & System
+
+- `GET /api/health`: System status, version, and service health checks (supports `?detailed=true`).
+- `GET /api/profile`: Get the bot's personality profile and stats.
+
+### 🧠 Brain Station (Knowledge)
+
+- `GET /api/knowledge/stats`: Knowledge base statistics.
+- `GET /api/knowledge/documents`: List indexed documents.
+- `POST /api/knowledge/upload`: Upload PDF/TXT/MD files.
+- `POST /api/knowledge/text`: Ingest raw text facts.
+- `POST /api/knowledge/url`: Ingest content from a URL.
+- `POST /api/knowledge/query`: Semantic search against the knowledge base.
+- `DELETE /api/knowledge/document/{doc_id}`: Remove a document.
+
+### 🎙️ Real-Time Voice
+
+- `GET /api/voice/status`: Check TTS/STT service availability.
+- `WS /api/voice/stream`: Bidirectional WebSocket for low-latency voice chat.
+- `GET /api/voice/realtime/status/{session_id}`: Check status of a voice session.
+- `POST /api/voice/listen`: Upload audio blob for transcription (STT).
+- `POST /api/voice/speak`: Generate audio from text (TTS).
+- `GET /api/voice/voices`: List available voice models.
+
+### 👁️ Desktop Vision
+
+- `POST /api/vision/desktop`: "Eye Mode" - Analyze active window content.
+- `POST /api/vision/analyze`: General image analysis endpoint.
+
+### 💬 Chat & Conversation
+
+- `POST /api/chat/message`: Main conversation endpoint (with memory).
+- `GET /api/visualization/graph`: Interactive memory graph data.
+- `GET /api/dashboard/stats`: Dashboard analytics.
+- `GET /api/analytics/conversations`: Conversation history.
+- `GET /api/analytics/topics`: Topic clusters and heatmaps.
+- `GET /api/creative/types`: Available creative modes (poems, dreams, etc).
+- `POST /api/creative/generate`: Generate creative content.
+- `GET /api/creative/prompt`: Get current creative prompt.
+- `GET /api/drafts/all`: List all pending drafts from all platforms.
+- `GET /api/analytics/detailed`: Detailed system analytics.
+
+### 🧩 Cognitive Services
+
+- `GET /api/cognitive/core-memories`: List long-term core memories.
+- `POST /api/cognitive/trigger-summarization`: Force memory summarization.
+- `GET /api/cognitive/active-learning/suggestions`: Get proactive questions.
+- `POST /api/cognitive/active-learning/answer`: Answer a proactive question.
+- `GET /api/memory/search`: Vector search debugging.
+- `GET /api/memory/stats`: Vector database statistics.
+- `GET /api/accuracy/quiz`: Generate a self-test quiz.
+- `GET /api/accuracy/stats`: Retrieval accuracy metrics.
+- `POST /api/accuracy/submit`: Submit quiz answers.
+- `POST /api/personality/snapshot`: Save current personality state.
+- `GET /api/personality/history`: Track personality changes over time.
+- `GET /api/personality/evolution`: Personality evolution metrics.
+- `GET /api/cognitive/learning-stats`: Learning progress statistics.
+
+### 📅 Calendar
+
+- `GET /api/calendar/status`: Calendar integration status.
+- `GET /api/calendar/events`: List upcoming events.
+- `GET /api/calendar/summary`: Daily briefing summary.
+
+### 🎓 Training & Feedback
+
+- `POST /api/training/feedback`: Submit user feedback (thumbs up/down).
+- `POST /api/training/auth`: Authenticate for Training Center.
+- `POST /api/training/upload/{source}`: Upload chat logs (WhatsApp, Discord, etc).
+- `POST /api/training/upload/document`: Upload a single document.
+- `POST /api/training/fact`: Add a manual fact.
+- `GET /api/training/facts`: List manual facts.
+- `DELETE /api/training/facts/{index}`: Remove a manual fact.
+- `POST /api/training/example`: Add a few-shot example.
+- `POST /api/training/chat`: Chat in training mode (no memory persistence).
+- `GET /api/training/chat/prompt`: Get training prompt.
+- `DELETE /api/training/reset`: Reset training session.
+- `POST /api/training/journal`: Add a journal entry.
+
+### 🤖 Autopilot Agents
+
+- `GET /api/autopilot/status`: Overall system status.
+- `GET /api/autopilot/{platform}/status`: Platform-specific status (discord, twitter, etc).
+- `POST /api/autopilot/{platform}/start`: Start a platform bot.
+- `POST /api/autopilot/{platform}/stop`: Stop a platform bot.
+- `POST /api/autopilot/{platform}/settings`: Update bot settings.
+- `POST /api/autopilot/{platform}/generate-reply`: Draft a reply for a DM/mention.
+- `POST /api/autopilot/{platform}/generate-tweet`: Generate a new post (Twitter/LinkedIn).
+- `GET /api/autopilot/logs`: View agent activity logs.
+
+## �🛡️ Security
 
 - **Local RAG**: Your uploaded documents stay on your machine.
 - **Ephemeral Vision**: Eye Mode screenshots are analyzed in RAM and discarded instantly.
