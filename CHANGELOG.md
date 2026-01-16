@@ -52,6 +52,17 @@ This update transforms the clone from a chatbot into a proactive, seeing, and li
 - **Memory**: Increased container memory limits to 3GB to handle vision tasks.
 - **UI**: Added "Live" indicators and improved glassmorphism on graphs.
 
+### 🛡️ Robustness & Reliability
+
+- **`robustness.py` (NEW)**: FastAPI middleware for request validation, global exception handling, and graceful degradation.
+- **Health Monitor**: `ServiceHealthMonitor` class tracks status of all dependent services (LLM, memory, voice, knowledge).
+- **Enhanced `/api/health`**: Now supports `?detailed=true` query param for full service status including circuit breaker state.
+- **Input Validation**: Enhanced Pydantic models with length limits, sanitization, and validators.
+- **Startup Checks**: New `startup_event` validates configuration and pre-warms critical services.
+- **Graceful Degradation**: `safe_service_call` decorator and `GracefulDegradation` context manager for fault-tolerant service calls.
+- **Request Timing**: All responses now include `X-Response-Time` header.
+- **Global Exception Handler**: Catches unhandled exceptions and returns user-friendly error messages.
+
 ---
 
 ## [2.2.0] - 2026-01-15

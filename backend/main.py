@@ -2,12 +2,13 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Req
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 import uvicorn
 import os
 import logging
-from config import Config
+import time
+from config import Config, validate_config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -16,20 +17,82 @@ logger = logging.getLogger(__name__)
 # Import rate limiter
 from services.rate_limiter import rate_limit
 
+# Import robustness utilities
+from services.robustness import (
+    RequestValidationMiddleware,
+    GlobalExceptionMiddleware,
+    get_health_monitor,
+    check_service_health,
+    safe_service_call,
+    GracefulDegradation,
+    validate_input_length,
+    create_robust_response
+)
+
+# Validate configuration at startup
+config_warnings = validate_config()
+for warning in config_warnings:
+    logger.warning(f"[CONFIG] {warning}")
+
 app = FastAPI(
     title="Chirag Clone API",
-    description="Personal AI Clone Bot API",
-    version="2.0.0"
+    description="Personal AI Clone Bot API - v2.3 with Real-Time Voice, Vision, and Brain Station",
+    version="2.3.0"
 )
+
+# Add robustness middleware
+app.add_middleware(GlobalExceptionMiddleware)
+app.add_middleware(RequestValidationMiddleware, max_body_size=Config.MAX_REQUEST_SIZE_MB * 1024 * 1024)
 
 # CORS Configuration - allow all localhost ports for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Startup event for initialization
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services and log startup status."""
+    logger.info("=" * 60)
+    logger.info("🧠 Chirag Clone API v2.3.0 Starting...")
+    logger.info("=" * 60)
+    
+    # Log configuration warnings
+    if config_warnings:
+        logger.warning(f"⚠️  {len(config_warnings)} configuration warning(s)")
+    else:
+        logger.info("✅ Configuration validated successfully")
+    
+    # Pre-warm critical services (optional, for faster first request)
+    try:
+        from services.personality_service import get_personality_service
+        personality = get_personality_service()
+        logger.info(f"✅ Personality service ready: {personality.get_profile().name}")
+    except Exception as e:
+        logger.warning(f"⚠️  Personality service: {e}")
+    
+    # Check LLM availability
+    try:
+        from services.llm_service import get_llm_service
+        llm = get_llm_service()
+        circuit_state = llm.get_circuit_state()
+        logger.info(f"✅ LLM service ready: {Config.LLM_PROVIDER} (circuit: {circuit_state['state']})")
+    except Exception as e:
+        logger.warning(f"⚠️  LLM service: {e}")
+    
+    logger.info("=" * 60)
+    logger.info("🚀 Server ready to accept requests")
+    logger.info("=" * 60)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown."""
+    logger.info("🛑 Chirag Clone API shutting down...")
 
 # Serve static frontend in production
 import pathlib
@@ -49,16 +112,31 @@ if frontend_path.exists():
             return FileResponse(str(file_path))
         return FileResponse(str(frontend_path / "index.html"))
 
-# Request Models
+# Request Models with validation
 class ChatMessage(BaseModel):
-    message: str
-    session_id: str = "default"
+    message: str = Field(..., min_length=1, max_length=Config.MAX_MESSAGE_LENGTH)
+    session_id: str = Field(default="default", max_length=100)
     training_mode: bool = False
+    
+    @validator('message')
+    def sanitize_message(cls, v):
+        # Strip leading/trailing whitespace
+        v = v.strip()
+        if not v:
+            raise ValueError('Message cannot be empty')
+        return v
+    
+    @validator('session_id')
+    def sanitize_session_id(cls, v):
+        # Remove any potentially dangerous characters
+        import re
+        v = re.sub(r'[^a-zA-Z0-9_-]', '', v)
+        return v or "default"
 
 class TrainingFeedback(BaseModel):
-    context: str
-    correct_response: Optional[str] = None
-    bot_response: Optional[str] = None
+    context: str = Field(..., min_length=1, max_length=Config.MAX_MESSAGE_LENGTH)
+    correct_response: Optional[str] = Field(default=None, max_length=Config.MAX_MESSAGE_LENGTH)
+    bot_response: Optional[str] = Field(default=None, max_length=Config.MAX_MESSAGE_LENGTH)
     accepted: bool = False
 
 # Dependencies (Lazy loading services)
@@ -69,9 +147,86 @@ async def get_chat_service():
 # --- Routes ---
 
 @app.get("/api/health")
-async def health_check():
-    """Health Check Endpoint"""
-    return {"status": "healthy", "version": "2.0.0", "framework": "FastAPI"}
+async def health_check(detailed: bool = False):
+    """
+    Health Check Endpoint.
+    
+    Args:
+        detailed: If true, includes service-level health status
+        
+    Returns:
+        Health status with optional service details
+    """
+    import asyncio
+    
+    health_monitor = get_health_monitor()
+    
+    # Basic health info
+    response = {
+        "status": "healthy",
+        "version": "2.3.0",
+        "framework": "FastAPI",
+        "timestamp": time.time()
+    }
+    
+    if detailed:
+        # Check LLM service
+        try:
+            from services.llm_service import get_llm_service
+            llm = get_llm_service()
+            circuit_state = llm.get_circuit_state()
+            health_monitor.update_status(
+                "llm",
+                not circuit_state.get("is_open", False),
+                f"Circuit: {circuit_state.get('state', 'UNKNOWN')}"
+            )
+        except Exception as e:
+            health_monitor.update_status("llm", False, str(e))
+        
+        # Check memory/vector service
+        try:
+            from services.memory_service import get_memory_service
+            memory = get_memory_service()
+            stats = memory.get_training_stats()
+            health_monitor.update_status("memory", True, f"{stats.get('total_entries', 0)} entries")
+        except Exception as e:
+            health_monitor.update_status("memory", False, str(e))
+        
+        # Check voice service
+        try:
+            from services.voice_service import get_voice_service
+            voice = get_voice_service()
+            voice_status = voice.get_status()
+            health_monitor.update_status(
+                "voice",
+                voice_status.get("tts_available", False) or voice_status.get("stt_available", False),
+                f"TTS: {voice_status.get('tts_available')}, STT: {voice_status.get('stt_available')}"
+            )
+        except Exception as e:
+            health_monitor.update_status("voice", False, str(e))
+        
+        # Check knowledge service
+        try:
+            from services.knowledge_service import get_knowledge_service
+            knowledge = get_knowledge_service()
+            doc_count = len(knowledge.list_documents()) if hasattr(knowledge, 'list_documents') else 0
+            health_monitor.update_status("knowledge", True, f"{doc_count} documents")
+        except Exception as e:
+            health_monitor.update_status("knowledge", False, str(e))
+        
+        # Get overall health
+        is_healthy, degraded_services, message = health_monitor.get_overall_health()
+        
+        response["status"] = "healthy" if is_healthy else "unhealthy"
+        response["message"] = message
+        response["services"] = health_monitor.get_all_status()
+        
+        if degraded_services:
+            response["degraded_services"] = degraded_services
+            if is_healthy:
+                response["status"] = "degraded"
+    
+    return response
 
 @app.post("/api/chat/message")
 @rate_limit
