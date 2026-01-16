@@ -1,5 +1,5 @@
-# Docker Compose for Chirag Clone v2.2
-# FastAPI backend + React frontend + Voice/Calendar/WhatsApp integrations
+# Docker Compose for Chirag Clone v2.3
+# FastAPI backend + React frontend + Voice/Vision/Brain Station features
 
 services:
   chirag-clone:
@@ -19,7 +19,7 @@ services:
       - DEBUG=False
       - LLM_PROVIDER=gemini
       - TRAINING_PASSCODE=${TRAINING_PASSCODE:-1234}
-      
+
       # Social Autopilot
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
@@ -31,15 +31,18 @@ services:
       - LINKEDIN_PASSWORD=${LINKEDIN_PASSWORD:-}
       - GMAIL_CLIENT_ID=${GMAIL_CLIENT_ID:-}
       - GMAIL_CLIENT_SECRET=${GMAIL_CLIENT_SECRET:-}
-      
-      # Voice
+
+      # Voice (Real-Time + Push-to-Talk)
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-}
-      
+
+      # Vision (Desktop Eye Mode)
+      - GEMINI_VISION_ENABLED=${GEMINI_VISION_ENABLED:-true}
+
       # Calendar
       - GOOGLE_CALENDAR_CLIENT_ID=${GOOGLE_CALENDAR_CLIENT_ID:-}
       - GOOGLE_CALENDAR_CLIENT_SECRET=${GOOGLE_CALENDAR_CLIENT_SECRET:-}
-      
+
       # WhatsApp
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
@@ -56,10 +59,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 3G
           cpus: '2.0'
         reservations:
-          memory: 512M
+          memory: 1G
           cpus: '0.5'
 
 volumes:

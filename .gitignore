@@ -96,3 +96,12 @@ backend/data/personality_history.json
 *.mp3
 *.webm
 elevenlabs_cache/
+
+# Desktop Widget Build
+desktop-widget/dist/
+desktop-widget/release/
+desktop-widget/out/
+
+# Brain Station Data
+backend/data/knowledge/
+backend/data/knowledge_graph.json

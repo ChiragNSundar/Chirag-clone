@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
+import { AudioVisualizer } from './AudioVisualizer';
 
 interface VoiceChatProps {
     onTranscript: (text: string) => void;
@@ -418,29 +419,31 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
                 )}
             </motion.button>
 
-            {/* Recording/Live Indicator */}
+            {/* Audio Visualizer */}
             <AnimatePresence>
-                {isRecording && (
+                {(isRecording || isSpeaking) && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className={clsx(
-                            "flex items-center gap-2 px-3 py-1 rounded-lg",
-                            isLiveMode
-                                ? "bg-green-500/10 border border-green-500/30"
-                                : "bg-red-500/10 border border-red-500/30"
-                        )}
+                        initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                        animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                        exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                        className="flex items-center gap-2 px-2"
                     >
+                        <AudioVisualizer
+                            isActive={isRecording || isSpeaking}
+                            audioStream={isRecording ? streamRef.current : null}
+                            audioElement={isSpeaking ? audioRef.current : null}
+                            mode={isRecording ? 'input' : 'output'}
+                            variant="bars"
+                        />
                         <span className={clsx(
-                            "w-2 h-2 rounded-full animate-pulse",
-                            isLiveMode ? "bg-green-500" : "bg-red-500"
-                        )} />
-                        <span className={clsx(
-                            "text-xs",
-                            isLiveMode ? "text-green-400" : "text-red-400"
+                            "text-xs px-2 py-0.5 rounded-full",
+                            isRecording
+                                ? isLiveMode
+                                    ? "bg-green-500/20 text-green-400"
+                                    : "bg-red-500/20 text-red-400"
+                                : "bg-purple-500/20 text-purple-400"
                         )}>
-                            {isLiveMode ? "Live..." : "Recording..."}
+                            {isRecording ? (isLiveMode ? "Live" : "Rec") : "Speaking"}
                         </span>
                     </motion.div>
                 )}

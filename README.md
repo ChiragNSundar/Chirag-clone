@@ -12,7 +12,7 @@
 - **Styling**: Tailwind CSS (Glassmorphism design)
 - **Icons**: Lucide React
 - **3D Avatar**: Three.js + React Three Fiber
-- **Visualization**: Recharts
+- **Visualization**: Recharts + Web Audio API
 - **State/Animations**: Framer Motion
 
 ### Backend
@@ -20,17 +20,18 @@
 - **Framework**: FastAPI (Python 3.11)
 - **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
 - **Vector DB**: ChromaDB (Local persistence)
+- **Real-Time**: WebSockets for Voice & Vision
 - **Task Management**: AsyncIO + APScheduler
-- **PDF Processing**: PyMuPDF
+- **PDF/Web Processing**: PyMuPDF + BeautifulSoup
 
 ### Desktop Widget
 
 - **Framework**: Electron
-- **Features**: Floating window, system tray, global shortcuts
+- **Features**: Floating window, screen capture (Eye Mode), global shortcuts
 
 ### DevOps & Infrastructure
 
-- **Containerization**: Docker + Docker Compose
+- **Containerization**: Docker + Docker Compose (v2.3)
 - **Server**: Uvicorn (ASGI)
 - **Environment**: Dotenv (.env) management
 
@@ -38,92 +39,49 @@
 
 ## ✨ Key Features
 
-### 🏛️ Extensive Training Center (`/training`)
+### 🎙️ Real-Time Voice Conversation (`/chat`)
 
-Teach your clone how to be you through multiple modalities:
+**NEW in v2.3!** Talk to your clone naturally with ultra-low latency.
 
-- **Chat Uploads**: Learn from your real conversations (WhatsApp, Instagram, Discord)
-- **Train by Chatting**: Interactive interview mode where the bot learns from your answers
-- **Documents**: Upload PDFs, resumes, and text files for RAG-based knowledge
-- **Journal**: Feed your thoughts and daily reflections
-- **Facts**: Manually add key facts about yourself
+- **WebSocket Streaming**: Bidirectional audio streaming for instant responses.
+- **Visualizer**: Real-time frequency bars (Orb/Wave modes) reacting to your voice.
+- **Interruption**: Speak anytime to interrupt the bot, just like a real call.
+- **Turn-taking**: Smart silence detection to know when you've finished speaking.
 
-### 📊 Analytics Dashboard (`/`)
+### 👁️ Desktop Vision "Eye Mode"
 
-Visual insights into your clone's development:
+**NEW in v2.3!** Your clone sees what you see.
 
-- **Personality Completion Ring**: Track how "complete" your clone is
-- **Data Sources**: See where your clone is learning from
-- **Learning Curve**: Track progress over time
-- **Knowledge Metrics**: Stats on facts, quirks, and emoji usage
+- **Screen Awareness**: Toggle "Eye Mode" in the desktop widget.
+- **Proactive Suggestions**: The bot watches your active window and offers relevant tips.
+- **Privacy-First**: Only captures the active window, never the full desktop.
+
+### 🧠 Brain Station (`/training`)
+
+**NEW in v2.3!** Central command for knowledge management.
+
+- **Knowledge Graph**: Interactive 3D visualization of your clone's memory.
+- **Drag-and-Drop**: Upload PDFs, text files, and markdown notes.
+- **URL Ingestion**: Feed it web pages to learn from instantly.
+- **Semantic Search**: Find any fact or document with natural language queries.
+
+### 🏛️ Training Center
+
+Teach your clone how to be you:
+
+- **Chat Uploads**: Learn from WhatsApp, Instagram, Discord archives.
+- **Interactive Training**: "Interview mode" where the bot asks you questions.
+- **Journal**: Daily thought recording and reflection.
+- **Facts**: Manual entry for key personal details.
 
 ### 🤖 Social Autopilot (`/autopilot`)
 
-Let your clone handle your socials when you're away:
+Handle your socials while you sleep:
 
-- **Discord Bot**: Auto-reply to DMs and mentions
-- **Telegram Bot**: Smart auto-responses
-- **Twitter/X**: Draft tweets and replies in your style
-- **LinkedIn**: Professional DM response drafting
-- **Gmail**: Email reply drafting with your voice
-- **Control Panel**: Start/stop bots and view reply logs in real-time
-
-### 🗣️ Voice Copilot (`/chat`)
-
-- **Voice I/O**: Talk to your clone with real-time speech-to-text
-- **Text-to-Speech**: ElevenLabs integration for natural voice responses
-- **Lip-Sync**: 3D Avatar mouth movement synced to voice audio
-
-### 🧠 Cognitive Enhancements
-
-Deep brain features for smarter interactions:
-
-- **Thinking Process**: Visible chain-of-thought reasoning logic
-- **Emotion Detection**: Adopts tone based on your emotional state
-- **Core Memories**: Automatic nightly summarization of key facts
-- **Active Learning**: Proactive questions to fill knowledge gaps
-
-### 📚 Advanced Memory & Knowledge
-
-- **Memory Search**: Full-text search across all conversations and documents
-- **Personality Timeline**: Track how your digital twin evolves over time
-- **Multi-Modal**: Learns from images, PDFs, and chat logs
-
-### 🤖 Expanded Autopilot
-
-- **WhatsApp**: Auto-reply drafts for WhatsApp Business
-- **Calendar**: AI scheduling assistant and daily summaries
-- **Unified Dashboard**: Manage drafts from Twitter, LinkedIn, Gmail, and WhatsApp
-- **Smart Drafts**: Approve/edit/reject workflow
-
-### 🎨 Creative Studio
-
-- **Dream Mode**: Generate poems, stories, and journals in your style
-- **Clone Accuracy**: Logic quizzes and A/B testing to verify authenticity
-
-### 📊 Analytics Dashboard (`/`)
-
-Visual insights into your clone's development:
-
-- **Conversation Analytics**: Topic heatmaps and activity trends
-- **Personality Completion**: Track how "complete" your clone is
-- **Learning Curve**: Track progress over time
-
-
-### 🖥️ Desktop Widget
-
-A floating mini-app for quick access:
-
-- **Always-on-top** floating window
-- **Global shortcut**: `Cmd+Shift+C` (macOS) to toggle
-- **System tray** icon for show/hide
-- **Quick chat** without opening a browser
-
-### Other Capabilities
-
-- **👁️ Vision**: Send images and I'll react like you would
-- **🔍 Web Search**: Real-time information access
-- **🛡️ Robust Security**: Rate limiting, localized data, PIN protection
+- **Discord/Telegram**: Smart auto-replies to DMs.
+- **Twitter/LinkedIn**: Draft tweets and professional replies in your style.
+- **Gmail**: Voice-to-email drafting.
+- **Review Workflow**: Nothing is posted without your approval.
 
 ---
 
@@ -138,72 +96,52 @@ graph TD
     
     subgraph "Frontend Layer"
         Frontend --> Dashboard["Analytics Dashboard"]
-        Frontend --> Training["Training Center"]
-        Frontend --> Autopilot["Autopilot Control"]
-        Frontend --> Chat["Chat Interface + 3D Avatar"]
+        Frontend --> Training["Training Center + Brain Station"]
+        Frontend --> Chat["Voice Chat + Visualizer"]
+        Frontend --> Graph["Interactive Memory Graph"]
     end
     
-    Widget -->|API| Backend
-    Frontend -->|"API/WebSocket"| Backend["Backend (FastAPI)"]
+    Widget -->|WebSocket| Backend
+    Frontend -->|WebSocket/API| Backend["Backend (FastAPI)"]
     
     subgraph "Backend Services"
         Backend --> Router["API Router"]
+        Router --> RealtimeVoice["Realtime Voice Service"]
+        Router --> Vision["Vision Service"]
+        Router --> Knowledge["Knowledge Service"]
         Router --> ChatService["Chat Service"]
-        Router --> TrainingService["Training Service"]
-        Router --> AutopilotService["Autopilot Service"]
-        Router --> CognitiveService["Cognitive Services"]
         
-        ChatService --> Brain["LLM (Gemini/OpenAI)"]
-        ChatService --> Memory["Memory (ChromaDB)"]
-        ChatService --> Personality["Personality Profile"]
-        ChatService --> Thinking["Thinking Service"]
+        RealtimeVoice -->|Stream| WebAudio["Audio Buffer"]
+        Vision -->|Analysis| Jemini["Gemini Vision"]
+        Knowledge -->|RAG| ChromaDB["Vector Store"]
         
-        CognitiveService --> CoreMemory["Core Memories"]
-        CognitiveService --> ActiveLearning["Active Learning"]
-        
-        AutopilotService --> Discord["Discord Bot"]
-        AutopilotService --> Telegram["Telegram Bot"]
-        AutopilotService --> Twitter["Twitter/X"]
-        AutopilotService --> LinkedIn["LinkedIn"]
-        AutopilotService --> Gmail["Gmail"]
+        ChatService --> Brain["LLM (Gemini 2.0)"]
+        ChatService --> Memory["Core Memories"]
+        ChatService --> Autopilot["Autopilot Services"]
     end
 ```
 
-### Cognitive Architecture
-
-```mermaid
-graph LR
-    subgraph "Cognitive Loop"
-        Input["User Message"] --> Thinking["Thinking Service"]
-        Thinking --> |"Complex Query"| CoT["Chain-of-Thought"]
-        CoT --> Response
-        Thinking --> |"Simple Query"| Response["Generate Response"]
-        
-        Response --> CoreMem["Core Memory Service"]
-        CoreMem --> |"Nightly"| Summarize["Summarize to Facts"]
-        
-        ActiveLearn["Active Learning"] --> |"Detect Gaps"| Questions["Proactive Questions"]
-    end
-```
-
-### Autopilot Workflow
+### Real-Time Voice Flow
 
 ```mermaid
 sequenceDiagram
-    participant P as Platform (Discord/Telegram/Twitter/LinkedIn/Gmail)
-    participant B as Bot Service
-    participant C as Chat Service
-    participant M as Memory (RAG)
+    participant U as User
+    participant F as Frontend (VoiceChat)
+    participant W as WebSocket
+    participant S as RealtimeService
     participant L as LLM
     
-    P->>B: Incoming Message/Email
-    B->>C: Generate Response
-    C->>M: Retrieve Context (Facts/Style/Core Memories)
-    M-->>C: Relevant Context
-    C->>L: Prompt with Persona & Context
-    L-->>C: Generated Reply (in your style)
-    C-->>B: Final Response/Draft
-    B->>P: Send Reply or Queue Draft
+    U->>F: Speaks (Audio Stream)
+    F->>W: Send Audio Chunks
+    W->>S: Transcribe Stream (Whisper)
+    S->>S: Detect Silence/Turn End
+    S->>L: Update Conversation Context
+    L-->>S: Generate Token Stream
+    S->>W: Send Text + Audio Stream (TTS)
+    W->>F: Play Audio + Visualize
+    F-->>U: Hear Response
+    
+    Note over U,F: User can interrupt at any time
 ```
 
 ---
@@ -212,193 +150,40 @@ sequenceDiagram
 
 ### 1. Prerequisites
 
-- Python 3.11+
-- Node.js 18+
-- [Google Gemini API Key](https://makersuite.google.com/app/apikey)
+- Docker Desktop installed
+- [Gemini API Key](https://makersuite.google.com/app/apikey)
+- [ElevenLabs API Key](https://elevenlabs.io) (for voice)
 
-### 2. Setup (Local Development)
+### 2. Setup & Run (Recommended)
 
-#### Backend Setup
-
-```bash
-# Activate venv:
-# Windows: venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
-
-cd backend
-python -m venv venv
-# Back to root for installation
-cd ..
-pip install -r requirements.txt
-cp .env.example .env  # Configure your keys in .env
-```
-
-#### Frontend Setup
+One command to start everything:
 
 ```bash
-cd frontend-react
-npm install
-```
-
-#### Desktop Widget Setup (Optional)
-
-```bash
-cd desktop-widget
-npm install
-```
-
-### 3. Running the App
-
-**Terminal 1 (Backend):**
-
-```bash
-cd backend
-python -m uvicorn main:app --reload --port 8000
-```
-
-**Terminal 2 (Frontend):**
-
-```bash
-cd frontend-react
-npm run dev
-```
-
-**Terminal 3 (Desktop Widget - Optional):**
-
-```bash
-cd desktop-widget
-npm start
-```
-
-Open **<http://localhost:5173>** (or the port shown in terminal) to access the UI.
-
----
-
-## 🖥️ Desktop Widget
-
-A floating desktop widget for quick access to your Chirag Clone without opening a browser.
-
-### Features
-
-- 🪟 Floating always-on-top window
-- ⌨️ Global shortcut: `Cmd+Shift+C` (macOS) to toggle
-- 🔧 System tray icon for show/hide
-- 💬 Quick chat interface
-- ⚙️ Configurable backend URL
-
-### Installation & Running
-
-```bash
-cd desktop-widget
-npm install
-npm start
-```
-
-### Building for macOS
-
-```bash
-npm run build:mac
-```
-
-This creates a `.dmg` file in the `dist/` directory.
-
-### Configuration
-
-Right-click the tray icon and select **Settings** to change the backend URL.
-Default: `http://localhost:8000`
-
----
-
-## 🐳 Docker Deployment
-
-Run the entire stack with a single command.
-
-### Option A: Docker Compose (Recommended)
-
-This sets up optimized containers for backend and frontend.
-
-```bash
-# 1. Configure environment
+# 1. Clone & Config
+git clone https://github.com/ChiragNSundar/Chirag-clone.git
+cd Chirag-clone
 cp .env.example .env
-# Edit .env with your API keys
 
-# 2. Start services
+# 2. Add API Keys to .env
+# GEMINI_API_KEY=...
+# ELEVENLABS_API_KEY=...
+
+# 3. Launch
 docker-compose up -d --build
-
-# 3. View logs
-docker-compose logs -f
 ```
 
-Access app at `http://localhost:5173` (Frontend) and `http://localhost:8000` (Backend API).
+- **Frontend**: <http://localhost:5173>
+- **Backend API**: <http://localhost:8000>
 
-### 🧪 Running Tests
+### 3. Desktop Widget (Optional)
 
-To verify the installation and backend logic:
+For the "Eye Mode" feature:
 
 ```bash
-# Install dependencies from root
-pip install -r requirements.txt
-pip install pytest httpx
-
-cd backend
-python -m pytest tests/test_main.py
+cd desktop-widget
+npm install
+npm start
 ```
-
-### Option B: Manual Docker Run
-
-```bash
-# Build image
-docker build -t chirag-clone .
-
-# Run container
-docker run -p 8000:8000 --env-file backend/.env chirag-clone
-```
-
----
-
-## 🔧 Bot Configuration
-
-To enable **Social Autopilot**, you need to configure bot tokens in your `.env` file:
-
-### Discord Bot Setup
-
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create a New Application -> Bot
-3. Enable **Message Content Intent** under Privileges
-4. Copy Token to `.env`: `DISCORD_BOT_TOKEN=your_token`
-5. Invite bot to server using OAuth2 URL Generator (scopes: `bot`, permissions: `Read Messages`, `Send Messages`)
-
-### Telegram Bot Setup
-
-1. Message [@BotFather](https://t.me/BotFather) on Telegram
-2. Send `/newbot` and follow instructions
-3. Copy Token to `.env`: `TELEGRAM_BOT_TOKEN=your_token`
-4. Start a chat with your new bot
-
-### Twitter/X Setup
-
-1. Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-2. Create an App with OAuth 2.0
-3. Copy credentials to `.env`:
-   - `TWITTER_CLIENT_ID`
-   - `TWITTER_CLIENT_SECRET`
-   - `TWITTER_ACCESS_TOKEN`
-   - `TWITTER_ACCESS_TOKEN_SECRET`
-
-### LinkedIn Setup
-
-Uses unofficial API with your LinkedIn credentials:
-- `LINKEDIN_EMAIL`
-- `LINKEDIN_PASSWORD`
-
-### Gmail Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create OAuth 2.0 credentials
-3. Enable Gmail API
-4. Copy to `.env`:
-   - `GMAIL_CLIENT_ID`
-   - `GMAIL_CLIENT_SECRET`
 
 ---
 
@@ -412,39 +197,51 @@ Chirag-clone/
 ├── docker-compose.yml          # Container Orchestration
 ├── Dockerfile                  # Production Build Definition
 ├── CHANGELOG.md                # Project History
+├── README.md                   # Documentation
 │
 ├── backend/
-│   ├── main.py                 # FastAPI Application Entry Point
+│   ├── main.py                 # FastAPI Application Entry Point (HTTP + WebSocket)
 │   ├── config.py               # Configuration Settings
+│   ├── gunicorn.conf.py        # Gunicorn Config
 │   │
 │   ├── services/                   # Core Business Logic
 │   │   ├── __init__.py
+│   │   ├── accuracy_service.py     # Verification Logic
+│   │   ├── active_learning_service.py # Proactive Questioning
 │   │   ├── analytics_service.py    # Dashboard Metrics
 │   │   ├── async_job_service.py    # Background Tasks
-│   │   ├── avatar_service.py       # 3D Avatar Lip-Sync (NEW)
+│   │   ├── avatar_service.py       # 3D Avatar Logic
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
+│   │   ├── calendar_service.py     # Google Calendar Integration
 │   │   ├── chat_service.py         # Main Conversation Logic
-│   │   ├── core_memory_service.py  # Long-term Memory (NEW)
+│   │   ├── conversation_analytics_service.py # Topic/Heatmap Analysis
+│   │   ├── core_memory_service.py  # Long-term Memory Summarization
+│   │   ├── creative_service.py     # Dreams/Poems/Stories Engine
 │   │   ├── discord_bot_service.py  # Discord Integration
-│   │   ├── gmail_bot_service.py    # Gmail Integration (NEW)
-│   │   ├── knowledge_service.py    # RAG/Document Handling
+│   │   ├── emotion_service.py      # Sentiment Analysis
+│   │   ├── gmail_bot_service.py    # Gmail Integration
+│   │   ├── knowledge_service.py    # RAG/Document/Brain Station
 │   │   ├── learning_service.py     # Training Logic
-│   │   ├── linkedin_bot_service.py # LinkedIn Integration (NEW)
+│   │   ├── linkedin_bot_service.py # LinkedIn Integration
 │   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
 │   │   ├── logger.py               # Structured Logging
+│   │   ├── memory_search_service.py # Advanced Vector Search
 │   │   ├── memory_service.py       # Vector DB Wrapper
 │   │   ├── middleware.py           # Request Processing
 │   │   ├── mood_service.py         # Emotional State
+│   │   ├── personality_history_service.py # Personality Drift Tracking
 │   │   ├── personality_service.py  # Identity Management
 │   │   ├── rate_limiter.py         # API Throttling
+│   │   ├── realtime_voice_service.py # WebSocket Visualizer/Voice (NEW)
 │   │   ├── scheduler_service.py    # Cron Jobs
 │   │   ├── search_service.py       # Web Search
 │   │   ├── telegram_bot_service.py # Telegram Integration
-│   │   ├── thinking_service.py     # Recursive Thinking (NEW)
-│   │   ├── twitter_bot_service.py  # Twitter/X Integration (NEW)
-│   │   ├── active_learning_service.py # Proactive Learning (NEW)
-│   │   └── vision_service.py       # Image Processing
+│   │   ├── thinking_service.py     # Recursive Thinking (CoT)
+│   │   ├── twitter_bot_service.py  # Twitter/X Integration
+│   │   ├── vision_service.py       # Image/Screen Analysis
+│   │   ├── voice_service.py        # TTS/STT (ElevenLabs/Whisper)
+│   │   └── whatsapp_bot_service.py # WhatsApp Integration
 │   │
 │   ├── parsers/                    # Chat Log Parsers
 │   │   ├── __init__.py
@@ -455,11 +252,12 @@ Chirag-clone/
 │   │
 │   ├── tests/                      # Test Suite
 │   │   ├── test_main.py            # API Tests
-│   │   ├── test_services.py        # Service Tests
+│   │   ├── test_integration.py     # E2E Tests
 │   │   └── ...
 │   │
 │   └── data/                       # Local Storage
 │       ├── chroma_db/              # Vector Database
+│       ├── knowledge/              # PDFs & Docs (Brain Station)
 │       └── personality_profile.json # Learned Traits
 │
 ├── frontend-react/
@@ -476,35 +274,38 @@ Chirag-clone/
 │       ├── App.tsx                 # Routing & Layout
 │       │
 │       ├── components/             # React Components
+│       │   ├── AudioVisualizer.tsx # Web Audio API Viz (NEW)
 │       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
-│       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync (NEW)
+│       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync
 │       │   ├── ChatInterface.tsx   # Main Chat UI + Avatar
 │       │   ├── Dashboard.tsx       # Analytics Home
 │       │   ├── Layout.tsx          # Navigation Wrapper
-│       │   ├── MemoryGraph.tsx     # Knowledge Visualization
+│       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph (NEW)
 │       │   ├── ProfilePage.tsx     # Bot Profile Settings
-│       │   └── TrainingCenter.tsx  # Interactive Training UI
+│       │   ├── ThinkingBubble.tsx  # CoT Visualization
+│       │   ├── TrainingCenter.tsx  # Brain Station + Training
+│       │   └── VoiceChat.tsx       # Live Voice Streaming
 │       │
-│       └── services/
-│           └── api.ts              # API Client
+│       ├── services/
+│       │   └── api.ts              # API Client
+│       │
+│       └── assets/                 # Static Assets
 │
-├── desktop-widget/                 # Electron Desktop App (NEW)
+├── desktop-widget/                 # Electron Desktop App
 │   ├── package.json                # Electron Dependencies
-│   ├── main.js                     # Main Process
+│   ├── main.js                     # Main Process (Screen Capture)
 │   ├── preload.js                  # Secure IPC Bridge
 │   ├── index.html                  # Widget UI
-│   ├── renderer.js                 # Frontend Logic
+│   ├── renderer.js                 # Front Logic (Eye Mode)
 │   └── styles.css                  # Glassmorphism Theme
-│
-├── Dockerfile                      # Production Build Definition
-└── docker-compose.yml              # Container Orchestration
 ```
+
+## 🛡️ Security
+
+- **Local RAG**: Your uploaded documents stay on your machine.
+- **Ephemeral Vision**: Eye Mode screenshots are analyzed in RAM and discarded instantly.
+- **PIN Protection**: Critical training features are locked.
 
 ---
 
-## 🛡️ Security & Privacy
-
-- **Local-First**: Your personality profile and vector data are stored locally in `backend/data/`.
-- **PIN Protection**: The Training Center is protected by a PIN (default: `1234`) to prevent unauthorized changes.
-- **Environment Variables**: API keys are strictly managed via `.env` and never committed.
-- **Draft-Only Social**: Twitter/LinkedIn/Gmail create drafts for review, not auto-posts.
+**v2.3 "Brain Station" Release** - [View Changelog](CHANGELOG.md)
