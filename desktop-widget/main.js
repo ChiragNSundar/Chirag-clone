@@ -1,8 +1,9 @@
 /**
  * Electron Main Process - Desktop Widget for Chirag Clone
  * Creates a floating always-on-top window for quick chat
+ * Now with Eye Mode for proactive screen-aware assistance
  */
-const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, nativeImage, desktopCapturer } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 
@@ -171,6 +172,71 @@ ipcMain.handle('close-window', () => {
     if (mainWindow) {
         mainWindow.hide();
     }
+});
+
+// ============= EYE MODE (Vision) =============
+
+let eyeModeInterval = null;
+let eyeModeEnabled = false;
+
+ipcMain.handle('capture-screen', async () => {
+    try {
+        const sources = await desktopCapturer.getSources({
+            types: ['window', 'screen'],
+            thumbnailSize: { width: 1280, height: 720 }
+        });
+
+        // Find the focused window or use the first screen
+        const focused = sources.find(s => s.name !== 'Chirag Clone Widget') || sources[0];
+
+        if (focused && focused.thumbnail) {
+            const dataUrl = focused.thumbnail.toDataURL();
+            const base64 = dataUrl.split(',')[1];
+            return {
+                success: true,
+                image_base64: base64,
+                window_name: focused.name,
+                mime_type: 'image/png'
+            };
+        }
+        return { success: false, error: 'No screen source found' };
+    } catch (error) {
+        console.error('Screen capture error:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('analyze-screen', async (_, imageBase64, mimeType) => {
+    try {
+        const backendUrl = store.get('backendUrl');
+        const response = await fetch(`${backendUrl}/api/vision/desktop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image_base64: imageBase64,
+                mime_type: mimeType || 'image/png'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Vision analysis error:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('set-eye-mode', (_, enabled) => {
+    eyeModeEnabled = enabled;
+    store.set('eyeModeEnabled', enabled);
+    return { success: true, enabled };
+});
+
+ipcMain.handle('get-eye-mode', () => {
+    return { enabled: store.get('eyeModeEnabled', false) };
 });
 
 // App lifecycle

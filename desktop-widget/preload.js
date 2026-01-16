@@ -13,5 +13,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     closeWindow: () => ipcRenderer.invoke('close-window'),
 
     // Event listeners
-    onShowSettings: (callback) => ipcRenderer.on('show-settings', callback)
+    onShowSettings: (callback) => ipcRenderer.on('show-settings', callback),
+
+    // Eye Mode (Vision) APIs
+    captureScreen: () => ipcRenderer.invoke('capture-screen'),
+    analyzeScreen: (imageBase64, mimeType) => ipcRenderer.invoke('analyze-screen', imageBase64, mimeType),
+    setEyeMode: (enabled) => ipcRenderer.invoke('set-eye-mode', enabled),
+    getEyeMode: () => ipcRenderer.invoke('get-eye-mode')
 });

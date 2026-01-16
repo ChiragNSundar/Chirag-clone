@@ -1,5 +1,6 @@
 /**
  * Renderer Script - Widget frontend logic
+ * Now with Eye Mode for proactive screen-aware assistance
  */
 
 // DOM Elements
@@ -17,20 +18,146 @@ const cancelSettingsBtn = document.getElementById('cancelSettings');
 let backendUrl = 'http://localhost:8000';
 let sessionId = 'widget_' + Math.random().toString(36).substr(2, 9);
 let isLoading = false;
+let eyeModeEnabled = false;
+let eyeModeInterval = null;
+const EYE_MODE_INTERVAL_MS = 30000; // Analyze screen every 30 seconds
 
 // Initialize
 async function init() {
     try {
         backendUrl = await window.electronAPI.getBackendUrl();
         backendUrlInput.value = backendUrl;
+
+        // Check Eye Mode state
+        const eyeModeState = await window.electronAPI.getEyeMode();
+        eyeModeEnabled = eyeModeState.enabled;
+        updateEyeModeUI();
+
+        if (eyeModeEnabled) {
+            startEyeMode();
+        }
     } catch (e) {
-        console.error('Failed to get backend URL:', e);
+        console.error('Failed to initialize:', e);
     }
 
     // Listen for settings request
     window.electronAPI.onShowSettings(() => {
         showSettings();
     });
+
+    // Create Eye Mode toggle button
+    createEyeModeToggle();
+}
+
+// Create Eye Mode toggle button in header
+function createEyeModeToggle() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+
+    const eyeBtn = document.createElement('button');
+    eyeBtn.id = 'btnEyeMode';
+    eyeBtn.className = 'icon-btn';
+    eyeBtn.title = 'Toggle Eye Mode (AI sees your screen)';
+    eyeBtn.innerHTML = '👁️';
+    eyeBtn.style.opacity = eyeModeEnabled ? '1' : '0.5';
+
+    eyeBtn.addEventListener('click', toggleEyeMode);
+
+    // Insert before minimize button
+    header.insertBefore(eyeBtn, btnMinimize);
+}
+
+// Update Eye Mode UI
+function updateEyeModeUI() {
+    const eyeBtn = document.getElementById('btnEyeMode');
+    if (eyeBtn) {
+        eyeBtn.style.opacity = eyeModeEnabled ? '1' : '0.5';
+        eyeBtn.style.background = eyeModeEnabled ? 'rgba(74, 222, 128, 0.2)' : 'transparent';
+    }
+}
+
+// Toggle Eye Mode
+async function toggleEyeMode() {
+    eyeModeEnabled = !eyeModeEnabled;
+    await window.electronAPI.setEyeMode(eyeModeEnabled);
+    updateEyeModeUI();
+
+    if (eyeModeEnabled) {
+        startEyeMode();
+        addMessage('👁️ Eye Mode activated. I can now see your screen and offer proactive help.', 'assistant');
+    } else {
+        stopEyeMode();
+        addMessage('👁️ Eye Mode deactivated.', 'assistant');
+    }
+}
+
+// Start Eye Mode - periodic screen analysis
+function startEyeMode() {
+    if (eyeModeInterval) return;
+
+    // Do an immediate analysis
+    analyzeScreenAndRespond();
+
+    // Set up periodic analysis
+    eyeModeInterval = setInterval(analyzeScreenAndRespond, EYE_MODE_INTERVAL_MS);
+}
+
+// Stop Eye Mode
+function stopEyeMode() {
+    if (eyeModeInterval) {
+        clearInterval(eyeModeInterval);
+        eyeModeInterval = null;
+    }
+}
+
+// Analyze screen and provide proactive response
+async function analyzeScreenAndRespond() {
+    if (!eyeModeEnabled || isLoading) return;
+
+    try {
+        // Capture screen
+        const captureResult = await window.electronAPI.captureScreen();
+
+        if (!captureResult.success) {
+            console.error('Screen capture failed:', captureResult.error);
+            return;
+        }
+
+        // Analyze with vision API
+        const analysisResult = await window.electronAPI.analyzeScreen(
+            captureResult.image_base64,
+            captureResult.mime_type
+        );
+
+        if (analysisResult.success && analysisResult.suggestion) {
+            // Show proactive suggestion
+            showProactiveSuggestion(analysisResult.suggestion, captureResult.window_name);
+        }
+    } catch (error) {
+        console.error('Eye Mode analysis error:', error);
+    }
+}
+
+// Show proactive suggestion as a special message
+function showProactiveSuggestion(suggestion, windowName) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant proactive';
+    messageDiv.innerHTML = `
+        <div class="proactive-header">
+            <span class="eye-icon">👁️</span>
+            <span class="context">Seeing: ${windowName || 'your screen'}</span>
+        </div>
+        <div class="proactive-content">${suggestion}</div>
+    `;
+
+    // Remove welcome message if present
+    const welcome = messagesContainer.querySelector('.welcome-message');
+    if (welcome) {
+        welcome.remove();
+    }
+
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
 // Add message to UI

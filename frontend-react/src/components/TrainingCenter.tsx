@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Upload, MessageSquare, BookOpen,
     Lock, Plus, Trash2, CheckCircle, AlertCircle,
-    RefreshCcw, PenLine, Instagram, Hash
+    RefreshCcw, PenLine, Instagram, Hash, Brain, Search, Link, FileText
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -12,7 +12,7 @@ interface TrainingCenterProps {
     onAuthenticate: () => void;
 }
 
-type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts';
+type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts' | 'brain';
 
 const UploadCard = ({
     title,
@@ -191,6 +191,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         { id: 'journal', label: 'Journal', icon: PenLine },
         { id: 'documents', label: 'Documents', icon: BookOpen },
         { id: 'facts', label: 'Facts', icon: BookOpen },
+        { id: 'brain', label: 'Brain Station', icon: Brain },
     ];
 
     const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -438,6 +439,10 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                     <DocumentUpload />
                 </motion.div>
             )}
+
+            {activeTab === 'brain' && (
+                <BrainStationTab />
+            )}
         </div>
     );
 };
@@ -608,6 +613,356 @@ const DocumentUpload = () => {
                 )}
             </AnimatePresence>
         </div>
+    );
+};
+
+// Brain Station - Knowledge management with drag-and-drop
+const BrainStationTab = () => {
+    const [documents, setDocuments] = useState<Array<{
+        id: string;
+        title: string;
+        filename: string;
+        doc_type: string;
+        category: string;
+        chunk_count: number;
+        char_count: number;
+        added_at: string;
+    }>>([]);
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{
+        content: string;
+        filename: string;
+        relevance: number;
+    }>>([]);
+    const [urlInput, setUrlInput] = useState('');
+    const [textInput, setTextInput] = useState('');
+    const [stats, setStats] = useState<{
+        total_documents: number;
+        total_chunks: number;
+        total_characters: number;
+    } | null>(null);
+    const [dragActive, setDragActive] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Load documents and stats on mount
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [docsRes, statsRes] = await Promise.all([
+                fetch('http://localhost:8000/api/knowledge/documents'),
+                fetch('http://localhost:8000/api/knowledge/stats')
+            ]);
+            const docs = await docsRes.json();
+            const statsData = await statsRes.json();
+            setDocuments(docs.documents || []);
+            setStats(statsData);
+        } catch (e) {
+            console.error('Failed to load knowledge data:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useState(() => { loadData(); });
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            await uploadFile(e.dataTransfer.files[0]);
+        }
+    };
+
+    const uploadFile = async (file: File) => {
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('category', 'general');
+
+            const response = await fetch('http://localhost:8000/api/knowledge/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                await loadData();
+            }
+        } catch (e) {
+            console.error('Upload error:', e);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const deleteDocument = async (docId: string) => {
+        try {
+            await fetch(`http://localhost:8000/api/knowledge/document/${docId}`, {
+                method: 'DELETE'
+            });
+            await loadData();
+        } catch (e) {
+            console.error('Delete error:', e);
+        }
+    };
+
+    const searchKnowledge = async () => {
+        if (!searchQuery.trim()) return;
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:8000/api/knowledge/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: searchQuery, n_results: 5 })
+            });
+            const result = await response.json();
+            setSearchResults(result.results || []);
+        } catch (e) {
+            console.error('Search error:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const addFromUrl = async () => {
+        if (!urlInput.trim()) return;
+        setUploading(true);
+        try {
+            const response = await fetch('http://localhost:8000/api/knowledge/url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput })
+            });
+            if (response.ok) {
+                setUrlInput('');
+                await loadData();
+            }
+        } catch (e) {
+            console.error('URL add error:', e);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const addFromText = async () => {
+        if (!textInput.trim()) return;
+        setUploading(true);
+        try {
+            const response = await fetch('http://localhost:8000/api/knowledge/text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: textInput, title: 'Quick Note' })
+            });
+            if (response.ok) {
+                setTextInput('');
+                await loadData();
+            }
+        } catch (e) {
+            console.error('Text add error:', e);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+        >
+            {/* Stats Header */}
+            <div className="glass-panel p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-purple-500/20 text-purple-400">
+                            <Brain size={24} />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-lg">Brain Station</h3>
+                            <p className="text-sm text-zinc-400">Manage your twin's knowledge base</p>
+                        </div>
+                    </div>
+                    {stats && (
+                        <div className="flex gap-4 text-sm text-zinc-400">
+                            <span>{stats.total_documents} docs</span>
+                            <span>{stats.total_chunks} chunks</span>
+                            <span>{(stats.total_characters / 1000).toFixed(1)}K chars</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Drop Zone */}
+            <div
+                className={`glass-panel p-8 border-2 border-dashed transition-all ${dragActive ? 'border-purple-500 bg-purple-500/10' : 'border-white/10'
+                    }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+            >
+                <div className="text-center">
+                    <FileText size={48} className="mx-auto mb-4 text-zinc-500" />
+                    <p className="text-zinc-400 mb-2">
+                        {uploading ? 'Uploading...' : 'Drop PDFs, TXT, or MD files here'}
+                    </p>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="text-primary hover:underline text-sm"
+                    >
+                        or click to browse
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.txt,.md"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
+                    />
+                </div>
+            </div>
+
+            {/* Quick Add */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* URL Input */}
+                <div className="glass-panel p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Link size={16} className="text-zinc-400" />
+                        <span className="text-sm text-zinc-400">Add from URL</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <input
+                            type="url"
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            placeholder="https://example.com/article"
+                            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
+                        />
+                        <button
+                            onClick={addFromUrl}
+                            disabled={uploading || !urlInput.trim()}
+                            className="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Quick Text */}
+                <div className="glass-panel p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <FileText size={16} className="text-zinc-400" />
+                        <span className="text-sm text-zinc-400">Quick text note</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={textInput}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            placeholder="Add a quick piece of knowledge..."
+                            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
+                        />
+                        <button
+                            onClick={addFromText}
+                            disabled={uploading || !textInput.trim()}
+                            className="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Search */}
+            <div className="glass-panel p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <Search size={16} className="text-zinc-400" />
+                    <span className="text-sm text-zinc-400">Search Knowledge</span>
+                </div>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && searchKnowledge()}
+                        placeholder="Ask your knowledge base..."
+                        className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
+                    />
+                    <button
+                        onClick={searchKnowledge}
+                        disabled={loading || !searchQuery.trim()}
+                        className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
+                    >
+                        Search
+                    </button>
+                </div>
+
+                {/* Search Results */}
+                {searchResults.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                        {searchResults.map((result, i) => (
+                            <div key={i} className="p-3 bg-white/5 rounded-lg">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-zinc-500">{result.filename}</span>
+                                    <span className="text-xs text-purple-400">
+                                        {(result.relevance * 100).toFixed(0)}% match
+                                    </span>
+                                </div>
+                                <p className="text-sm text-zinc-300">{result.content}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Document List */}
+            <div className="glass-panel p-4">
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <BookOpen size={16} className="text-zinc-400" />
+                    Indexed Documents ({documents.length})
+                </h4>
+                {documents.length === 0 ? (
+                    <p className="text-sm text-zinc-500 text-center py-4">
+                        No documents yet. Drop files above to get started!
+                    </p>
+                ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {documents.map((doc) => (
+                            <div key={doc.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                <div>
+                                    <p className="text-sm font-medium">{doc.title || doc.filename}</p>
+                                    <p className="text-xs text-zinc-500">
+                                        {doc.chunk_count} chunks • {(doc.char_count / 1000).toFixed(1)}K chars • {doc.doc_type}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => deleteDocument(doc.id)}
+                                    className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </motion.div>
     );
 };
 

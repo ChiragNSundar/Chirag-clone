@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -1121,6 +1121,271 @@ async def get_available_voices():
         logger.error(f"Voices list error: {e}")
         return {"voices": []}
 
+
+# ============= REAL-TIME VOICE STREAMING =============
+
+class RealtimeAudioChunk(BaseModel):
+    audio_base64: str
+    audio_format: str = "webm"
+    session_id: str = "default"
+
+class RealtimeProcessRequest(BaseModel):
+    session_id: str = "default"
+
+@app.websocket("/api/voice/stream")
+async def realtime_voice_stream(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time voice streaming.
+    
+    Protocol:
+    - Client sends JSON: {"type": "audio", "audio_base64": "...", "format": "webm"}
+    - Client sends JSON: {"type": "end_turn"} to indicate they've stopped speaking
+    - Client sends JSON: {"type": "interrupt"} to stop bot speech
+    - Server sends JSON: {"type": "status", "is_bot_speaking": bool, "is_user_speaking": bool}
+    - Server sends JSON: {"type": "transcript", "text": "..."}
+    - Server sends JSON: {"type": "response", "text": "...", "audio_base64": "...", "format": "mp3"}
+    """
+    await websocket.accept()
+    
+    session_id = f"ws_{id(websocket)}"
+    
+    try:
+        from services.realtime_voice_service import get_realtime_voice_service
+        service = get_realtime_voice_service()
+        
+        # Send initial status
+        await websocket.send_json({
+            "type": "connected",
+            "session_id": session_id,
+            "status": service.get_session_status(session_id)
+        })
+        
+        while True:
+            try:
+                data = await websocket.receive_json()
+                msg_type = data.get("type", "")
+                
+                if msg_type == "audio":
+                    # Handle incoming audio chunk
+                    result = await service.handle_audio_chunk(
+                        session_id,
+                        data.get("audio_base64", ""),
+                        data.get("format", "webm")
+                    )
+                    
+                    if result.get("status") == "interrupted":
+                        await websocket.send_json({
+                            "type": "interrupted",
+                            "message": result.get("message", "")
+                        })
+                    
+                elif msg_type == "end_turn":
+                    # User finished speaking, process audio
+                    result = await service.process_buffered_audio(session_id)
+                    
+                    if result.get("status") == "success":
+                        # Send transcript
+                        await websocket.send_json({
+                            "type": "transcript",
+                            "text": result.get("transcript", "")
+                        })
+                        
+                        # Send response
+                        await websocket.send_json({
+                            "type": "response",
+                            "text": result.get("response_text", ""),
+                            "audio_base64": result.get("response_audio"),
+                            "format": "mp3",
+                            "confidence": result.get("confidence", 0),
+                            "mood": result.get("mood", {})
+                        })
+                    elif result.get("status") == "error":
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": result.get("message", "Processing failed")
+                        })
+                
+                elif msg_type == "interrupt":
+                    # User interrupts bot speech
+                    service.mark_bot_speech_complete(session_id)
+                    await websocket.send_json({
+                        "type": "interrupted",
+                        "message": "Bot speech stopped"
+                    })
+                
+                elif msg_type == "status":
+                    # Send current status
+                    await websocket.send_json({
+                        "type": "status",
+                        **service.get_session_status(session_id)
+                    })
+                
+                elif msg_type == "bot_speech_complete":
+                    # Client signals bot audio playback finished
+                    service.mark_bot_speech_complete(session_id)
+                
+            except Exception as e:
+                logger.error(f"WebSocket message error: {e}")
+                await websocket.send_json({
+                    "type": "error",
+                    "message": str(e)
+                })
+                
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected: {session_id}")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        # Clean up session
+        try:
+            from services.realtime_voice_service import get_realtime_voice_service
+            service = get_realtime_voice_service()
+            service.end_session(session_id)
+        except Exception:
+            pass
+
+@app.post("/api/voice/realtime/chunk")
+async def handle_realtime_audio_chunk(request: RealtimeAudioChunk):
+    """HTTP fallback for sending audio chunks (for browsers without WebSocket)."""
+    try:
+        from services.realtime_voice_service import get_realtime_voice_service
+        service = get_realtime_voice_service()
+        
+        result = await service.handle_audio_chunk(
+            request.session_id,
+            request.audio_base64,
+            request.audio_format
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Realtime chunk error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/voice/realtime/process")
+async def process_realtime_audio(request: RealtimeProcessRequest):
+    """HTTP fallback for processing buffered audio."""
+    try:
+        from services.realtime_voice_service import get_realtime_voice_service
+        service = get_realtime_voice_service()
+        
+        result = await service.process_buffered_audio(request.session_id)
+        return result
+    except Exception as e:
+        logger.error(f"Realtime process error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/voice/realtime/status/{session_id}")
+async def get_realtime_session_status(session_id: str):
+    """Get status of a real-time voice session."""
+    try:
+        from services.realtime_voice_service import get_realtime_voice_service
+        service = get_realtime_voice_service()
+        return service.get_session_status(session_id)
+    except Exception as e:
+        logger.error(f"Realtime status error: {e}")
+        return {"error": str(e)}
+
+# ============= DESKTOP VISION ENDPOINTS =============
+
+class DesktopVisionRequest(BaseModel):
+    image_base64: str
+    mime_type: str = "image/png"
+
+@app.post("/api/vision/desktop")
+async def analyze_desktop_screen(request: DesktopVisionRequest):
+    """
+    Analyze a desktop screenshot for proactive assistance.
+    Returns a contextual suggestion based on what the user is viewing.
+    """
+    try:
+        import asyncio
+        from services.vision_service import get_vision_service
+        from services.chat_service import get_chat_service
+        
+        vision_service = get_vision_service()
+        
+        if not vision_service.is_available():
+            return {
+                "success": False,
+                "error": "Vision service not available. Set GEMINI_API_KEY."
+            }
+        
+        # Analyze the screen
+        analysis_result = await asyncio.to_thread(
+            vision_service.analyze_image,
+            request.image_base64,
+            "Describe what you see on this desktop screen. Focus on the main application and what task the user appears to be working on.",
+            request.mime_type
+        )
+        
+        if not analysis_result.get("success"):
+            return {
+                "success": False,
+                "error": analysis_result.get("error", "Analysis failed")
+            }
+        
+        screen_description = analysis_result.get("description", "")
+        
+        # Generate proactive suggestion using chat service
+        chat_service = get_chat_service()
+        
+        suggestion_prompt = f"""Based on what I can see on the user's screen:
+{screen_description}
+
+As their digital twin assistant, provide ONE brief, helpful suggestion or tip related to what they're doing. Be concise (1-2 sentences max). If nothing helpful comes to mind, respond with just "null"."""
+
+        suggestion, _, _ = await asyncio.to_thread(
+            chat_service.generate_response,
+            suggestion_prompt,
+            session_id="vision_proactive"
+        )
+        
+        # Don't return trivial suggestions
+        if suggestion.lower().strip() in ["null", "none", "", "n/a"]:
+            return {
+                "success": True,
+                "suggestion": None,
+                "screen_context": screen_description[:200]
+            }
+        
+        return {
+            "success": True,
+            "suggestion": suggestion,
+            "screen_context": screen_description[:200]
+        }
+        
+    except Exception as e:
+        logger.error(f"Desktop vision error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/vision/analyze")
+async def analyze_image_endpoint(request: DesktopVisionRequest):
+    """General image analysis endpoint."""
+    try:
+        import asyncio
+        from services.vision_service import get_vision_service
+        
+        vision_service = get_vision_service()
+        
+        if not vision_service.is_available():
+            return {
+                "success": False,
+                "error": "Vision service not available"
+            }
+        
+        result = await asyncio.to_thread(
+            vision_service.analyze_image,
+            request.image_base64,
+            "Describe what you see in this image in detail.",
+            request.mime_type
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Image analysis error: {e}")
+        return {"success": False, "error": str(e)}
+
 # ============= MEMORY SEARCH ENDPOINTS =============
 
 @app.get("/api/memory/search")
@@ -1188,6 +1453,195 @@ async def get_daily_prompt():
         return {"prompt": service.generate_daily_prompt()}
     except Exception as e:
         return {"prompt": "Write about something meaningful to you."}
+
+# ============= KNOWLEDGE MANAGEMENT ENDPOINTS =============
+
+class KnowledgeTextRequest(BaseModel):
+    content: str
+    title: str = "Quick Note"
+    category: str = "general"
+
+class KnowledgeUrlRequest(BaseModel):
+    url: str
+    category: str = "general"
+
+class KnowledgeQueryRequest(BaseModel):
+    query: str
+    n_results: int = 5
+    category: Optional[str] = None
+
+@app.get("/api/knowledge/documents")
+async def list_knowledge_documents():
+    """List all indexed knowledge documents."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        service = get_knowledge_service()
+        documents = service.list_documents()
+        return {"documents": documents}
+    except Exception as e:
+        logger.error(f"Knowledge list error: {e}")
+        return {"documents": [], "error": str(e)}
+
+@app.get("/api/knowledge/stats")
+async def get_knowledge_stats():
+    """Get knowledge base statistics."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        service = get_knowledge_service()
+        return service.get_stats()
+    except Exception as e:
+        logger.error(f"Knowledge stats error: {e}")
+        return {"total_documents": 0, "total_chunks": 0, "total_characters": 0, "error": str(e)}
+
+@app.post("/api/knowledge/upload")
+async def upload_knowledge_document(
+    file: UploadFile = File(...),
+    category: str = Form("general"),
+    title: Optional[str] = Form(None)
+):
+    """Upload a document to the knowledge base."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        
+        content = await file.read()
+        filename = file.filename or "document.txt"
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'txt'
+        
+        service = get_knowledge_service()
+        
+        if ext == 'pdf':
+            # Extract text from PDF
+            try:
+                import fitz
+                import io
+                pdf_doc = fitz.open(stream=content, filetype="pdf")
+                text_content = ""
+                for page in pdf_doc:
+                    text_content += page.get_text() + "\n\n"
+                pdf_doc.close()
+            except Exception as e:
+                return {"success": False, "error": f"PDF parsing failed: {e}"}
+        else:
+            text_content = content.decode('utf-8', errors='replace')
+        
+        if not text_content.strip():
+            return {"success": False, "error": "Document is empty"}
+        
+        result = service.add_document(
+            content=text_content,
+            filename=filename,
+            doc_type=ext,
+            title=title,
+            category=category
+        )
+        
+        return {"success": True, **result}
+        
+    except Exception as e:
+        logger.error(f"Knowledge upload error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/knowledge/text")
+async def add_knowledge_text(request: KnowledgeTextRequest):
+    """Add text content directly to knowledge base."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        
+        service = get_knowledge_service()
+        result = service.add_document(
+            content=request.content,
+            filename=f"{request.title}.txt",
+            doc_type="txt",
+            title=request.title,
+            category=request.category
+        )
+        
+        return {"success": True, **result}
+        
+    except Exception as e:
+        logger.error(f"Knowledge text error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/knowledge/url")
+async def add_knowledge_from_url(request: KnowledgeUrlRequest):
+    """Fetch and add content from a URL to knowledge base."""
+    try:
+        import asyncio
+        import aiohttp
+        from bs4 import BeautifulSoup
+        from services.knowledge_service import get_knowledge_service
+        
+        # Fetch URL content
+        async with aiohttp.ClientSession() as session:
+            async with session.get(request.url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                if response.status != 200:
+                    return {"success": False, "error": f"Failed to fetch URL: HTTP {response.status}"}
+                html = await response.text()
+        
+        # Extract text from HTML
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style", "nav", "footer", "header"]):
+            script.decompose()
+        
+        # Get text
+        text = soup.get_text(separator='\n', strip=True)
+        
+        if not text.strip():
+            return {"success": False, "error": "No text content found at URL"}
+        
+        # Get page title
+        title = soup.title.string if soup.title else request.url
+        
+        service = get_knowledge_service()
+        result = service.add_document(
+            content=text[:50000],  # Limit to 50K chars
+            filename=f"url_{hash(request.url) % 10000}.txt",
+            doc_type="url",
+            title=title[:100],
+            category=request.category
+        )
+        
+        return {"success": True, **result}
+        
+    except Exception as e:
+        logger.error(f"Knowledge URL error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/knowledge/query")
+async def query_knowledge_base(request: KnowledgeQueryRequest):
+    """Query the knowledge base for relevant content."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        
+        service = get_knowledge_service()
+        results = service.query_knowledge(
+            query=request.query,
+            n_results=request.n_results,
+            category=request.category
+        )
+        
+        return {"results": results}
+        
+    except Exception as e:
+        logger.error(f"Knowledge query error: {e}")
+        return {"results": [], "error": str(e)}
+
+@app.delete("/api/knowledge/document/{doc_id}")
+async def delete_knowledge_document(doc_id: str):
+    """Delete a document from the knowledge base."""
+    try:
+        from services.knowledge_service import get_knowledge_service
+        
+        service = get_knowledge_service()
+        success = service.delete_document(doc_id)
+        
+        return {"success": success}
+        
+    except Exception as e:
+        logger.error(f"Knowledge delete error: {e}")
+        return {"success": False, "error": str(e)}
 
 # ============= PERSONALITY HISTORY ENDPOINTS =============
 
