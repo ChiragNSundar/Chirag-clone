@@ -63,6 +63,14 @@ This update transforms the clone from a chatbot into a proactive, seeing, and li
 - **Request Timing**: All responses now include `X-Response-Time` header.
 - **Global Exception Handler**: Catches unhandled exceptions and returns user-friendly error messages.
 
+### ⚡ Performance Optimizations
+
+- **GZip Compression**: All responses >500 bytes are compressed (60-80% bandwidth savings).
+- **`http_pool.py` (NEW)**: Connection pooling for external HTTP requests with automatic retry and exponential backoff.
+- **Async Caching**: New `async_cached` decorator supports both sync and async functions with TTL-based invalidation.
+- **System Metrics**: New `/api/system/metrics` endpoint for monitoring cache hit rates, memory usage, and connection pool status.
+- **Graceful Shutdown**: Proper cleanup of HTTP connections and cache on server shutdown.
+
 ---
 
 ## [2.2.0] - 2026-01-15

@@ -193,3 +193,67 @@ def cached(ttl_seconds: int = 300, prefix: str = ''):
         
         return wrapper
     return decorator
+
+
+# Async-aware cache decorator
+import asyncio
+from functools import wraps
+
+def async_cached(ttl_seconds: int = 300, prefix: str = ''):
+    """
+    Async-compatible cache decorator for both sync and async functions.
+    
+    Args:
+        ttl_seconds: Cache TTL in seconds
+        prefix: Key prefix for cache organization
+    """
+    def decorator(func):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            cache = get_cache_service()
+            
+            # Generate cache key (exclude 'self' from key generation)
+            cache_args = args[1:] if args and hasattr(args[0], '__class__') else args
+            key_base = f"{prefix}:{func.__name__}" if prefix else func.__name__
+            key = f"{key_base}:{cache._generate_key(*cache_args, **kwargs)}"
+            
+            # Try cache first
+            result = cache.get(key)
+            if result is not None:
+                return result
+            
+            # Execute function
+            if asyncio.iscoroutinefunction(func):
+                result = await func(*args, **kwargs)
+            else:
+                result = await asyncio.to_thread(func, *args, **kwargs)
+            
+            # Cache result (don't cache None or empty results)
+            if result is not None:
+                cache.set(key, result, ttl_seconds)
+            return result
+        
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            cache = get_cache_service()
+            
+            cache_args = args[1:] if args and hasattr(args[0], '__class__') else args
+            key_base = f"{prefix}:{func.__name__}" if prefix else func.__name__
+            key = f"{key_base}:{cache._generate_key(*cache_args, **kwargs)}"
+            
+            result = cache.get(key)
+            if result is not None:
+                return result
+            
+            result = func(*args, **kwargs)
+            
+            if result is not None:
+                cache.set(key, result, ttl_seconds)
+            return result
+        
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return sync_wrapper
+    
+    return decorator
+

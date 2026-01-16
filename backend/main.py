@@ -44,6 +44,10 @@ app = FastAPI(
 app.add_middleware(GlobalExceptionMiddleware)
 app.add_middleware(RequestValidationMiddleware, max_body_size=Config.MAX_REQUEST_SIZE_MB * 1024 * 1024)
 
+# Add GZip compression for optimized response sizes (60-80% smaller)
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)  # Compress responses > 500 bytes
+
 # CORS Configuration - allow all localhost ports for development
 app.add_middleware(
     CORSMiddleware,
@@ -93,6 +97,24 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown."""
     logger.info("🛑 Chirag Clone API shutting down...")
+    
+    # Cleanup HTTP connection pool
+    try:
+        from services.http_pool import cleanup_http_pool
+        await cleanup_http_pool()
+        logger.info("✅ HTTP connection pool closed")
+    except Exception as e:
+        logger.warning(f"⚠️ HTTP pool cleanup: {e}")
+    
+    # Clear cache
+    try:
+        from services.cache_service import get_cache_service
+        cache = get_cache_service()
+        stats = cache.get_stats()
+        cache.clear()
+        logger.info(f"✅ Cache cleared (was {stats['size']} entries, {stats['hit_rate']}% hit rate)")
+    except Exception as e:
+        logger.warning(f"⚠️ Cache cleanup: {e}")
 
 # Serve static frontend in production
 import pathlib
@@ -145,6 +167,58 @@ async def get_chat_service():
     return _get_service()
 
 # --- Routes ---
+
+@app.get("/api/system/metrics")
+async def system_metrics():
+    """
+    Get system performance metrics.
+    Useful for monitoring cache efficiency, memory usage, and connection pool status.
+    """
+    import psutil
+    import os
+    
+    metrics = {
+        "timestamp": time.time(),
+        "process": {}
+    }
+    
+    # Process memory
+    try:
+        process = psutil.Process(os.getpid())
+        memory_info = process.memory_info()
+        metrics["process"] = {
+            "memory_mb": round(memory_info.rss / (1024 * 1024), 2),
+            "cpu_percent": process.cpu_percent(),
+            "threads": process.num_threads()
+        }
+    except Exception:
+        pass
+    
+    # Cache stats
+    try:
+        from services.cache_service import get_cache_service
+        cache = get_cache_service()
+        metrics["cache"] = cache.get_stats()
+    except Exception:
+        metrics["cache"] = {"available": False}
+    
+    # HTTP pool stats
+    try:
+        from services.http_pool import get_http_pool
+        pool = get_http_pool()
+        if pool._session and not pool._session.closed:
+            connector = pool._session.connector
+            metrics["http_pool"] = {
+                "active": True,
+                "limit": connector.limit if connector else 0,
+                "limit_per_host": connector.limit_per_host if connector else 0
+            }
+        else:
+            metrics["http_pool"] = {"active": False}
+    except Exception:
+        metrics["http_pool"] = {"available": False}
+    
+    return metrics
 
 @app.get("/api/health")
 async def health_check(detailed: bool = False):

@@ -305,6 +305,7 @@ Chirag-clone/
 ### Health & System
 
 - `GET /api/health`: System status, version, and service health checks (supports `?detailed=true`).
+- `GET /api/system/metrics`: Cache stats, memory usage, connection pool status.
 - `GET /api/profile`: Get the bot's personality profile and stats.
 
 ### 🧠 Brain Station (Knowledge)

@@ -1,5 +1,5 @@
-# Docker Compose for Chirag Clone v2.3
-# FastAPI backend + React frontend + Voice/Vision/Brain Station features
+# Docker Compose for Chirag Clone v2.3.1
+# FastAPI backend + React frontend + Voice/Vision/Brain Station + Performance Optimizations
 
 services:
   chirag-clone:
@@ -47,24 +47,36 @@ services:
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
       - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
+
+      # Performance tuning
+      - MALLOC_ARENA_MAX=2
+      - PYTHONHASHSEED=random
     volumes:
       - chirag_data:/app/backend/data
+      - chirag_logs:/app/backend/logs
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 45s
     deploy:
       resources:
         limits:
-          memory: 3G
+          memory: 4G
           cpus: '2.0'
         reservations:
           memory: 1G
           cpus: '0.5'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   chirag_data:
+    driver: local
+  chirag_logs:
     driver: local
