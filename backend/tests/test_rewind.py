@@ -197,8 +197,10 @@ class TestRewindService:
         from services.rewind_service import RewindFrame
         
         now = datetime.now()
+        # Populate buffer in chronological order (Oldest -> Newest)
+        # i=4 (4 mins ago) -> i=0 (Now)
         with service._lock:
-            for i in range(5):
+            for i in reversed(range(5)):
                 service._buffer.append(RewindFrame(
                     timestamp=now - timedelta(minutes=i),
                     window_name=f"Window {i}",

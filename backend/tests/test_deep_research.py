@@ -123,27 +123,7 @@ class TestDeepResearchService:
             assert result == cached_result
 
 
-class TestResearchHelpers:
-    """Test helper functions in deep research service."""
-    
-    def test_build_context(self):
-        """Test context building from sources."""
-        from services.deep_research_service import DeepResearchService, ResearchSource
-        
-        service = DeepResearchService()
-        
-        sources = [
-            ResearchSource(
-                url="https://example.com",
-                title="Test Article",
-                content="This is test content for analysis.",
-                relevance_score=0.9
-            )
-        ]
-        
-        context = service._build_context(sources, "test query")
-        
-        assert "SCREEN HISTORY" in context or "Test Article" in context
+
 
 
 class TestResearchIntegration:

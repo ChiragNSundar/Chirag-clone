@@ -13,7 +13,7 @@ cachetools==6.2.4
 certifi==2025.11.12
 charset-normalizer==3.4.4
 chroma-hnswlib==0.7.3
-chromadb==0.4.22
+chromadb
 click==8.3.1
 colorama==0.4.6
 coloredlogs==15.0.1
@@ -43,7 +43,7 @@ h11==0.16.0
 httpcore==1.0.9
 httplib2==0.31.0
 httptools==0.7.1
-httpx==0.28.1
+httpx==0.25.2
 huggingface-hub==0.36.0
 humanfriendly==10.0
 idna==3.11
@@ -66,16 +66,7 @@ numpy==1.26.2
 oauthlib==3.3.1
 onnxruntime==1.23.2
 openai==1.6.1
-opentelemetry-api==1.39.1
-opentelemetry-exporter-otlp-proto-common==1.39.1
-opentelemetry-exporter-otlp-proto-grpc==1.39.1
-opentelemetry-instrumentation==0.60b1
-opentelemetry-instrumentation-asgi==0.60b1
-opentelemetry-instrumentation-fastapi==0.60b1
-opentelemetry-proto==1.39.1
-opentelemetry-sdk==1.39.1
-opentelemetry-semantic-conventions==0.60b1
-opentelemetry-util-http==0.60b1
+# opentelemetry removed to allow auto-resolution
 overrides==7.7.0
 packaging==25.0
 pandas==2.1.4
@@ -84,7 +75,7 @@ pluggy==1.6.0
 posthog==7.4.2
 primp==0.15.0
 proto-plus==1.27.0
-protobuf==4.25.8
+protobuf>=3.20.0
 pulsar-client==3.8.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
@@ -96,9 +87,9 @@ pyparsing==3.3.1
 PyPika==0.48.9
 pyproject_hooks==1.2.0
 pyreadline3==3.5.4
-pytest==9.0.2
-pytest-asyncio==0.23.5
-pytest-cov==4.1.0
+pytest
+pytest-asyncio
+pytest-cov
 python-dateutil==2.8.2
 python-dotenv==1.0.0
 python-engineio==4.13.0

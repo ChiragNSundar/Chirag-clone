@@ -37,7 +37,7 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         expect(screen.getByPlaceholderText(/type a message/i)).toBeInTheDocument();
-        expect(screen.getByRole('button')).toBeInTheDocument();
+        expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
     });
 
     it('shows empty state when no messages', () => {
@@ -58,7 +58,8 @@ describe('ChatInterface', () => {
     it('disables send button when input is empty', () => {
         render(<ChatInterface />);
 
-        const sendButton = screen.getByRole('button');
+        const buttons = screen.getAllByRole('button');
+        const sendButton = buttons[buttons.length - 1];
         expect(sendButton).toBeDisabled();
     });
 
@@ -68,7 +69,8 @@ describe('ChatInterface', () => {
         const input = screen.getByPlaceholderText(/type a message/i);
         await userEvent.type(input, 'Hello');
 
-        const sendButton = screen.getByRole('button');
+        const buttons = screen.getAllByRole('button');
+        const sendButton = buttons[buttons.length - 1];
         expect(sendButton).not.toBeDisabled();
     });
 
@@ -87,7 +89,8 @@ describe('ChatInterface', () => {
         const input = screen.getByPlaceholderText(/type a message/i);
         await userEvent.type(input, 'Hello');
 
-        const sendButton = screen.getByRole('button');
+        const buttons = screen.getAllByRole('button');
+        const sendButton = buttons[buttons.length - 1];
         await userEvent.click(sendButton);
 
         await waitFor(() => {
@@ -130,9 +133,13 @@ describe('ChatInterface', () => {
 
         render(<ChatInterface />);
 
-        const input = screen.getByPlaceholderText(/type a message/i);
+        const input = screen.getByPlaceholderText('Type a message...');
+        // The first button might be the microphone/voice button, second is send
+        const buttons = screen.getAllByRole('button');
+        const sendButton = buttons[buttons.length - 1];
+
         await userEvent.type(input, 'Hello');
-        await userEvent.click(screen.getByRole('button'));
+        await userEvent.click(sendButton);
 
         // Check for thinking indicator
         await waitFor(() => {

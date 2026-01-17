@@ -1,0 +1,22 @@
+{
+  "5eb32f0d827d": {
+    "id": "5eb32f0d827d",
+    "filename": "Test Document.txt",
+    "title": "Test Document",
+    "doc_type": "txt",
+    "category": "general",
+    "chunk_count": 1,
+    "char_count": 35,
+    "added_at": "2026-01-17T22:04:13.709409"
+  },
+  "bd2e178385f3": {
+    "id": "bd2e178385f3",
+    "filename": "France Facts.txt",
+    "title": "France Facts",
+    "doc_type": "txt",
+    "category": "general",
+    "chunk_count": 1,
+    "char_count": 68,
+    "added_at": "2026-01-17T22:04:13.865215"
+  }
+}

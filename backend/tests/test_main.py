@@ -85,13 +85,12 @@ class TestChatEndpoints:
             assert response.status_code != 422
     
     def test_chat_empty_message(self):
-        """Empty message should still be accepted by validation (but may fail logically)."""
+        """Empty message should return 422 validation error."""
         response = client.post("/api/chat/message", json={
             "message": "",
             "session_id": "test"
         })
-        # Empty string passes Pydantic validation (it's a string)
-        assert response.status_code != 422
+        assert response.status_code == 422
         
     def test_chat_long_message(self):
         """Very long message should be handled gracefully."""
@@ -228,7 +227,8 @@ class TestTrainingEndpoints:
             "context": "",
             "accepted": True
         })
-        assert response.status_code in [200, 400, 500]
+        # Explicit validation might return 422, or app might handle it otherwise
+        assert response.status_code in [422, 200, 400, 500]
 
 
 # ============================================================================

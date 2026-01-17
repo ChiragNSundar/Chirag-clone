@@ -15,7 +15,7 @@ class TestLocalVoiceService:
         with patch('services.local_voice_service.HAS_FASTER_WHISPER', False), \
              patch('services.local_voice_service.HAS_PIPER', False):
             from services.local_voice_service import LocalVoiceService
-            return LocalVoiceService()
+            yield LocalVoiceService()
     
     def test_init(self, service):
         """Test service initialization."""

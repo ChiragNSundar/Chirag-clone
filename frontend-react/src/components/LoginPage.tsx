@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Chrome, Loader2, Shield, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
@@ -20,7 +20,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
     // Check OAuth status on mount
-    useState(() => {
+    useEffect(() => {
         fetch('/api/auth/status')
             .then((res) => res.json())
             .then(setOauthStatus)
@@ -33,7 +33,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             localStorage.setItem('auth_token', token);
             onLoginSuccess?.();
         }
-    });
+
+    }, [onLoginSuccess]);
 
     const handleGoogleLogin = async () => {
         if (isLoading || !oauthStatus?.google) return;

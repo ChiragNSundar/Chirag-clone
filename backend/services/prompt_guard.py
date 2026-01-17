@@ -12,12 +12,15 @@ from services.logger import get_logger
 logger = get_logger(__name__)
 
 
-class ThreatLevel(Enum):
-    SAFE = "safe"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+
+from enum import IntEnum
+
+class ThreatLevel(IntEnum):
+    SAFE = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    CRITICAL = 4
 
 
 @dataclass
@@ -44,7 +47,7 @@ class PromptGuard:
     # Patterns that indicate prompt injection attempts
     INJECTION_PATTERNS = [
         # System prompt extraction
-        (r"ignore\s+(previous|all|prior)\s+(instructions|prompts)", ThreatLevel.CRITICAL, "instruction_override"),
+        (r"ignore\s+(all\s+)?(previous|prior|existing)\s+(instructions|prompts)", ThreatLevel.CRITICAL, "instruction_override"),
         (r"disregard\s+(your|the)\s+(previous|above)", ThreatLevel.CRITICAL, "instruction_override"),
         (r"forget\s+(everything|all|what)\s+(you|i)", ThreatLevel.HIGH, "memory_manipulation"),
         
