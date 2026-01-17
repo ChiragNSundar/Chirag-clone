@@ -12,10 +12,16 @@
 - **VAD Integration**: Voice Activity Detection using `webrtcvad` with energy-based fallback.
 - **VoiceState Enum**: Enhanced state machine for conversation tracking.
 
-### 🔐 Security
-- **OAuth2 Login**: Google and GitHub social login via `authlib`.
-- **JWT Tokens**: Secure token-based authentication.
-- **LoginPage**: New React component for social login UI.
+### 🔐 Security & Auth
+- **Google-Only Auth**: Simplified authentication to exclusively use Google OAuth2 (GitHub removed), ensuring stricter access control.
+- **Circuit Breakers**: Added `CircuitBreaker` pattern to `backend/services/circuit_breaker.py` preventing cascading failures.
+- **Hybrid RAG**: Implemented Reciprocal Rank Fusion combining BM25 keyword search with semantic vector search.
+- **Prompt Guard**: 5-level threat detection system identifying prompt injection.
+
+### 🧪 Test Suite Expansion
+- **Backend Coverage**: Added comprehensive tests for `auth_service`, `realtime_voice_service`, `prompt_guard`, `hybrid_rag`, and `circuit_breaker`.
+- **Frontend Tests**: Added Vitest mocks and component tests for `VoiceChat`, `Dashboard`, and `LoginPage`.
+- **Reliability**: Implemented mocks for complex services (WebSocket, MediaRecorder, OpenAI).
 
 ---
 

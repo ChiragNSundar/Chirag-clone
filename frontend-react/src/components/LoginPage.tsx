@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Chrome, Github, Loader2, Shield, AlertCircle } from 'lucide-react';
+import { Chrome, Loader2, Shield, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
 
 interface LoginPageProps {
@@ -9,14 +9,13 @@ interface LoginPageProps {
 
 interface OAuthStatus {
     google: boolean;
-    github: boolean;
 }
 
 /**
- * LoginPage - OAuth2 Social Login
+ * LoginPage - Google OAuth2 Login
  */
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
-    const [isLoading, setIsLoading] = useState<'google' | 'github' | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [oauthStatus, setOauthStatus] = useState<OAuthStatus | null>(null);
 
@@ -25,7 +24,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         fetch('/api/auth/status')
             .then((res) => res.json())
             .then(setOauthStatus)
-            .catch(() => setOauthStatus({ google: false, github: false }));
+            .catch(() => setOauthStatus({ google: false }));
 
         // Check for token in URL (callback)
         const params = new URLSearchParams(window.location.search);
@@ -39,7 +38,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     const handleGoogleLogin = async () => {
         if (isLoading || !oauthStatus?.google) return;
 
-        setIsLoading('google');
+        setIsLoading(true);
         setError(null);
 
         try {
@@ -55,37 +54,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 window.location.href = data.url;
             } else {
                 setError('Failed to initiate Google login');
-                setIsLoading(null);
+                setIsLoading(false);
             }
         } catch (err) {
             setError('Failed to connect to server');
-            setIsLoading(null);
-        }
-    };
-
-    const handleGithubLogin = async () => {
-        if (isLoading || !oauthStatus?.github) return;
-
-        setIsLoading('github');
-        setError(null);
-
-        try {
-            const redirectUri = `${window.location.origin}/auth/callback/github`;
-            const response = await fetch(`/api/auth/github/url?redirect_uri=${encodeURIComponent(redirectUri)}`);
-            const data = await response.json();
-
-            if (data.url) {
-                if (data.state) {
-                    localStorage.setItem('oauth_state', data.state);
-                }
-                window.location.href = data.url;
-            } else {
-                setError('Failed to initiate GitHub login');
-                setIsLoading(null);
-            }
-        } catch (err) {
-            setError('Failed to connect to server');
-            setIsLoading(null);
+            setIsLoading(false);
         }
     };
 
@@ -129,41 +102,20 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleGoogleLogin}
-                        disabled={isLoading !== null || !oauthStatus?.google}
+                        disabled={isLoading || !oauthStatus?.google}
                         className={clsx(
-                            'w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium transition-all',
+                            'w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-medium transition-all text-lg',
                             oauthStatus?.google
-                                ? 'bg-white text-zinc-900 hover:bg-zinc-100'
+                                ? 'bg-white text-zinc-900 hover:bg-zinc-100 shadow-lg'
                                 : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                         )}
                     >
-                        {isLoading === 'google' ? (
-                            <Loader2 size={20} className="animate-spin" />
+                        {isLoading ? (
+                            <Loader2 size={24} className="animate-spin" />
                         ) : (
-                            <Chrome size={20} />
+                            <Chrome size={24} />
                         )}
-                        {oauthStatus?.google ? 'Continue with Google' : 'Google not configured'}
-                    </motion.button>
-
-                    {/* GitHub Login */}
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleGithubLogin}
-                        disabled={isLoading !== null || !oauthStatus?.github}
-                        className={clsx(
-                            'w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium transition-all',
-                            oauthStatus?.github
-                                ? 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700'
-                                : 'bg-zinc-800/50 text-zinc-500 cursor-not-allowed border border-zinc-800'
-                        )}
-                    >
-                        {isLoading === 'github' ? (
-                            <Loader2 size={20} className="animate-spin" />
-                        ) : (
-                            <Github size={20} />
-                        )}
-                        {oauthStatus?.github ? 'Continue with GitHub' : 'GitHub not configured'}
+                        {oauthStatus?.google ? 'Sign in with Google' : 'Google not configured'}
                     </motion.button>
 
                     {/* Divider */}

@@ -28,7 +28,7 @@
 - **Robustness**: Circuit Breakers + Rate Limiting + Model Fallback
 - **Vector DB**: ChromaDB (Local persistence)
 - **Real-Time**: WebSockets for Voice & Vision
-- **Auth**: OAuth2 (Google/GitHub) + JWT + Admin Access Control
+- **Auth**: OAuth2 (Google) + JWT + Admin Access Control
 - **Task Management**: AsyncIO + APScheduler
 - **PDF/Web Processing**: PyMuPDF + BeautifulSoup
 
@@ -56,7 +56,7 @@
 
 ### 🔐 Security & Auth (v2.6)
 
-- **OAuth2 Login**: Secure Google and GitHub social login flows.
+- **OAuth2 Login**: Secure Google social login flow.
 - **Admin Access Control**: Training center restricted to authorized admins (`chiragns12@gmail.com`).
 - **JWT Authentication**: Stateless, secure interactions.
 
@@ -154,7 +154,7 @@ graph TD
         end
         
         subgraph "Core Services"
-            Guard --> Auth["Auth Service (OAuth2)"]
+            Guard --> Auth["Auth Service (Google)"]
             Guard --> Fallback["Model Fallback Manager"]
             Fallback --> L["LLM (Gemini/OpenAI/Local)"]
             
@@ -164,6 +164,7 @@ graph TD
             
             Guard --> Realtime["Realtime Voice"]
             Guard --> Research["Deep Research"]
+            Guard --> Auto["Social Autopilot"]
         end
     end
 ```
@@ -261,21 +262,21 @@ Chirag-clone/
 │   │   ├── active_learning_service.py # Proactive Questioning
 │   │   ├── analytics_service.py    # Dashboard Metrics
 │   │   ├── async_job_service.py    # Background Tasks
-│   │   ├── auth_service.py         # OAuth2 & JWT Logic (NEW)
+│   │   ├── auth_service.py         # OAuth2 & JWT Logic 
 │   │   ├── avatar_service.py       # 3D Avatar Logic
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
 │   │   ├── calendar_service.py     # Google Calendar Integration
-│   │   ├── circuit_breaker.py      # Fault Tolerance (NEW)
+│   │   ├── circuit_breaker.py      # Fault Tolerance 
 │   │   ├── chat_service.py         # Main Conversation Logic
 │   │   ├── conversation_analytics_service.py # Topic/Heatmap Analysis
 │   │   ├── core_memory_service.py  # Long-term Memory Summarization
 │   │   ├── creative_service.py     # Dreams/Poems/Stories Engine
-│   │   ├── deep_research.py        # Autonomous Research Agent (NEW)
+│   │   ├── deep_research.py        # Autonomous Research Agent 
 │   │   ├── discord_bot_service.py  # Discord Integration
 │   │   ├── emotion_service.py      # Sentiment Analysis
 │   │   ├── gmail_bot_service.py    # Gmail Integration
-│   │   ├── hybrid_rag.py           # BM25 + Semantic Search (NEW)
+│   │   ├── hybrid_rag.py           # BM25 + Semantic Search 
 │   │   ├── knowledge_service.py    # RAG/Document/Brain Station
 │   │   ├── learning_service.py     # Training Logic
 │   │   ├── linkedin_bot_service.py # LinkedIn Integration
@@ -284,14 +285,14 @@ Chirag-clone/
 │   │   ├── memory_search_service.py # Advanced Vector Search
 │   │   ├── memory_service.py       # Vector DB Wrapper
 │   │   ├── middleware.py           # Legacy Middleware
-│   │   ├── model_fallback.py       # LLM Cascade Fallback (NEW)
+│   │   ├── model_fallback.py       # LLM Cascade Fallback 
 │   │   ├── mood_service.py         # Emotional State
 │   │   ├── personality_history_service.py # Personality Drift Tracking
 │   │   ├── personality_service.py  # Identity Management
-│   │   ├── prompt_guard.py         # Injection Protection (NEW)
+│   │   ├── prompt_guard.py         # Injection Protection 
 │   │   ├── rate_limiter.py         # API Throttling
 │   │   ├── realtime_voice_service.py # WebSocket Visualizer/Voice
-│   │   ├── rewind_service.py       # Screen Memory (NEW)
+│   │   ├── rewind_service.py       # Screen Memory 
 │   │   ├── scheduler_service.py    # Cron Jobs
 │   │   ├── search_service.py       # Web Search
 │   │   ├── telegram_bot_service.py # Telegram Integration
@@ -302,12 +303,12 @@ Chirag-clone/
 │   │   └── whatsapp_bot_service.py # WhatsApp Integration
 │   │
 │   ├── middleware/                 # Middleware Layer
-│   │   └── security.py             # CSP & Sanitization (NEW)
+│   │   └── security.py             # CSP & Sanitization 
 │   │
 │   ├── models/
-│   │   └── validation.py           # Pydantic v2 Models (NEW)
+│   │   └── validation.py           # Pydantic v2 Models 
 │   │
-│   ├── migrations/                 # Alembic Database Migrations (NEW)
+│   ├── migrations/                 # Alembic Database Migrations 
 │   │   └── versions/
 │   │
 │   ├── parsers/                    # Chat Log Parsers
@@ -317,10 +318,14 @@ Chirag-clone/
 │   │   ├── smart_parser.py         # Auto-format Detector
 │   │   └── whatsapp_parser.py      # WhatsApp Text Parser
 │   │
-│   ├── tests/                      # Test Suite
-│   │   ├── test_main.py            # API Tests
-│   │   ├── test_integration.py     # E2E Tests
-│   │   └── ...
+│   │   ├── tests/                      # Test Suite
+│   │   │   ├── test_main.py             # API Tests
+│   │   │   ├── test_auth.py             # Auth & Security Tests 
+│   │   │   ├── test_voice.py            # Real-time Voice Tests 
+│   │   │   ├── test_prompt_guard.py     # Injection Protection Tests 
+│   │   │   ├── test_hybrid_rag.py       # Knowledge Retrieval Tests 
+│   │   │   ├── test_circuit_breaker.py  # Fault Tolerance Tests 
+│   │   │   └── test_integration.py      # E2E Tests
 │   │
 │   └── data/                       # Local Storage
 │       ├── chroma_db/              # Vector Database
@@ -333,7 +338,7 @@ Chirag-clone/
 │   ├── postcss.config.js
 │   ├── tailwind.config.js
 │   ├── tsconfig.json
-├── .prettierrc                 # Formatting Config (NEW)
+├── .prettierrc                 # Formatting Config 
 │   ├── vite.config.ts
 │   │
 │   └── src/
@@ -346,21 +351,26 @@ Chirag-clone/
 │       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
 │       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync
 │       │   ├── ChatInterface.tsx   # Main Chat UI + Avatar
-│       │   ├── CommandPalette.tsx  # Quick Actions (NEW)
+│       │   ├── CommandPalette.tsx  # Quick Actions 
 │       │   ├── Dashboard.tsx       # Analytics Home
 │       │   ├── Layout.tsx          # Navigation Wrapper
 │       │   ├── LoginPage.tsx       # Social Login (NEW)
 │       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph
 │       │   ├── ProfilePage.tsx     # Bot Profile Settings
-│       │   ├── SettingsPanel.tsx   # Preferences & Theme (NEW)
+│       │   ├── SettingsPanel.tsx   # Preferences & Theme 
 │       │   ├── ThinkingBubble.tsx  # CoT Visualization
 │       │   ├── TrainingCenter.tsx  # Brain Station + Training
-│       │   └── VoiceChat.tsx       # Live Voice Streaming
+│       │   ├── VoiceChat.tsx       # Live Voice Streaming
+│       │   │
+│       │   ├── __tests__/          # Component Tests 
+│       │   │   ├── LoginPage.test.tsx
+│       │   │   ├── VoiceChat.test.tsx
+│       │   │   └── Dashboard.test.tsx
 │       │
 │       ├── utils/
-│       │   └── lazyLoad.tsx        # Lazy Loading HOCs (NEW)
+│       │   └── lazyLoad.tsx        # Lazy Loading HOCs 
 │       │
-│       ├── e2e/                    # End-to-End Tests (NEW)
+│       ├── e2e/                    # End-to-End Tests 
 │       │   └── app.spec.ts         # Playwright Spec
 │       │
 │       ├── services/
@@ -478,4 +488,4 @@ Chirag-clone/
 
 ---
 
-**v2.3 "Brain Station" Release** - [View Changelog](CHANGELOG.md)
+**v2.6 "Production Ready" Release** - [View Changelog](CHANGELOG.md)

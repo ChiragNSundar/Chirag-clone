@@ -1,6 +1,6 @@
 """
 OAuth2 Authentication Service
-Handles Google and GitHub OAuth2 authentication flows.
+Handles Google OAuth2 authentication.
 """
 import os
 import secrets
@@ -21,8 +21,6 @@ logger = get_logger(__name__)
 # Configuration from environment
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID", "")
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET", "")
 
 # Admin Access Control - Only these emails can access training
 ALLOWED_ADMIN_EMAILS = os.getenv(
@@ -38,11 +36,6 @@ JWT_EXPIRY_HOURS = 24 * 7  # 1 week
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
-
-GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
-GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
-GITHUB_USER_URL = "https://api.github.com/user"
-GITHUB_EMAILS_URL = "https://api.github.com/user/emails"
 
 
 @dataclass
@@ -76,7 +69,7 @@ class AuthService:
     
     Supports:
     - Google OAuth2
-    - GitHub OAuth2
+    - Google OAuth2
     - JWT token generation and validation
     """
     
@@ -88,8 +81,6 @@ class AuthService:
         """Log configuration status."""
         if not GOOGLE_CLIENT_ID:
             logger.warning("GOOGLE_CLIENT_ID not set - Google OAuth disabled")
-        if not GITHUB_CLIENT_ID:
-            logger.warning("GITHUB_CLIENT_ID not set - GitHub OAuth disabled")
     
     def get_google_auth_url(self, redirect_uri: str, state: Optional[str] = None) -> str:
         """
@@ -118,30 +109,6 @@ class AuthService:
         query = "&".join(f"{k}={v}" for k, v in params.items())
         return f"{GOOGLE_AUTH_URL}?{query}", state
     
-    def get_github_auth_url(self, redirect_uri: str, state: Optional[str] = None) -> str:
-        """
-        Generate GitHub OAuth2 authorization URL.
-        
-        Args:
-            redirect_uri: Callback URL after auth
-            state: Optional state parameter for CSRF protection
-            
-        Returns:
-            Authorization URL to redirect user to
-        """
-        if not GITHUB_CLIENT_ID:
-            raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
-        
-        state = state or secrets.token_urlsafe(32)
-        params = {
-            "client_id": GITHUB_CLIENT_ID,
-            "redirect_uri": redirect_uri,
-            "scope": "user:email read:user",
-            "state": state
-        }
-        query = "&".join(f"{k}={v}" for k, v in params.items())
-        return f"{GITHUB_AUTH_URL}?{query}", state
-    
     async def exchange_google_code(self, code: str, redirect_uri: str) -> User:
         """
         Exchange Google authorization code for user info.
@@ -152,118 +119,81 @@ class AuthService:
             
         Returns:
             Authenticated User object
+            
+        Raises:
+            HTTPException: If authentication fails
         """
         import httpx
         
-        # Exchange code for tokens
-        async with httpx.AsyncClient() as client:
-            token_response = await client.post(
-                GOOGLE_TOKEN_URL,
-                data={
-                    "client_id": GOOGLE_CLIENT_ID,
-                    "client_secret": GOOGLE_CLIENT_SECRET,
-                    "code": code,
-                    "grant_type": "authorization_code",
-                    "redirect_uri": redirect_uri
-                }
-            )
-            
-            if token_response.status_code != 200:
-                logger.error(f"Google token exchange failed: {token_response.text}")
-                raise HTTPException(status_code=401, detail="Failed to authenticate with Google")
-            
-            tokens = token_response.json()
-            access_token = tokens.get("access_token")
-            
-            # Get user info
-            userinfo_response = await client.get(
-                GOOGLE_USERINFO_URL,
-                headers={"Authorization": f"Bearer {access_token}"}
-            )
-            
-            if userinfo_response.status_code != 200:
-                raise HTTPException(status_code=401, detail="Failed to get user info from Google")
-            
-            userinfo = userinfo_response.json()
-            
-            user = User(
-                id=f"google_{userinfo['id']}",
-                email=userinfo.get("email", ""),
-                name=userinfo.get("name", userinfo.get("email", "")),
-                picture=userinfo.get("picture"),
-                provider="google"
-            )
-            
-            logger.info(f"User authenticated via Google: {user.email}")
-            return user
-    
-    async def exchange_github_code(self, code: str, redirect_uri: str) -> User:
-        """
-        Exchange GitHub authorization code for user info.
+        if not code or not code.strip():
+            raise HTTPException(status_code=400, detail="Authorization code is required")
         
-        Args:
-            code: Authorization code from GitHub
-            redirect_uri: Same redirect URI used in auth request
-            
-        Returns:
-            Authenticated User object
-        """
-        import httpx
+        if not redirect_uri or not redirect_uri.strip():
+            raise HTTPException(status_code=400, detail="Redirect URI is required")
         
-        async with httpx.AsyncClient() as client:
-            # Exchange code for token
-            token_response = await client.post(
-                GITHUB_TOKEN_URL,
-                headers={"Accept": "application/json"},
-                data={
-                    "client_id": GITHUB_CLIENT_ID,
-                    "client_secret": GITHUB_CLIENT_SECRET,
-                    "code": code,
-                    "redirect_uri": redirect_uri
-                }
-            )
-            
-            if token_response.status_code != 200:
-                logger.error(f"GitHub token exchange failed: {token_response.text}")
-                raise HTTPException(status_code=401, detail="Failed to authenticate with GitHub")
-            
-            tokens = token_response.json()
-            access_token = tokens.get("access_token")
-            
-            if not access_token:
-                raise HTTPException(status_code=401, detail="No access token from GitHub")
-            
-            # Get user info
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Accept": "application/json"
-            }
-            
-            user_response = await client.get(GITHUB_USER_URL, headers=headers)
-            if user_response.status_code != 200:
-                raise HTTPException(status_code=401, detail="Failed to get user info from GitHub")
-            
-            userinfo = user_response.json()
-            
-            # Get email (may be private)
-            email = userinfo.get("email")
-            if not email:
-                emails_response = await client.get(GITHUB_EMAILS_URL, headers=headers)
-                if emails_response.status_code == 200:
-                    emails = emails_response.json()
-                    primary_email = next((e for e in emails if e.get("primary")), None)
-                    email = primary_email.get("email") if primary_email else emails[0].get("email") if emails else ""
-            
-            user = User(
-                id=f"github_{userinfo['id']}",
-                email=email or f"{userinfo.get('login')}@github.local",
-                name=userinfo.get("name") or userinfo.get("login", ""),
-                picture=userinfo.get("avatar_url"),
-                provider="github"
-            )
-            
-            logger.info(f"User authenticated via GitHub: {user.email}")
-            return user
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                # Exchange code for tokens
+                token_response = await client.post(
+                    GOOGLE_TOKEN_URL,
+                    data={
+                        "client_id": GOOGLE_CLIENT_ID,
+                        "client_secret": GOOGLE_CLIENT_SECRET,
+                        "code": code,
+                        "grant_type": "authorization_code",
+                        "redirect_uri": redirect_uri
+                    }
+                )
+                
+                if token_response.status_code != 200:
+                    logger.error(f"Google token exchange failed: {token_response.text}")
+                    raise HTTPException(status_code=401, detail="Failed to authenticate with Google")
+                
+                tokens = token_response.json()
+                access_token = tokens.get("access_token")
+                
+                if not access_token:
+                    logger.error("Google OAuth: No access token in response")
+                    raise HTTPException(status_code=401, detail="Invalid response from Google")
+                
+                # Get user info
+                userinfo_response = await client.get(
+                    GOOGLE_USERINFO_URL,
+                    headers={"Authorization": f"Bearer {access_token}"}
+                )
+                
+                if userinfo_response.status_code != 200:
+                    logger.error(f"Google userinfo failed: {userinfo_response.text}")
+                    raise HTTPException(status_code=401, detail="Failed to get user info from Google")
+                
+                userinfo = userinfo_response.json()
+                
+                if not userinfo.get("id"):
+                    logger.error("Google userinfo missing user ID")
+                    raise HTTPException(status_code=401, detail="Invalid user info from Google")
+                
+                user = User(
+                    id=f"google_{userinfo['id']}",
+                    email=userinfo.get("email", ""),
+                    name=userinfo.get("name", userinfo.get("email", "")),
+                    picture=userinfo.get("picture"),
+                    provider="google"
+                )
+                
+                logger.info(f"User authenticated via Google: {user.email}")
+                return user
+                
+        except httpx.TimeoutException:
+            logger.error("Google OAuth: Request timed out")
+            raise HTTPException(status_code=504, detail="Authentication request timed out")
+        except httpx.RequestError as e:
+            logger.error(f"Google OAuth: Network error - {e}")
+            raise HTTPException(status_code=502, detail="Network error during authentication")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Google OAuth: Unexpected error - {e}")
+            raise HTTPException(status_code=500, detail="Authentication failed unexpectedly")
     
     def generate_jwt(self, user: User) -> str:
         """
@@ -308,8 +238,7 @@ class AuthService:
     def get_oauth_status(self) -> Dict[str, bool]:
         """Get status of OAuth providers."""
         return {
-            "google": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET),
-            "github": bool(GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET)
+            "google": bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
         }
 
 

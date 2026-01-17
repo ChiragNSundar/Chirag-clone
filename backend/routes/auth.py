@@ -1,6 +1,6 @@
 """
 OAuth2 Authentication Routes
-Endpoints for Google and GitHub OAuth2 login flows.
+Endpoints for Google OAuth2 login flow.
 """
 from fastapi import APIRouter, Query, HTTPException, Request, Depends
 from fastapi.responses import RedirectResponse
@@ -32,14 +32,6 @@ async def get_google_auth_url(redirect_uri: str = Query(...)):
     return {"url": url, "state": state}
 
 
-@router.get("/github/url")
-async def get_github_auth_url(redirect_uri: str = Query(...)):
-    """Get GitHub OAuth authorization URL."""
-    auth_service = get_auth_service()
-    url, state = auth_service.get_github_auth_url(redirect_uri)
-    return {"url": url, "state": state}
-
-
 @router.get("/google/callback")
 async def google_callback(
     code: str = Query(...),
@@ -55,35 +47,6 @@ async def google_callback(
     
     try:
         user = await auth_service.exchange_google_code(code, redirect_uri)
-        token = auth_service.generate_jwt(user)
-        
-        return {
-            "success": True,
-            "token": token,
-            "user": user.to_dict(),
-            "is_admin": is_admin(user.email)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/github/callback")
-async def github_callback(
-    code: str = Query(...),
-    state: Optional[str] = Query(None),
-    redirect_uri: str = Query(...)
-):
-    """
-    Handle GitHub OAuth callback.
-    
-    Returns JWT token for authenticated user.
-    """
-    auth_service = get_auth_service()
-    
-    try:
-        user = await auth_service.exchange_github_code(code, redirect_uri)
         token = auth_service.generate_jwt(user)
         
         return {
@@ -120,4 +83,3 @@ async def logout():
     by removing the token. This endpoint is for API completeness.
     """
     return {"success": True, "message": "Logged out"}
-
