@@ -159,3 +159,11 @@ psutil>=5.9.0
 # Uvicorn Production Performance
 uvloop>=0.19.0; sys_platform != 'win32'
 httptools>=0.6.0
+
+# Local-First Voice (offline TTS/STT)
+faster-whisper>=1.0.0
+piper-tts>=1.2.0
+
+# Image processing for Rewind feature
+Pillow>=10.0.0
+

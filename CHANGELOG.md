@@ -1,6 +1,47 @@
 # Changelog
 
-All notable changes to the "Chirag Clone" project will be documented in this file.
+
+## [2.5.0] - 2026-01-17
+
+### 🚀 Major Features
+- **Production Robustness**: Introduced a comprehensive suite of reliability features.
+    - **Circuit Breakers**: Added `CircuitBreaker` pattern to `backend/services/circuit_breaker.py` preventing cascading failures from external API outages.
+    - **Hybrid RAG**: Implemented Reciprocal Rank Fusion combining BM25 keyword search with semantic vector search in `backend/services/hybrid_rag.py`.
+    - **Model Fallback**: Automated fallback system (Gemini → GPT-4o → Local) in `backend/services/model_fallback.py`.
+
+### 🔒 Security
+- **Prompt Guard**: 5-level threat detection system identifying prompt injection, role-playing attacks, and jailbreaks.
+- **Security Middleware**: Added CSP, XSS protection, and SQL injection detection in `backend/middleware/security.py`.
+- **Strict Validation**: Migrated all data models to strict Pydantic v2 schemas in `backend/models/validation.py`.
+
+### 🏗️ Infrastructure
+- **Docker Compose**: Enhanced stack with Redis (caching) and ChromaDB (vector storage) services.
+- **E2E Testing**: Added Playwright test suite (`frontend-react/e2e/`) covering navigation, chat, and accessibility.
+- **Migrations**: Setup Alembic for database migrations.
+
+## [2.4.2] - 2026-01-17
+
+### ⚡ Performance & UX
+- **Command Palette**: Added `Cmd+K` interface for global navigation and quick actions.
+- **Lazy Loading**: Implemented code-splitting for all major routes (Dashboard, Training, etc.) reducing initial bundle size.
+- **Settings Panel**: New centralized settings UI with theme toggle (Dark/Light/System) and preference persistence.
+- **Async Caching**: Added request coalescing decorator to prevent "thundering herd" issues on high-traffic endpoints.
+
+## [2.4.1] - 2026-01-17
+
+### 🧪 Quality Assurance
+- **Frontend Tests**: Added Vitest unit tests for Dashboard, ChatInterface, and ThinkingBubble.
+- **Components**: Added `ErrorBoundary`, `Toast` notifications, and accessible `Skeleton` loaders.
+- **Hooks**: Added `useUtilities` collection (debounce, localStorage, mediaQuery).
+
+## [2.4.0] - 2026-01-17
+
+### 🌟 Core Capabilities
+- **Deep Research**: Agentic web research capable of recursive searching and report generation.
+- **Rewind Memory**: Desktop screen recording buffer allowing "What was I looking at?" queries.
+- **Local Voice**: Offline-first TTS/STT using `faster-whisper` and `piper-tts`.
+- **Performance Monitor**: Middleware for tracking API latency and error rates.
+
 
 ## [2.3.1] - 2026-01-16
 

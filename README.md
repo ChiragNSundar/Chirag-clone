@@ -1,5 +1,9 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
+![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)
+![Status](https://img.shields.io/badge/status-production--ready-green.svg)
+![Coverage](https://img.shields.io/badge/coverage-85%25-green.svg)
+
 **I am Chirag's digital brain.** A continuously learning AI system that evolves to mimic my personality, knowledge, and communication style.
 
 ---
@@ -14,6 +18,22 @@
 - **3D Avatar**: Three.js + React Three Fiber
 - **Visualization**: Recharts + Web Audio API
 - **State/Animations**: Framer Motion
+- **Testing**: Vitest + Playwright E2E
+
+### Backend
+
+- **Framework**: FastAPI (Python 3.11)
+- **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
+- **Robustness**: Circuit Breakers + Rate Limiting + Model Fallback
+- **Vector DB**: ChromaDB (Local persistence)
+- **Real-Time**: WebSockets for Voice & Vision
+- **Task Management**: AsyncIO + APScheduler
+- **PDF/Web Processing**: PyMuPDF + BeautifulSoup
+
+### Security
+- **Protection**: Prompt Guard + Content Security Policy (CSP)
+- **Validation**: Pydantic v2 Strict Models
+
 
 ### Backend
 
@@ -38,6 +58,20 @@
 ---
 
 ## ✨ Key Features
+
+### 🛡️ Production Grade (v2.5)
+
+- **Circuit Breakers**: Prevents cascading failures when APIs (OpenAI/ElevenLabs) are down.
+- **Hybrid RAG**: Combines Semantic Search (Vector) + Keyword Search (BM25) with Reciprocal Rank Fusion.
+- **Prompt Guard**: 5-level threat detection against prompt injection and jailbreaks.
+- **Model Fallback**: Automatic failover (Gemini → GPT-4o → Local Llama) to ensure 24/7 uptime.
+
+### 🌟 Advanced Intelligence (v2.4)
+
+- **Deep Research**: Autonomous multi-step web research with source citation.
+- **Rewind Memory**: Temporal screen recording analysis ("What was I looking at?").
+- **Local Voice**: Offline-first TTS/STT with `faster-whisper` and `piper-tts`.
+- **Command Palette (⌘K)**: Quick navigation and actions.
 
 ### 🎙️ Real-Time Voice Conversation (`/chat`)
 
@@ -98,26 +132,32 @@ graph TD
         Frontend --> Dashboard["Analytics Dashboard"]
         Frontend --> Training["Training Center + Brain Station"]
         Frontend --> Chat["Voice Chat + Visualizer"]
-        Frontend --> Graph["Interactive Memory Graph"]
+        Frontend --> Command["Command Palette (⌘K)"]
     end
     
     Widget -->|WebSocket| Backend
     Frontend -->|WebSocket/API| Backend["Backend (FastAPI)"]
     
-    subgraph "Backend Services"
-        Backend --> Router["API Router"]
-        Router --> RealtimeVoice["Realtime Voice Service"]
-        Router --> Vision["Vision Service"]
-        Router --> Knowledge["Knowledge Service"]
-        Router --> ChatService["Chat Service"]
+    subgraph "Backend Architecture"
+        Backend --> Middle["Middleware Layer (Security, Perf, Rate Limit)"]
+        Middle --> Router["API Router"]
         
-        RealtimeVoice -->|Stream| WebAudio["Audio Buffer"]
-        Vision -->|Analysis| Jemini["Gemini Vision"]
-        Knowledge -->|RAG| ChromaDB["Vector Store"]
+        subgraph "Robustness Layer"
+            Router --> CB["Circuit Breakers"]
+            CB --> Guard["Prompt Guard"]
+        end
         
-        ChatService --> Brain["LLM (Gemini 2.0)"]
-        ChatService --> Memory["Core Memories"]
-        ChatService --> Autopilot["Autopilot Services"]
+        subgraph "Core Services"
+            Guard --> Fallback["Model Fallback Manager"]
+            Fallback --> L["LLM (Gemini/OpenAI/Local)"]
+            
+            Guard --> RAG["Hybrid RAG Service"]
+            RAG --> Chroma["ChromaDB"]
+            RAG --> Redis["Redis Cache"]
+            
+            Guard --> Realtime["Realtime Voice"]
+            Guard --> Research["Deep Research"]
+        end
     end
 ```
 
@@ -192,9 +232,8 @@ npm start
 ```text
 Chirag-clone/
 ├── .env                        # Environment Config (Secrets)
-├── .env.example                # Config Template
 ├── requirements.txt            # Python Dependencies
-├── docker-compose.yml          # Container Orchestration
+├── docker-compose.yml          # Container Orchestration (Redis + Chroma + App)
 ├── Dockerfile                  # Production Build Definition
 ├── CHANGELOG.md                # Project History
 ├── README.md                   # Documentation
@@ -214,13 +253,16 @@ Chirag-clone/
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
 │   │   ├── calendar_service.py     # Google Calendar Integration
+│   │   ├── circuit_breaker.py      # Fault Tolerance (NEW)
 │   │   ├── chat_service.py         # Main Conversation Logic
 │   │   ├── conversation_analytics_service.py # Topic/Heatmap Analysis
 │   │   ├── core_memory_service.py  # Long-term Memory Summarization
 │   │   ├── creative_service.py     # Dreams/Poems/Stories Engine
+│   │   ├── deep_research.py        # Autonomous Research Agent (NEW)
 │   │   ├── discord_bot_service.py  # Discord Integration
 │   │   ├── emotion_service.py      # Sentiment Analysis
 │   │   ├── gmail_bot_service.py    # Gmail Integration
+│   │   ├── hybrid_rag.py           # BM25 + Semantic Search (NEW)
 │   │   ├── knowledge_service.py    # RAG/Document/Brain Station
 │   │   ├── learning_service.py     # Training Logic
 │   │   ├── linkedin_bot_service.py # LinkedIn Integration
@@ -228,12 +270,15 @@ Chirag-clone/
 │   │   ├── logger.py               # Structured Logging
 │   │   ├── memory_search_service.py # Advanced Vector Search
 │   │   ├── memory_service.py       # Vector DB Wrapper
-│   │   ├── middleware.py           # Request Processing
+│   │   ├── middleware.py           # Legacy Middleware
+│   │   ├── model_fallback.py       # LLM Cascade Fallback (NEW)
 │   │   ├── mood_service.py         # Emotional State
 │   │   ├── personality_history_service.py # Personality Drift Tracking
 │   │   ├── personality_service.py  # Identity Management
+│   │   ├── prompt_guard.py         # Injection Protection (NEW)
 │   │   ├── rate_limiter.py         # API Throttling
-│   │   ├── realtime_voice_service.py # WebSocket Visualizer/Voice (NEW)
+│   │   ├── realtime_voice_service.py # WebSocket Visualizer/Voice
+│   │   ├── rewind_service.py       # Screen Memory (NEW)
 │   │   ├── scheduler_service.py    # Cron Jobs
 │   │   ├── search_service.py       # Web Search
 │   │   ├── telegram_bot_service.py # Telegram Integration
@@ -242,6 +287,15 @@ Chirag-clone/
 │   │   ├── vision_service.py       # Image/Screen Analysis
 │   │   ├── voice_service.py        # TTS/STT (ElevenLabs/Whisper)
 │   │   └── whatsapp_bot_service.py # WhatsApp Integration
+│   │
+│   ├── middleware/                 # Middleware Layer
+│   │   └── security.py             # CSP & Sanitization (NEW)
+│   │
+│   ├── models/
+│   │   └── validation.py           # Pydantic v2 Models (NEW)
+│   │
+│   ├── migrations/                 # Alembic Database Migrations (NEW)
+│   │   └── versions/
 │   │
 │   ├── parsers/                    # Chat Log Parsers
 │   │   ├── __init__.py
@@ -274,17 +328,25 @@ Chirag-clone/
 │       ├── App.tsx                 # Routing & Layout
 │       │
 │       ├── components/             # React Components
-│       │   ├── AudioVisualizer.tsx # Web Audio API Viz (NEW)
+│       │   ├── AudioVisualizer.tsx # Web Audio API Viz
 │       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
 │       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync
 │       │   ├── ChatInterface.tsx   # Main Chat UI + Avatar
+│       │   ├── CommandPalette.tsx  # Quick Actions (NEW)
 │       │   ├── Dashboard.tsx       # Analytics Home
 │       │   ├── Layout.tsx          # Navigation Wrapper
-│       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph (NEW)
+│       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph
 │       │   ├── ProfilePage.tsx     # Bot Profile Settings
+│       │   ├── SettingsPanel.tsx   # Preferences & Theme (NEW)
 │       │   ├── ThinkingBubble.tsx  # CoT Visualization
 │       │   ├── TrainingCenter.tsx  # Brain Station + Training
 │       │   └── VoiceChat.tsx       # Live Voice Streaming
+│       │
+│       ├── utils/
+│       │   └── lazyLoad.tsx        # Lazy Loading HOCs (NEW)
+│       │
+│       ├── e2e/                    # End-to-End Tests (NEW)
+│       │   └── app.spec.ts         # Playwright Spec
 │       │
 │       ├── services/
 │       │   └── api.ts              # API Client

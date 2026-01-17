@@ -239,6 +239,89 @@ ipcMain.handle('get-eye-mode', () => {
     return { enabled: store.get('eyeModeEnabled', false) };
 });
 
+// ============= REWIND MODE (Temporal Memory) =============
+
+let rewindInterval = null;
+let rewindEnabled = false;
+const REWIND_CAPTURE_INTERVAL = 5000; // 5 seconds
+
+ipcMain.handle('start-rewind', async () => {
+    if (rewindInterval) return { success: true, message: 'Already running' };
+
+    rewindEnabled = true;
+    store.set('rewindEnabled', true);
+
+    rewindInterval = setInterval(async () => {
+        if (!rewindEnabled) return;
+
+        try {
+            const sources = await desktopCapturer.getSources({
+                types: ['window', 'screen'],
+                thumbnailSize: { width: 640, height: 360 }
+            });
+
+            // Find focused window (exclude our widget)
+            const focused = sources.find(s => s.name !== 'Chirag Clone Widget') || sources[0];
+
+            if (focused && focused.thumbnail) {
+                const base64 = focused.thumbnail.toDataURL().split(',')[1];
+                const backendUrl = store.get('backendUrl');
+
+                // Send to backend
+                const formData = new URLSearchParams();
+                formData.append('image_base64', base64);
+                formData.append('window_name', focused.name);
+                formData.append('mime_type', 'image/png');
+
+                fetch(`${backendUrl}/api/rewind/frame`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                }).catch(err => console.error('Rewind upload failed:', err));
+            }
+        } catch (error) {
+            console.error('Rewind capture error:', error);
+        }
+    }, REWIND_CAPTURE_INTERVAL);
+
+    return { success: true, message: 'Rewind started', interval: REWIND_CAPTURE_INTERVAL };
+});
+
+ipcMain.handle('stop-rewind', () => {
+    if (rewindInterval) {
+        clearInterval(rewindInterval);
+        rewindInterval = null;
+    }
+    rewindEnabled = false;
+    store.set('rewindEnabled', false);
+    return { success: true, message: 'Rewind stopped' };
+});
+
+ipcMain.handle('get-rewind-status', () => {
+    return {
+        enabled: rewindEnabled,
+        interval: REWIND_CAPTURE_INTERVAL
+    };
+});
+
+ipcMain.handle('query-rewind', async (_, question, timeRangeMinutes = null) => {
+    try {
+        const backendUrl = store.get('backendUrl');
+        const response = await fetch(`${backendUrl}/api/rewind/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                question,
+                time_range_minutes: timeRangeMinutes
+            })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Rewind query error:', error);
+        return { success: false, error: error.message };
+    }
+});
+
 // App lifecycle
 app.whenReady().then(() => {
     createWindow();

@@ -1,5 +1,5 @@
-# Docker Compose for Chirag Clone v2.3.1
-# FastAPI backend + React frontend + Voice/Vision/Brain Station + Performance Optimizations
+# Docker Compose for Chirag Clone v2.5
+# Full stack: FastAPI + React + Redis + ChromaDB + Voice/Vision
 
 services:
   chirag-clone:
@@ -14,6 +14,7 @@ services:
     environment:
       # Core
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-${GEMINI_API_KEY}}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - BOT_NAME=${BOT_NAME:-Chirag}
       - DEBUG=False
@@ -48,6 +49,11 @@ services:
       - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
       - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
 
+      # Redis & ChromaDB
+      - REDIS_URL=redis://redis:6379/0
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+
       # Performance tuning
       - MALLOC_ARENA_MAX=2
       - PYTHONHASHSEED=random
@@ -55,6 +61,11 @@ services:
       - chirag_data:/app/backend/data
       - chirag_logs:/app/backend/logs
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health" ]
       interval: 30s
@@ -74,9 +85,57 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - chirag-network
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: chirag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - chirag-network
+
+  # ChromaDB for vector storage
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chirag-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - chirag-network
 
 volumes:
   chirag_data:
     driver: local
   chirag_logs:
     driver: local
+  redis_data:
+    driver: local
+  chroma_data:
+    driver: local
+
+networks:
+  chirag-network:
+    driver: bridge

@@ -44,6 +44,10 @@ app = FastAPI(
 app.add_middleware(GlobalExceptionMiddleware)
 app.add_middleware(RequestValidationMiddleware, max_body_size=Config.MAX_REQUEST_SIZE_MB * 1024 * 1024)
 
+# Add Security Headers (CSP, XSS Protection)
+from middleware.security import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware, csp_policy="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' ws: wss: https:;")
+
 # Add GZip compression for optimized response sizes (60-80% smaller)
 from starlette.middleware.gzip import GZipMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)  # Compress responses > 500 bytes
@@ -2070,5 +2074,185 @@ async def get_all_drafts():
     
     return all_drafts
 
+
+# ============= Deep Research Endpoints =============
+
+class DeepResearchQuery(BaseModel):
+    query: str = Field(..., min_length=5, max_length=500)
+    max_depth: int = Field(default=3, ge=1, le=5)
+
+
+@app.post("/api/research/deep")
+@rate_limit
+async def deep_research(data: DeepResearchQuery):
+    """
+    Perform deep agentic research on a query.
+    Recursively searches the web, scrapes pages, and synthesizes an answer with citations.
+    """
+    try:
+        from services.deep_research_service import get_deep_research_service
+        
+        service = get_deep_research_service()
+        result = await service.research(data.query, data.max_depth)
+        
+        return {
+            "success": True,
+            "query": result.query,
+            "answer": result.answer,
+            "sources": [s.to_dict() for s in result.sources],
+            "follow_up_queries": result.follow_up_queries,
+            "total_sources_checked": result.total_sources_checked,
+            "research_time_seconds": result.research_time_seconds
+        }
+    except Exception as e:
+        logger.error(f"Deep research error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.websocket("/api/research/stream")
+async def deep_research_stream(websocket: WebSocket):
+    """
+    WebSocket endpoint for streaming deep research progress.
+    Send: {"query": "your question", "max_depth": 3}
+    Receive: Progress events and final result
+    """
+    await websocket.accept()
+    
+    try:
+        data = await websocket.receive_json()
+        query = data.get("query", "")
+        max_depth = data.get("max_depth", 3)
+        
+        if not query or len(query) < 5:
+            await websocket.send_json({"error": "Query too short"})
+            await websocket.close()
+            return
+        
+        from services.deep_research_service import get_deep_research_service
+        service = get_deep_research_service()
+        
+        # Stream progress events
+        async for event in service.research_stream(query, max_depth):
+            await websocket.send_json(event)
+        
+        await websocket.close()
+        
+    except WebSocketDisconnect:
+        logger.info("Research WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"Research stream error: {e}")
+        try:
+            await websocket.send_json({"error": str(e)})
+            await websocket.close()
+        except:
+            pass
+
+
+@app.get("/api/research/status")
+async def research_status():
+    """Get deep research service status."""
+    try:
+        from services.deep_research_service import get_deep_research_service
+        from services.search_service import get_search_service
+        
+        search = get_search_service()
+        
+        return {
+            "available": search.is_available(),
+            "search_engine": "DuckDuckGo",
+            "max_depth": 5,
+            "features": ["recursive_search", "page_scraping", "llm_synthesis", "citations"]
+        }
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+# ============= Desktop Rewind Memory Endpoints =============
+
+class RewindQuery(BaseModel):
+    question: str = Field(..., min_length=3, max_length=500)
+    time_range_minutes: Optional[float] = Field(default=None, ge=0, le=30)
+
+
+@app.post("/api/rewind/frame")
+async def add_rewind_frame(
+    image_base64: str = Form(...),
+    window_name: str = Form(...),
+    mime_type: str = Form(default="image/png")
+):
+    """
+    Add a frame to the rewind buffer.
+    Called by the desktop widget during continuous capture.
+    """
+    try:
+        from services.rewind_service import get_rewind_service
+        service = get_rewind_service()
+        return service.add_frame(image_base64, window_name, mime_type)
+    except Exception as e:
+        logger.error(f"Rewind frame error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/rewind/query")
+@rate_limit
+async def query_rewind(data: RewindQuery):
+    """
+    Query the rewind buffer.
+    Answer questions like "What was I looking at 10 minutes ago?"
+    """
+    try:
+        from services.rewind_service import get_rewind_service
+        import asyncio
+        
+        service = get_rewind_service()
+        result = await asyncio.to_thread(service.query, data.question, data.time_range_minutes)
+        return result
+    except Exception as e:
+        logger.error(f"Rewind query error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/rewind/status")
+async def get_rewind_status():
+    """Get rewind service status."""
+    try:
+        from services.rewind_service import get_rewind_service
+        return get_rewind_service().get_status()
+    except Exception as e:
+        return {"enabled": False, "error": str(e)}
+
+
+@app.get("/api/rewind/timeline")
+async def get_rewind_timeline(limit: int = 20):
+    """Get timeline of recent frames."""
+    try:
+        from services.rewind_service import get_rewind_service
+        return {"timeline": get_rewind_service().get_timeline(limit)}
+    except Exception as e:
+        return {"timeline": [], "error": str(e)}
+
+
+@app.post("/api/rewind/pause")
+async def pause_rewind():
+    """Pause rewind capture."""
+    from services.rewind_service import get_rewind_service
+    return get_rewind_service().pause()
+
+
+@app.post("/api/rewind/resume")
+async def resume_rewind():
+    """Resume rewind capture."""
+    from services.rewind_service import get_rewind_service
+    return get_rewind_service().resume()
+
+
+@app.delete("/api/rewind/clear")
+async def clear_rewind():
+    """Clear rewind buffer (privacy)."""
+    from services.rewind_service import get_rewind_service
+    return get_rewind_service().clear()
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
