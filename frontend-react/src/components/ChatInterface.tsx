@@ -36,7 +36,7 @@ export const ChatInterface = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Avatar state
-    const [showAvatar, setShowAvatar] = useState(true);
+    const [showAvatar, setShowAvatar] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [currentSpeechText, setCurrentSpeechText] = useState('');
 

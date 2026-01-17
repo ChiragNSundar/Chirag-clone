@@ -51,10 +51,12 @@ function App() {
             path="training"
             element={
               <LazyWrapper>
-                <LazyTrainingCenter
-                  isAuthenticated={isTrainingAuthenticated}
-                  onAuthenticate={() => setIsTrainingAuthenticated(true)}
-                />
+                <ErrorBoundary>
+                  <LazyTrainingCenter
+                    isAuthenticated={isTrainingAuthenticated}
+                    onAuthenticate={() => setIsTrainingAuthenticated(true)}
+                  />
+                </ErrorBoundary>
               </LazyWrapper>
             }
           />

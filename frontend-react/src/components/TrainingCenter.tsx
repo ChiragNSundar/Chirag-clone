@@ -665,7 +665,10 @@ const BrainStationTab = () => {
         }
     };
 
-    useState(() => { loadData(); });
+    // Load documents and stats on mount
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
