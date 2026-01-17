@@ -24,7 +24,9 @@ class Config:
     LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'gemini')  # 'gemini', 'openai', 'anthropic', 'ollama'
     
     # Gemini (Primary)
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+    # Supports comma-separated keys for rotation
+    GEMINI_API_KEYS = [k.strip() for k in os.getenv('GEMINI_API_KEY', '').split(',') if k.strip()]
+    GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ''
     GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
     
     # Model Hierarchy (Strictly V2+)
@@ -89,7 +91,7 @@ def validate_config() -> List[str]:
     
     # Check API key configuration based on provider
     if Config.LLM_PROVIDER == 'gemini':
-        if not Config.GEMINI_API_KEY or Config.GEMINI_API_KEY == 'your-gemini-api-key-here':
+        if not Config.GEMINI_API_KEYS or Config.GEMINI_API_KEYS[0] == 'your-gemini-api-key-here':
             warnings.append("GEMINI_API_KEY not configured - chat will not work")
     elif Config.LLM_PROVIDER == 'openai':
         if not Config.OPENAI_API_KEY or Config.OPENAI_API_KEY == 'sk-your-openai-key-here':

@@ -80,6 +80,10 @@ class LLMService:
         self._init_error = None
         self._lazy_init_done = False
         
+        # Key Rotation
+        self._current_key_index = 0
+        self._key_rotation_lock = Lock()
+        
         # Resilience settings
         self.max_retries = getattr(Config, 'LLM_RETRY_COUNT', 3)
         self.request_timeout = getattr(Config, 'LLM_REQUEST_TIMEOUT', 30)
@@ -89,6 +93,30 @@ class LLMService:
         reset_timeout = getattr(Config, 'CIRCUIT_BREAKER_TIMEOUT', 60)
         self._circuit_breaker = CircuitBreaker(failure_threshold, reset_timeout)
     
+    def _rotate_key(self) -> bool:
+        """
+        Rotate to the next available API key.
+        Returns True if rotated, False if no other keys available.
+        """
+        if self.provider != 'gemini' or not Config.GEMINI_API_KEYS or len(Config.GEMINI_API_KEYS) <= 1:
+            return False
+            
+        with self._key_rotation_lock:
+            prev_index = self._current_key_index
+            self._current_key_index = (self._current_key_index + 1) % len(Config.GEMINI_API_KEYS)
+            
+            # Re-initialize client with new key
+            try:
+                import google.generativeai as genai
+                new_key = Config.GEMINI_API_KEYS[self._current_key_index]
+                genai.configure(api_key=new_key)
+                self.client = genai
+                logger.info(f"🔄 Rotated API Key: {prev_index} -> {self._current_key_index}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to rotate key: {e}")
+                return False
+
     def _lazy_init(self):
         """Lazy initialization of LLM client - only when first needed."""
         if self._lazy_init_done:
@@ -104,11 +132,13 @@ class LLMService:
     def _init_client(self):
         """Initialize the appropriate LLM client based on provider."""
         if self.provider == 'gemini':
-            if not Config.GEMINI_API_KEY or Config.GEMINI_API_KEY == 'your-gemini-api-key-here':
+            if not Config.GEMINI_API_KEYS or Config.GEMINI_API_KEYS[0] == 'your-gemini-api-key-here':
                 raise ValueError("Gemini API key not configured. Please set GEMINI_API_KEY in .env file.")
             
             import google.generativeai as genai
-            genai.configure(api_key=Config.GEMINI_API_KEY)
+            # Use current key from rotation
+            current_key = Config.GEMINI_API_KEYS[self._current_key_index]
+            genai.configure(api_key=current_key)
             self.client = genai
             self.model = Config.GEMINI_MODEL
             
@@ -142,11 +172,15 @@ class LLMService:
     def _retry_with_backoff(self, func, *args, **kwargs):
         """
         Execute function with exponential backoff retry.
+        Automatically rotates API keys on quota errors.
         Returns (success, result_or_error)
         """
         last_error = None
         
-        for attempt in range(self.max_retries):
+        # Dynamic retries - if we rotate keys, we can try more times
+        max_attempts = self.max_retries + len(Config.GEMINI_API_KEYS) if Config.GEMINI_API_KEYS else self.max_retries
+        
+        for attempt in range(max_attempts):
             try:
                 result = func(*args, **kwargs)
                 return True, result
@@ -154,16 +188,29 @@ class LLMService:
                 last_error = e
                 error_msg = str(e).lower()
                 
-                # Don't retry on certain errors
+                # Check for Quota/Rate Limit Errors
+                if 'quota' in error_msg or 'limit' in error_msg or '429' in error_msg:
+                    logger.warning(f"Rate limit hit with key {self._current_key_index}: {e}")
+                    
+                    # Try to rotate key
+                    if self._rotate_key():
+                        logger.info("Retrying immediately with new key...")
+                        time.sleep(0.5) # Brief pause before retry
+                        continue
+                    else:
+                         logger.error("No other keys available for rotation.")
+                         return False, e
+                
+                # Don't retry on Auth errors unless we can rotate? 
+                # Usually auth error means invalid key, so maybe we SHOULD rotate.
                 if 'api key' in error_msg or 'authentication' in error_msg:
-                    logger.error(f"Authentication error, not retrying: {e}")
-                    return False, e
+                     logger.warning(f"Auth error with key {self._current_key_index}: {e}")
+                     if self._rotate_key():
+                         logger.info("Rotated key due to auth failure, retrying...")
+                         continue
+                     return False, e
                 
-                if 'quota' in error_msg or 'limit' in error_msg:
-                    logger.error(f"Quota/rate limit error, not retrying: {e}")
-                    return False, e
-                
-                # Exponential backoff
+                # Exponential backoff for other errors
                 if attempt < self.max_retries - 1:
                     wait_time = (2 ** attempt) * 0.5  # 0.5s, 1s, 2s...
                     logger.warning(f"Attempt {attempt + 1} failed, retrying in {wait_time}s: {e}")
