@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Upload, MessageSquare, BookOpen,
@@ -133,6 +133,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const [facts, setFacts] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const loadFacts = async () => {
         try {
@@ -193,8 +194,6 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         { id: 'facts', label: 'Facts', icon: BookOpen },
         { id: 'brain', label: 'Brain Station', icon: Brain },
     ];
-
-    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     const resetAllLearning = async () => {
         try {
