@@ -1,0 +1,47 @@
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | migrations
+    | __pycache__
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = [".git", "__pycache__", ".venv", "migrations"]
+known_first_party = ["services", "parsers", "models", "middleware"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+markers = [
+    "voice: Tests for voice/TTS/STT features",
+    "vision: Tests for vision/image analysis",
+    "knowledge: Tests for Brain Station/RAG",
+    "slow: Tests that take longer to run",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chirag-clone"
+version = "2.6.0"
+description = "Personal AI Digital Twin"
+requires-python = ">=3.11"

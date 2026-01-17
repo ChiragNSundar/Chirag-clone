@@ -1,5 +1,5 @@
-# Docker Compose for Chirag Clone v2.5
-# Full stack: FastAPI + React + Redis + ChromaDB + Voice/Vision
+# Docker Compose for Chirag Clone v2.6
+# Full stack: FastAPI + React + Redis + ChromaDB + Voice/Vision + OAuth2
 
 services:
   chirag-clone:
@@ -20,6 +20,14 @@ services:
       - DEBUG=False
       - LLM_PROVIDER=gemini
       - TRAINING_PASSCODE=${TRAINING_PASSCODE:-1234}
+
+      # OAuth2 Authentication (v2.6)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
+      - JWT_SECRET=${JWT_SECRET:-}
+      - ALLOWED_ADMIN_EMAILS=${ALLOWED_ADMIN_EMAILS:-chiragns12@gmail.com}
 
       # Social Autopilot
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}

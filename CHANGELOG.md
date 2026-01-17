@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.0] - 2026-01-17
+
+### 🛠️ Developer Experience
+- **Pre-commit Hooks**: Added `.pre-commit-config.yaml` with Black, isort, Prettier, ESLint.
+- **pyproject.toml**: Centralized Python tooling configuration.
+- **Prettier/ESLint**: Consistent frontend code formatting.
+
+### 🎙️ Voice Enhancements
+- **Duplex Voice**: Added barge-in capability for interrupting bot mid-speech.
+- **VAD Integration**: Voice Activity Detection using `webrtcvad` with energy-based fallback.
+- **VoiceState Enum**: Enhanced state machine for conversation tracking.
+
+### 🔐 Security
+- **OAuth2 Login**: Google and GitHub social login via `authlib`.
+- **JWT Tokens**: Secure token-based authentication.
+- **LoginPage**: New React component for social login UI.
+
+---
 
 ## [2.5.0] - 2026-01-17
 

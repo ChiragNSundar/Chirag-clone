@@ -1,5 +1,5 @@
 # ============================================================
-# Chirag Clone v2.5 - Production Dockerfile
+# Chirag Clone v2.6 - Production Dockerfile
 # Multi-stage build with security hardening and performance optimizations
 # ============================================================
 
@@ -35,8 +35,8 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 FROM python:3.11-slim
 
 LABEL maintainer="Chirag"
-LABEL description="Chirag Clone - Personal AI Digital Twin v2.5"
-LABEL version="2.5.0"
+LABEL description="Chirag Clone - Personal AI Digital Twin v2.6"
+LABEL version="2.6.0"
 
 # ============== Security Hardening ==============
 # Create non-root user with specific UID/GID

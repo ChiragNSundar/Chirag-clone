@@ -105,3 +105,10 @@ desktop-widget/out/
 # Brain Station Data
 backend/data/knowledge/
 backend/data/knowledge_graph.json
+
+# v2.6 Dev Tools
+.mypy_cache/
+.ruff_cache/
+.pre-commit-config.yaml.save
+coverage.xml
+.estlintcache

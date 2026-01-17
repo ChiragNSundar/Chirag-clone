@@ -170,6 +170,10 @@ async def get_chat_service():
     from services.chat_service import get_chat_service as _get_service
     return _get_service()
 
+# --- Auth Routes ---
+from routes.auth import router as auth_router
+app.include_router(auth_router)
+
 # --- Routes ---
 
 @app.get("/api/system/metrics")

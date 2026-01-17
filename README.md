@@ -1,8 +1,9 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
-![Coverage](https://img.shields.io/badge/coverage-85%25-green.svg)
+![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
+![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
 
 **I am Chirag's digital brain.** A continuously learning AI system that evolves to mimic my personality, knowledge, and communication style.
 
@@ -27,6 +28,7 @@
 - **Robustness**: Circuit Breakers + Rate Limiting + Model Fallback
 - **Vector DB**: ChromaDB (Local persistence)
 - **Real-Time**: WebSockets for Voice & Vision
+- **Auth**: OAuth2 (Google/GitHub) + JWT + Admin Access Control
 - **Task Management**: AsyncIO + APScheduler
 - **PDF/Web Processing**: PyMuPDF + BeautifulSoup
 
@@ -35,14 +37,6 @@
 - **Validation**: Pydantic v2 Strict Models
 
 
-### Backend
-
-- **Framework**: FastAPI (Python 3.11)
-- **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
-- **Vector DB**: ChromaDB (Local persistence)
-- **Real-Time**: WebSockets for Voice & Vision
-- **Task Management**: AsyncIO + APScheduler
-- **PDF/Web Processing**: PyMuPDF + BeautifulSoup
 
 ### Desktop Widget
 
@@ -54,10 +48,22 @@
 - **Containerization**: Docker + Docker Compose (v2.3)
 - **Server**: Uvicorn (ASGI)
 - **Environment**: Dotenv (.env) management
+- **Linting**: Pre-commit hooks (Black, Prettier, ESLint)
 
 ---
 
 ## ✨ Key Features
+
+### 🔐 Security & Auth (v2.6)
+
+- **OAuth2 Login**: Secure Google and GitHub social login flows.
+- **Admin Access Control**: Training center restricted to authorized admins (`chiragns12@gmail.com`).
+- **JWT Authentication**: Stateless, secure interactions.
+
+### 🎙️ Duplex Voice (v2.6)
+
+- **Barge-in Support**: Interrupt the bot mid-sentence naturally.
+- **VAD Integration**: Intelligent Voice Activity Detection using WebRTC.
 
 ### 🛡️ Production Grade (v2.5)
 
@@ -148,6 +154,7 @@ graph TD
         end
         
         subgraph "Core Services"
+            Guard --> Auth["Auth Service (OAuth2)"]
             Guard --> Fallback["Model Fallback Manager"]
             Fallback --> L["LLM (Gemini/OpenAI/Local)"]
             
@@ -232,6 +239,8 @@ npm start
 ```text
 Chirag-clone/
 ├── .env                        # Environment Config (Secrets)
+├── .pre-commit-config.yaml     # Linting Config (NEW)
+├── pyproject.toml              # Python Config (NEW)
 ├── requirements.txt            # Python Dependencies
 ├── docker-compose.yml          # Container Orchestration (Redis + Chroma + App)
 ├── Dockerfile                  # Production Build Definition
@@ -243,12 +252,16 @@ Chirag-clone/
 │   ├── config.py               # Configuration Settings
 │   ├── gunicorn.conf.py        # Gunicorn Config
 │   │
+│   ├── routes/                 # API Routes (NEW)
+│   │   └── auth.py             # OAuth2 Routes
+│   │
 │   ├── services/                   # Core Business Logic
 │   │   ├── __init__.py
 │   │   ├── accuracy_service.py     # Verification Logic
 │   │   ├── active_learning_service.py # Proactive Questioning
 │   │   ├── analytics_service.py    # Dashboard Metrics
 │   │   ├── async_job_service.py    # Background Tasks
+│   │   ├── auth_service.py         # OAuth2 & JWT Logic (NEW)
 │   │   ├── avatar_service.py       # 3D Avatar Logic
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
@@ -320,6 +333,7 @@ Chirag-clone/
 │   ├── postcss.config.js
 │   ├── tailwind.config.js
 │   ├── tsconfig.json
+├── .prettierrc                 # Formatting Config (NEW)
 │   ├── vite.config.ts
 │   │
 │   └── src/
@@ -335,6 +349,7 @@ Chirag-clone/
 │       │   ├── CommandPalette.tsx  # Quick Actions (NEW)
 │       │   ├── Dashboard.tsx       # Analytics Home
 │       │   ├── Layout.tsx          # Navigation Wrapper
+│       │   ├── LoginPage.tsx       # Social Login (NEW)
 │       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph
 │       │   ├── ProfilePage.tsx     # Bot Profile Settings
 │       │   ├── SettingsPanel.tsx   # Preferences & Theme (NEW)
