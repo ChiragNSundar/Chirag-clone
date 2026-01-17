@@ -12,6 +12,7 @@ import {
 } from './utils/lazyLoad';
 // ChatInterface remains eager loaded as it's the main entry point often accessed
 import { ChatInterface } from './components/ChatInterface';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   const [isTrainingAuthenticated, setIsTrainingAuthenticated] = useState(false);
@@ -27,7 +28,12 @@ function App() {
           } />
 
           {/* ChatInterface is eager loaded for speed */}
-          <Route path="chat" element={<ChatInterface />} />
+          {/* ChatInterface is eager loaded for speed */}
+          <Route path="chat" element={
+            <ErrorBoundary>
+              <ChatInterface />
+            </ErrorBoundary>
+          } />
 
           <Route path="memory" element={
             <LazyWrapper>

@@ -2,7 +2,7 @@
  * Avatar3D Component - 3D avatar with lip-sync capability
  * Uses Three.js via React Three Fiber and Ready Player Me GLB models
  */
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
@@ -188,7 +188,7 @@ interface Avatar3DProps {
 export function Avatar3D({
     speaking = false,
     text = '',
-    avatarUrl = 'https://models.readyplayer.me/64bfa15f0e72c63d7c3934e6.glb',
+    avatarUrl = 'https://models.readyplayer.me/658be9e8fc8be93dc963db81.glb',
     visible = true
 }: Avatar3DProps) {
     const [isLoading, setIsLoading] = useState(true);
@@ -268,12 +268,14 @@ export function Avatar3D({
                 <directionalLight position={[5, 5, 5]} intensity={0.8} />
                 <directionalLight position={[-5, 3, -5]} intensity={0.4} />
 
-                <AvatarModel
-                    url={customAvatarUrl}
-                    speaking={speaking}
-                    text={text}
-                    onLoadComplete={handleLoadComplete}
-                />
+                <Suspense fallback={null}>
+                    <AvatarModel
+                        url={customAvatarUrl}
+                        speaking={speaking}
+                        text={text}
+                        onLoadComplete={handleLoadComplete}
+                    />
+                </Suspense>
 
                 <OrbitControls
                     enableZoom={false}
@@ -288,6 +290,6 @@ export function Avatar3D({
 }
 
 // Preload default avatar
-useGLTF.preload('https://models.readyplayer.me/64bfa15f0e72c63d7c3934e6.glb');
+useGLTF.preload('https://models.readyplayer.me/658be9e8fc8be93dc963db81.glb');
 
 export default Avatar3D;

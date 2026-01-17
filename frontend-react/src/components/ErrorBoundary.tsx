@@ -1,5 +1,5 @@
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
 interface Props {
     children: ReactNode;
@@ -9,109 +9,47 @@ interface Props {
 interface State {
     hasError: boolean;
     error: Error | null;
-    errorInfo: ErrorInfo | null;
 }
 
-/**
- * Error Boundary Component
- * Catches JavaScript errors anywhere in the child component tree and displays a fallback UI.
- */
 export class ErrorBoundary extends Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = { hasError: false, error: null, errorInfo: null };
-    }
-
-    static getDerivedStateFromError(error: Error): State {
-        return { hasError: true, error, errorInfo: null };
-    }
-
-    componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
-        this.setState({ errorInfo });
-
-        // Optional: Send to error reporting service
-        // reportError(error, errorInfo);
-    }
-
-    handleReset = (): void => {
-        this.setState({ hasError: false, error: null, errorInfo: null });
+    public state: State = {
+        hasError: false,
+        error: null
     };
 
-    render(): ReactNode {
-        if (this.state.hasError) {
-            if (this.props.fallback) {
-                return this.props.fallback;
-            }
+    public static getDerivedStateFromError(error: Error): State {
+        return { hasError: true, error };
+    }
 
-            return (
-                <div className="min-h-[200px] flex items-center justify-center p-6">
-                    <div className="glass-panel p-6 max-w-md text-center">
-                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
-                            <AlertTriangle className="w-6 h-6 text-red-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">
-                            Something went wrong
-                        </h3>
-                        <p className="text-sm text-zinc-400 mb-4">
-                            An unexpected error occurred. Please try again.
-                        </p>
-                        {this.state.error && (
-                            <details className="text-left mb-4">
-                                <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300">
-                                    Error details
-                                </summary>
-                                <pre className="mt-2 p-2 bg-zinc-900 rounded text-xs text-red-400 overflow-x-auto">
-                                    {this.state.error.message}
-                                </pre>
-                            </details>
-                        )}
-                        <button
-                            onClick={this.handleReset}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
-                        >
-                            <RefreshCw size={16} />
-                            Try again
-                        </button>
+    public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('Uncaught error:', error, errorInfo);
+    }
+
+    public render() {
+        if (this.state.hasError) {
+            return this.props.fallback || (
+                <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-zinc-950/50 rounded-xl border border-red-500/20">
+                    <div className="p-4 bg-red-500/10 rounded-full mb-4">
+                        <AlertTriangle className="w-8 h-8 text-red-400" />
                     </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
+                    <p className="text-zinc-400 mb-6 max-w-sm">
+                        {this.state.error?.message || 'An unexpected error occurred in this component.'}
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white transition-colors"
+                    >
+                        <RefreshCcw size={16} />
+                        Reload Page
+                    </button>
+                    <pre className="mt-4 p-2 bg-black/50 rounded text-xs text-red-300 text-left overflow-auto max-w-full">
+                        {this.state.error?.stack}
+                    </pre>
                 </div>
             );
         }
 
         return this.props.children;
     }
-}
-
-/**
- * Hook version for functional components
- */
-export function useErrorHandler() {
-    const [error, setError] = React.useState<Error | null>(null);
-
-    const resetError = React.useCallback(() => {
-        setError(null);
-    }, []);
-
-    const captureError = React.useCallback((error: Error) => {
-        setError(error);
-        console.error('Error captured:', error);
-    }, []);
-
-    return { error, resetError, captureError };
-}
-
-/**
- * HOC to wrap components with error boundary
- */
-export function withErrorBoundary<P extends object>(
-    WrappedComponent: React.ComponentType<P>,
-    fallback?: ReactNode
-) {
-    return function ComponentWithErrorBoundary(props: P) {
-        return (
-            <ErrorBoundary fallback={fallback}>
-                <WrappedComponent {...props} />
-            </ErrorBoundary>
-        );
-    };
 }

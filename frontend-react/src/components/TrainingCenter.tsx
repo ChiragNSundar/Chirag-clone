@@ -977,15 +977,9 @@ const TrainingAuth = ({ onSuccess }: { onSuccess: () => void }) => {
         setError('');
 
         try {
-            const formData = new FormData();
-            formData.append('pin', pin);
+            const isValid = await api.validatePin(pin);
 
-            const response = await fetch('http://localhost:8000/api/training/auth', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
+            if (isValid) {
                 onSuccess();
             } else {
                 setError('Invalid PIN');

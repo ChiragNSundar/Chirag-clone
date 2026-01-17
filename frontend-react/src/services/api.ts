@@ -137,6 +137,87 @@ export const api = {
         return res.json();
     },
 
+    async resetLearning(): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/training/reset`, { method: 'DELETE' });
+        return res.json();
+    },
+
+    async getTrainingPrompt(): Promise<{ prompt: string }> {
+        const res = await fetch(`${API_BASE}/training/chat/prompt`);
+        if (!res.ok) throw new Error('Failed to get prompt');
+        return res.json();
+    },
+
+    async submitTrainingResponse(botMessage: string, userResponse: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/training/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_message: botMessage, user_response: userResponse })
+        });
+        if (!res.ok) throw new Error('Failed to submit response');
+        return res.json();
+    },
+
+    // ============= Knowledge API =============
+
+    async getKnowledgeDocuments(): Promise<{ documents: any[] }> {
+        const res = await fetch(`${API_BASE}/knowledge/documents`);
+        return res.json();
+    },
+
+    async getKnowledgeStats(): Promise<any> {
+        const res = await fetch(`${API_BASE}/knowledge/stats`);
+        return res.json();
+    },
+
+    async uploadKnowledgeFile(file: File, category: string = 'general'): Promise<{ success: boolean; message: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', category);
+
+        const res = await fetch(`${API_BASE}/knowledge/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        return res.json();
+    },
+
+    async deleteKnowledgeDocument(docId: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/knowledge/document/${docId}`, {
+            method: 'DELETE'
+        });
+        return res.json();
+    },
+
+    async queryKnowledge(query: string, nResults: number = 5): Promise<{ results: any[] }> {
+        const res = await fetch(`${API_BASE}/knowledge/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, n_results: nResults })
+        });
+        return res.json();
+    },
+
+    async addKnowledgeUrl(url: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/knowledge/url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        if (!res.ok) throw new Error('Failed to add URL');
+        return res.json();
+    },
+
+    async addKnowledgeText(content: string, title: string): Promise<{ success: boolean }> {
+        const res = await fetch(`${API_BASE}/knowledge/text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, title })
+        });
+        if (!res.ok) throw new Error('Failed to add text');
+        return res.json();
+    },
+
     // ============= Deep Research API =============
 
     async deepResearch(query: string, maxDepth: number = 3): Promise<DeepResearchResult> {
@@ -207,6 +288,18 @@ export const api = {
     async getHealth(detailed: boolean = false): Promise<HealthStatus> {
         const res = await fetch(`${API_BASE}/health?detailed=${detailed}`);
         return res.json();
+    },
+
+    async validatePin(pin: string): Promise<boolean> {
+        const formData = new FormData();
+        formData.append('pin', pin);
+
+        const res = await fetch(`${API_BASE}/training/auth`, {
+            method: 'POST',
+            body: formData
+        });
+
+        return res.ok;
     }
 };
 
