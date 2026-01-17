@@ -205,7 +205,7 @@ class AvatarErrorBoundary extends Component<{ children: ReactNode }, { hasError:
 export function Avatar3D({
     speaking = false,
     text = '',
-    avatarUrl = 'https://models.readyplayer.me/658be9e8fc8be93dc963db81.glb',
+    avatarUrl = 'https://models.readyplayer.me/64b73b52d9a9f2441957257a.glb',
     visible = true
 }: Avatar3DProps) {
     const [isLoading, setIsLoading] = useState(true);
