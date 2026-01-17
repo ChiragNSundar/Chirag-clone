@@ -63,6 +63,22 @@
       "response_time_ms": 0,
       "confidence": 0.7,
       "is_training": false
+    },
+    {
+      "timestamp": "2026-01-17T23:01:03.856622",
+      "user_message": "hi",
+      "bot_response": "API limit reached. Please try again later.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
+    },
+    {
+      "timestamp": "2026-01-17T23:01:56.601048",
+      "user_message": "hey",
+      "bot_response": "API key seems invalid. Please check your API configuration.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
     }
   ],
   "daily_stats": {
@@ -82,10 +98,11 @@
       }
     },
     "2026-01-17": {
-      "total_messages": 2,
+      "total_messages": 4,
       "training_messages": 0,
       "hours": {
-        "22": 2
+        "22": 2,
+        "23": 2
       }
     }
   },
@@ -101,11 +118,15 @@
     0,
     0,
     0,
+    0,
+    0,
     0
   ],
   "quality_scores": [
     0.7,
     0.5,
+    0.7,
+    0.7,
     0.7,
     0.7,
     0.7,

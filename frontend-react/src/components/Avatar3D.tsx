@@ -4,7 +4,7 @@
  */
 import { useRef, useEffect, useState, useCallback, Suspense, Component, type ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
+import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { Settings, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -189,9 +189,11 @@ class AvatarErrorBoundary extends Component<{ children: ReactNode }, { hasError:
     componentDidCatch(error: any) { console.error("Avatar 3D Error:", error); }
     render() {
         if (this.state.hasError) return (
-            <div className="flex items-center justify-center h-full text-red-400 text-xs text-center p-4">
-                Failed to load 3D Model
-            </div>
+            <Html center>
+                <div className="flex items-center justify-center w-32 text-red-400 text-xs text-center p-2 bg-black/50 rounded backdrop-blur-sm">
+                    Failed to load 3D Model
+                </div>
+            </Html>
         );
         return this.props.children;
     }

@@ -25,6 +25,7 @@ class Config:
     
     # Gemini (Primary)
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
     
     # Model Hierarchy (Strictly V2+)
     # Order: Gemma 2 27b -> Gemini 2.0 Flash Lite -> Gemini 2.0 Flash -> Gemini 2.0 Pro
