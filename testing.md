@@ -100,6 +100,22 @@ The testing strategy follows the **Testing Pyramid**:
   - *Input*: JSON structure `{"messages": [{"content": "Hi", "author": ...}]}`.
   - *Output*: Normalized training data.
 
+### 6. Frontend & E2E Testing (New in v2.5)
+
+**Goal**: Validate UI interactions, responsiveness, and end-to-end user flows in a real browser environment.
+
+- **E2E Tests (`frontend-react/e2e/`)**:
+  - **Tool**: Playwright
+  - **`app.spec.ts`**:
+    - *Navigation*: Verifies all routes (Dashboard, Chat, Profile) load correctly.
+    - *Chat*: Simulates typing a message and receiving a response.
+    - *Accessibility*: Checks for basic ARIA compliance.
+  - **Config**: Multi-browser support (Chromium, Firefox, WebKit) in `playwright.config.ts`.
+
+- **Unit Tests (`src/test/`)**:
+  - **Tool**: Vitest + React Testing Library
+  - **Scope**: Tests individual React components (e.g., `ThinkingBubble`, `AudioVisualizer`) in isolation.
+
 ---
 
 ## 🏃 Method of Execution
@@ -107,7 +123,14 @@ The testing strategy follows the **Testing Pyramid**:
 ### Running All Tests
 
 ```bash
+# 1. Backend Tests
 pytest
+
+# 2. Frontend Unit Tests
+cd frontend-react && npm test
+
+# 3. Frontend E2E Tests
+cd frontend-react && npx playwright test
 ```
 
 ### Running Specific Suites
