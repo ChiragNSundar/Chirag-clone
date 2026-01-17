@@ -2,7 +2,7 @@
  * Avatar3D Component - 3D avatar with lip-sync capability
  * Uses Three.js via React Three Fiber and Ready Player Me GLB models
  */
-import { useRef, useEffect, useState, useCallback, Suspense } from 'react';
+import { useRef, useEffect, useState, useCallback, Suspense, Component, type ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
@@ -182,6 +182,21 @@ interface Avatar3DProps {
     onToggleVisibility?: () => void;
 }
 
+// Inner Error Boundary for the 3D Model
+class AvatarErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error: any) { console.error("Avatar 3D Error:", error); }
+    render() {
+        if (this.state.hasError) return (
+            <div className="flex items-center justify-center h-full text-red-400 text-xs text-center p-4">
+                Failed to load 3D Model
+            </div>
+        );
+        return this.props.children;
+    }
+}
+
 /**
  * Main Avatar3D Component
  */
@@ -195,6 +210,10 @@ export function Avatar3D({
     const [isExpanded, setIsExpanded] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [customAvatarUrl, setCustomAvatarUrl] = useState(avatarUrl);
+
+    useEffect(() => {
+        setCustomAvatarUrl(avatarUrl);
+    }, [avatarUrl]);
 
     const handleLoadComplete = useCallback(() => {
         setIsLoading(false);
@@ -268,14 +287,16 @@ export function Avatar3D({
                 <directionalLight position={[5, 5, 5]} intensity={0.8} />
                 <directionalLight position={[-5, 3, -5]} intensity={0.4} />
 
-                <Suspense fallback={null}>
-                    <AvatarModel
-                        url={customAvatarUrl}
-                        speaking={speaking}
-                        text={text}
-                        onLoadComplete={handleLoadComplete}
-                    />
-                </Suspense>
+                <AvatarErrorBoundary>
+                    <Suspense fallback={null}>
+                        <AvatarModel
+                            url={customAvatarUrl}
+                            speaking={speaking}
+                            text={text}
+                            onLoadComplete={handleLoadComplete}
+                        />
+                    </Suspense>
+                </AvatarErrorBoundary>
 
                 <OrbitControls
                     enableZoom={false}
@@ -289,7 +310,6 @@ export function Avatar3D({
     );
 }
 
-// Preload default avatar
-useGLTF.preload('https://models.readyplayer.me/658be9e8fc8be93dc963db81.glb');
-
 export default Avatar3D;
+
+

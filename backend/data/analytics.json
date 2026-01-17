@@ -47,6 +47,22 @@
       "response_time_ms": 0,
       "confidence": 0.7,
       "is_training": false
+    },
+    {
+      "timestamp": "2026-01-17T22:59:15.958144",
+      "user_message": "hello",
+      "bot_response": "I'm having trouble connecting to the AI service. Please check your API key configuration.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
+    },
+    {
+      "timestamp": "2026-01-17T22:59:50.886117",
+      "user_message": "hi",
+      "bot_response": "I'm having trouble connecting to the AI service. Please check your API key configuration.",
+      "response_time_ms": 0,
+      "confidence": 0.7,
+      "is_training": false
     }
   ],
   "daily_stats": {
@@ -64,12 +80,22 @@
       "hours": {
         "13": 3
       }
+    },
+    "2026-01-17": {
+      "total_messages": 2,
+      "training_messages": 0,
+      "hours": {
+        "22": 2
+      }
     }
   },
   "topics": {
-    "chirag": 1
+    "chirag": 1,
+    "hello": 1
   },
   "response_times": [
+    0,
+    0,
     0,
     0,
     0,
@@ -80,6 +106,8 @@
   "quality_scores": [
     0.7,
     0.5,
+    0.7,
+    0.7,
     0.7,
     0.7,
     0.7,

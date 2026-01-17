@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Import rate limiter
-from services.rate_limiter import rate_limit
+
 
 # Import robustness utilities
 from services.robustness import (
@@ -60,6 +60,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add Rate Limiting Middleware
+from services.rate_limiter import rate_limit
+app.middleware("http")(rate_limit)
 
 # Startup event for initialization
 @app.on_event("startup")
@@ -311,7 +315,7 @@ async def health_check(detailed: bool = False):
     return response
 
 @app.post("/api/chat/message")
-@rate_limit
+
 async def chat_message(data: ChatMessage):
     """Handle chat messages"""
     try:
@@ -339,7 +343,7 @@ async def chat_message(data: ChatMessage):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/training/feedback")
-@rate_limit
+
 async def training_feedback(data: TrainingFeedback):
     """Handle training feedback"""
     try:
@@ -2087,7 +2091,7 @@ class DeepResearchQuery(BaseModel):
 
 
 @app.post("/api/research/deep")
-@rate_limit
+
 async def deep_research(data: DeepResearchQuery):
     """
     Perform deep agentic research on a query.
@@ -2198,7 +2202,7 @@ async def add_rewind_frame(
 
 
 @app.post("/api/rewind/query")
-@rate_limit
+
 async def query_rewind(data: RewindQuery):
     """
     Query the rewind buffer.
