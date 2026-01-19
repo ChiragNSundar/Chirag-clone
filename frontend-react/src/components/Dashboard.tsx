@@ -8,12 +8,13 @@ import {
     Brain, MessageSquare, Zap, Smile, TrendingUp, Database,
     Activity, Users, FileText, Clock, Target, Award
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface AnalyticsData {
     training: {
         total_examples: number;
         sources: Record<string, number>;
-        recent_activity: any[];
+        recent_activity: Array<{ timestamp: string; action: string }>;
     };
     personality: {
         facts_count: number;
@@ -33,7 +34,7 @@ interface AnalyticsData {
 const CHART_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
 
 const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary', trend }: {
-    icon: React.ElementType;
+    icon: LucideIcon;
     title: string;
     value: string | number;
     subtitle?: string;

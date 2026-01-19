@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Command, Search, MessageSquare, Database, Brain, Settings, User, Zap, X } from 'lucide-react';
+import { Search, MessageSquare, Database, Brain, Settings, User, Zap } from 'lucide-react';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcuts';
 import { useNavigate } from 'react-router-dom';
 

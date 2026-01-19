@@ -1,6 +1,6 @@
 # 🧪 Testing Documentation
 
-This document provides a comprehensive high-level and low-level explanation of the testing infrastructure for the **Chirag Clone v2.6** project. The test suite is designed to be robust, resilient to missing dependencies, and covers everything from unit logic to full integration workflows.
+This document provides a comprehensive high-level and low-level explanation of the testing infrastructure for the **Chirag Clone v2.8** project. The test suite is designed to be robust, resilient to missing dependencies, and covers everything from unit logic to full integration workflows.
 
 ---
 
@@ -12,12 +12,14 @@ The testing strategy follows the **Testing Pyramid**:
 2. **API Tests (`test_main.py`)**: Checks the HTTP contract of the FastAPI endpoints.
 3. **Integration Tests (`test_integration.py`)**: Tests complete workflows (e.g., "Upload PDF -> Query Knowledge Base").
 4. **Frontend Tests**: Component-level tests using Vitest and React Testing Library.
+5. **Hook Tests**: Custom React hook tests using `@testing-library/react`.
 
 ### Key Principles
 
 - **Graceful Degradation**: Tests detect if optional dependencies are missing and skip relevant tests.
 - **Isolation**: Unit tests do not hit real external APIs (OpenAI, Gemini). They use mocks.
 - **Markers**: We use pytest markers (`@pytest.mark.voice`, `@pytest.mark.asyncio`) to allow running specific feature subsets.
+- **Comprehensive Mocks**: Test setup includes mocks for AudioContext, MediaRecorder, localStorage, clipboard, etc.
 
 ---
 
@@ -52,6 +54,16 @@ The testing strategy follows the **Testing Pyramid**:
 - **`LoginPage.test.tsx`**: Tests Google Sign-In button rendering, OAuth status checking, and error display.
 - **`VoiceChat.test.tsx`**: Mocks `WebSocket` and `MediaRecorder` to test real-time voice controls and status indicators.
 - **`Dashboard.test.tsx`**: Tests analytics data fetching, chart rendering, and loading states.
+- **`ChatInterface.test.tsx`**: Tests message sending, thinking indicators, and avatar controls.
+- **`ThinkingBubble.test.tsx`**: Tests thinking step rendering and animations.
+
+### 7. Hook Tests (`useUtilities.test.ts`) 🪝
+- **`useDebounce`**: Tests debouncing behavior and timer cancellation.
+- **`useLocalStorage`**: Tests read/write/update with mocked localStorage.
+- **`usePrevious`**: Tests previous value tracking across renders.
+- **`useWindowSize`**: Tests window dimension reporting.
+- **`useCopyToClipboard`**: Tests clipboard API integration.
+- **`useAsync`**: Tests async function execution, loading, and error states.
 
 ---
 

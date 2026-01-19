@@ -112,3 +112,13 @@ backend/data/knowledge_graph.json
 .pre-commit-config.yaml.save
 coverage.xml
 .estlintcache
+
+# v2.8 PWA & Testing
+frontend-react/dev-dist/
+frontend-react/playwright-report/
+frontend-react/test-results/
+frontend-react/coverage/
+
+# Service Worker (dev mode)
+*.sw.js
+*.sw.js.map

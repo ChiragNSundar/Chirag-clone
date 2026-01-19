@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Optimized Dependency Installer for Chirag Clone
-================================================
+Optimized Dependency Installer for Chirag Clone v2.8
+=====================================================
 Fast batch installation for backend (Python) and frontend (Node.js).
 
 Optimizations:

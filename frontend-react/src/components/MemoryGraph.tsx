@@ -6,7 +6,7 @@ import ReactFlow, {
     useNodesState,
     useEdgesState,
 } from 'reactflow';
-import type { Node, Edge, NodeMouseHandler } from 'reactflow';
+import type { Node, NodeMouseHandler } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -103,13 +103,17 @@ function AvatarModel({ url, speaking, text, onLoadComplete }: AvatarModelProps) 
     }, [scene, onLoadComplete]);
 
     // Generate viseme queue when text changes and speaking
+    // Using a stable reference to avoid unnecessary re-renders
+    const visemesRef = useRef<{ viseme: string; duration: number }[]>([]);
+
     useEffect(() => {
         if (speaking && text) {
-            const visemes = textToVisemes(text);
-            setVisemeQueue(visemes);
+            visemesRef.current = textToVisemes(text);
+            setVisemeQueue(visemesRef.current);
             setCurrentVisemeIndex(0);
             visemeStartTime.current = 0;
         } else {
+            visemesRef.current = [];
             setVisemeQueue([]);
             setCurrentVisemeIndex(0);
         }
@@ -320,7 +324,7 @@ function SimpleRobot({ speaking }: { speaking: boolean }) {
 class AvatarErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
     state = { hasError: false };
     static getDerivedStateFromError() { return { hasError: true }; }
-    componentDidCatch(error: any) { console.error("Avatar 3D Error:", error); }
+    componentDidCatch(error: Error) { console.error("Avatar 3D Error:", error); }
     render() {
         if (this.state.hasError) return (
             <Html center>

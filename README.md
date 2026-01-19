@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -19,6 +19,7 @@
 - **3D Avatar**: Three.js + React Three Fiber
 - **Visualization**: Recharts + Web Audio API
 - **State/Animations**: Framer Motion
+- **PWA**: Vite PWA Plugin (installable, offline-capable)
 - **Testing**: Vitest + Playwright E2E
 
 ### Backend
@@ -48,6 +49,7 @@
 - **Server**: Uvicorn (ASGI)
 - **Environment**: Dotenv (.env) management
 - **Linting**: Pre-commit hooks (Black, Prettier, ESLint)
+- **Code Quality**: Husky + lint-staged (auto-fix on commit)
 
 ---
 
@@ -250,6 +252,68 @@ For the "Eye Mode" feature:
 cd desktop-widget
 npm install
 npm start
+```
+
+### 4. Running Tests
+
+**Frontend Unit Tests (Vitest):**
+
+```bash
+cd frontend-react
+
+# Run all tests once
+npm run test:run
+
+# Watch mode (re-run on file changes)
+npm run test
+
+# With coverage report
+npm run test:run -- --coverage
+```
+
+**Backend Tests (Pytest):**
+
+```bash
+cd backend
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_auth.py -v
+
+# With coverage
+pytest tests/ --cov=services --cov-report=term-missing
+```
+
+**E2E Tests (Playwright):**
+
+```bash
+cd frontend-react
+
+# Install Playwright browsers (first time)
+npx playwright install
+
+# Run E2E tests
+npx playwright test
+
+# Run with UI mode
+npx playwright test --ui
+```
+
+**Code Quality (Pre-commit):**
+
+```bash
+cd frontend-react
+
+# Initialize Husky (first time after clone)
+npm run prepare
+
+# Lint check
+npm run lint
+
+# Format check
+npm run format
 ```
 
 ---

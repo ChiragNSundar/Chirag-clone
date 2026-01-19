@@ -7,6 +7,7 @@ import {
     RefreshCcw,
     BookOpen
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { api, type ProfileData } from '../services/api';
 
 const ToneBar = ({ name, value }: { name: string; value: number }) => (
@@ -33,7 +34,7 @@ const Section = ({
     delay = 0
 }: {
     title: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     children: React.ReactNode;
     delay?: number;
 }) => (

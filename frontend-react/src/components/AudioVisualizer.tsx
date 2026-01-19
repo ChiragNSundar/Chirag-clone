@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface AudioVisualizerProps {
@@ -8,6 +8,55 @@ interface AudioVisualizerProps {
     mode: 'input' | 'output';
     variant?: 'bars' | 'orb' | 'wave';
 }
+
+// Helper drawing functions (pure, no React hooks)
+const drawBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+    const barCount = 32;
+    const barWidth = width / barCount;
+    const step = Math.floor(dataArray.length / barCount);
+
+    for (let i = 0; i < barCount; i++) {
+        const value = dataArray[i * step];
+        const barHeight = (value / 255) * height;
+
+        // Gradient from purple to blue
+        const hue = 260 + (i / barCount) * 40;
+        ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+
+        const x = i * barWidth;
+        const y = height - barHeight;
+
+        // Draw rounded bar
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y, barWidth - 2, barHeight, 2);
+        ctx.fill();
+    }
+};
+
+const drawWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)';
+    ctx.lineWidth = 2;
+
+    const sliceWidth = width / dataArray.length;
+    let x = 0;
+
+    for (let i = 0; i < dataArray.length; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * height) / 2;
+
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+    }
+
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+};
 
 /**
  * AudioVisualizer - Real-time frequency visualization using Web Audio API
@@ -26,6 +75,39 @@ export function AudioVisualizer({
     const audioContextRef = useRef<AudioContext | null>(null);
     const [avgFrequency, setAvgFrequency] = useState(0);
 
+    const visualize = useCallback(() => {
+        if (!analyserRef.current || !canvasRef.current) return;
+
+        const analyser = analyserRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const draw = () => {
+            animationRef.current = requestAnimationFrame(draw);
+
+            analyser.getByteFrequencyData(dataArray);
+
+            // Calculate average for orb intensity
+            const avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+            setAvgFrequency(avg);
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (variant === 'bars') {
+                drawBars(ctx, dataArray, canvas.width, canvas.height);
+            } else if (variant === 'wave') {
+                drawWave(ctx, dataArray, canvas.width, canvas.height);
+            }
+        };
+
+        draw();
+    }, [variant]);
+
     useEffect(() => {
         if (!isActive) {
             if (animationRef.current) {
@@ -38,7 +120,8 @@ export function AudioVisualizer({
             try {
                 // Create or reuse audio context
                 if (!audioContextRef.current) {
-                    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+                    audioContextRef.current = new AudioContextClass();
                 }
                 const audioContext = audioContextRef.current;
 
@@ -65,39 +148,6 @@ export function AudioVisualizer({
             }
         };
 
-        const visualize = () => {
-            if (!analyserRef.current || !canvasRef.current) return;
-
-            const analyser = analyserRef.current;
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            const draw = () => {
-                animationRef.current = requestAnimationFrame(draw);
-
-                analyser.getByteFrequencyData(dataArray);
-
-                // Calculate average for orb intensity
-                const avg = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
-                setAvgFrequency(avg);
-
-                // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                if (variant === 'bars') {
-                    drawBars(ctx, dataArray, canvas.width, canvas.height);
-                } else if (variant === 'wave') {
-                    drawWave(ctx, dataArray, canvas.width, canvas.height);
-                }
-            };
-
-            draw();
-        };
-
         setupAudio();
 
         return () => {
@@ -105,55 +155,7 @@ export function AudioVisualizer({
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [isActive, audioStream, audioElement, mode, variant]);
-
-    const drawBars = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
-        const barCount = 32;
-        const barWidth = width / barCount;
-        const step = Math.floor(dataArray.length / barCount);
-
-        for (let i = 0; i < barCount; i++) {
-            const value = dataArray[i * step];
-            const barHeight = (value / 255) * height;
-
-            // Gradient from purple to blue
-            const hue = 260 + (i / barCount) * 40;
-            ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
-
-            const x = i * barWidth;
-            const y = height - barHeight;
-
-            // Draw rounded bar
-            ctx.beginPath();
-            ctx.roundRect(x + 1, y, barWidth - 2, barHeight, 2);
-            ctx.fill();
-        }
-    };
-
-    const drawWave = (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.8)';
-        ctx.lineWidth = 2;
-
-        const sliceWidth = width / dataArray.length;
-        let x = 0;
-
-        for (let i = 0; i < dataArray.length; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = (v * height) / 2;
-
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-
-            x += sliceWidth;
-        }
-
-        ctx.lineTo(width, height / 2);
-        ctx.stroke();
-    };
+    }, [isActive, audioStream, audioElement, mode, visualize]);
 
     if (variant === 'orb') {
         const intensity = avgFrequency / 255;

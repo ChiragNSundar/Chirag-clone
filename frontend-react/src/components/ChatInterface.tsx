@@ -16,13 +16,19 @@ interface ThinkingData {
     has_thinking: boolean;
 }
 
+interface Mood {
+    emoji?: string;
+    sentiment?: string;
+    score?: number;
+}
+
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
     timestamp: Date;
     confidence?: number;
-    mood?: any;
+    mood?: Mood;
     thinking?: ThinkingData;
 }
 

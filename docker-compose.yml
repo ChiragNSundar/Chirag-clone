@@ -1,5 +1,5 @@
-# Docker Compose for Chirag Clone v2.7
-# Full stack: FastAPI + React + Redis + ChromaDB + Voice/Vision + OAuth2
+# Docker Compose for Chirag Clone v2.8
+# Full stack: FastAPI + React (PWA) + Redis + ChromaDB + Voice/Vision + OAuth2
 
 services:
   chirag-clone:

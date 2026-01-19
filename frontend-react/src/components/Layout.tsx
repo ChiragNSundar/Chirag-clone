@@ -1,8 +1,9 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, MessageSquare, Network, User, GraduationCap, Bot } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 
-const NavItem = ({ to, icon: Icon, label }: { to: string; icon: React.ElementType; label: string }) => (
+const NavItem = ({ to, icon: Icon, label }: { to: string; icon: LucideIcon; label: string }) => (
     <NavLink
         to={to}
         className={({ isActive }) =>

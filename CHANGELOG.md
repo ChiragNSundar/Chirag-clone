@@ -1,5 +1,53 @@
 # Changelog
 
+## [2.8.0] - 2026-01-19
+
+### 🌐 Progressive Web App (PWA)
+
+- **Installable Desktop App**: Frontend now supports PWA installation for desktop browsers.
+- **Offline Caching**: Workbox service worker with runtime caching for assets and Google Fonts.
+- **Web Manifest**: Auto-generated manifest with dark theme colors and standalone display mode.
+- **Dependencies**: Added `vite-plugin-pwa` for PWA generation.
+
+### 🔧 Code Quality & Pre-commit Hooks
+
+- **Husky + lint-staged**: Automated pre-commit hooks for code quality.
+  - TypeScript/TSX files: ESLint + Prettier auto-fix
+  - CSS/JSON/MD files: Prettier formatting
+- **New Script**: `npm run prepare` initializes Husky hooks.
+
+### 🧪 Improved Test Coverage
+
+- **63 Tests Passing**: Comprehensive test suite with 8 test files.
+- **New Hook Tests**: Added `useUtilities.test.ts` covering:
+  - `useDebounce`, `useLocalStorage`, `usePrevious`
+  - `useWindowSize`, `useCopyToClipboard`, `useAsync`
+- **Enhanced Test Setup**: Added mocks for:
+  - `AudioContext` / `webkitAudioContext`
+  - `MediaRecorder`, `IntersectionObserver`
+  - `navigator.mediaDevices`, `navigator.clipboard`
+  - `window.matchMedia`, `window.scrollTo`
+
+### 🐛 TypeScript Fixes
+
+- Fixed 15+ TypeScript errors across components:
+  - Replaced `React.ElementType` with `LucideIcon` type for icon props
+  - Fixed `useRef<T>()` missing initial value
+  - Removed unused imports (`Edge`, `Command`, `X`, `fireEvent`)
+  - Replaced `any` types with proper interfaces (`Mood`, activity arrays)
+- Refactored `AudioVisualizer.tsx` to fix function declaration order lint errors.
+
+### 📁 File Changes
+
+- **Modified**: `frontend-react/vite.config.ts` (PWA configuration)
+- **Modified**: `frontend-react/package.json` (Husky + lint-staged config)
+- **Added**: `frontend-react/.husky/pre-commit` (pre-commit hook)
+- **Added**: `frontend-react/src/hooks/__tests__/useUtilities.test.ts`
+- **Modified**: `frontend-react/src/setupTests.ts` (enhanced mocks)
+- **Modified**: Multiple component files (TypeScript fixes)
+
+---
+
 ## [2.7.0] - 2026-01-19
 
 ### 🏗️ Major Backend Refactoring

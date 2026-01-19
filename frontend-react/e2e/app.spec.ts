@@ -115,11 +115,8 @@ test.describe('Responsive Design', () => {
         await page.setViewportSize({ width: 375, height: 667 });
         await page.goto('/');
 
-        // Check that sidebar is hidden or collapsed on mobile
-        const sidebar = page.locator('[data-testid="sidebar"], .sidebar');
-
-        // Sidebar might be hidden or transformed
-        // Just check page renders without errors
+        // Check that page renders correctly on mobile
+        // Sidebar might be hidden or transformed on mobile
         await expect(page.locator('main')).toBeVisible();
     });
 });

@@ -5,6 +5,7 @@ import {
     Lock, Plus, Trash2, CheckCircle, AlertCircle,
     RefreshCcw, PenLine, Instagram, Hash, Brain, Search, Link, FileText
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { api } from '../services/api';
 
 interface TrainingCenterProps {
@@ -24,7 +25,7 @@ const UploadCard = ({
     endpoint
 }: {
     title: string;
-    icon: React.ElementType;
+    icon: LucideIcon;
     description: string;
     accept: string;
     fieldName: string;
