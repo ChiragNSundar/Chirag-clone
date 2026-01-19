@@ -33,10 +33,9 @@
 - **PDF/Web Processing**: PyMuPDF + BeautifulSoup
 
 ### Security
+
 - **Protection**: Prompt Guard + Content Security Policy (CSP)
 - **Validation**: Pydantic v2 Strict Models
-
-
 
 ### Desktop Widget
 
@@ -216,7 +215,24 @@ cp .env.example .env
 # GEMINI_API_KEY=...
 # ELEVENLABS_API_KEY=...
 
-# 3. Launch
+# 3. Launch with Robust Installer (Recommended)
+python install_deps.py
+
+# 4. Start Backend
+cd backend && python -m uvicorn main:app --reload
+
+# 5. Start Frontend
+cd frontend-react && npm run dev
+```
+
+- **Frontend**: <http://localhost:5173>
+- **Backend API**: <http://localhost:8000>
+
+### Option 2: Docker Environment (Isolated)
+
+If you prefer running in containers:
+
+```bash
 docker-compose up -d --build
 ```
 
