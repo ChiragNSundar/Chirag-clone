@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -144,26 +144,29 @@ graph TD
     Frontend -->|WebSocket/API| Backend["Backend (FastAPI)"]
     
     subgraph "Backend Architecture"
-        Backend --> Middle["Middleware Layer (Security, Perf, Rate Limit)"]
-        Middle --> Router["API Router"]
+        Backend --> Middle["Middleware (Security, Rate Limit)"]
+        Middle --> Router["Refactored API Routers"]
         
-        subgraph "Robustness Layer"
-            Router --> CB["Circuit Breakers"]
-            CB --> Guard["Prompt Guard"]
+        subgraph "Router Modules"
+            Router --> R_Auth["Auth"]
+            Router --> R_Chat["Chat"]
+            Router --> R_Voice["Voice"]
+            Router --> R_Know["Knowledge"]
+            Router --> R_Auto["Autopilot"]
+            Router --> R_Vis["Vision"]
         end
-        
-        subgraph "Core Services"
-            Guard --> Auth["Auth Service (Google)"]
-            Guard --> Fallback["Model Fallback Manager"]
-            Fallback --> L["LLM (Gemini/OpenAI/Local)"]
+
+        subgraph "Services Layer"
+            R_Auth --> Auth["Auth Service"]
+            R_Chat --> Fallback["Model Fallback (Gemini/OpenAI)"]
             
-            Guard --> RAG["Hybrid RAG Service"]
-            RAG --> Chroma["ChromaDB"]
+            R_Know --> RAG["Hybrid RAG Service"]
+            RAG --> Chroma["ChromaDB (or Mock)"]
             RAG --> Redis["Redis Cache"]
             
-            Guard --> Realtime["Realtime Voice"]
-            Guard --> Research["Deep Research"]
-            Guard --> Auto["Social Autopilot"]
+            R_Voice --> Realtime["Realtime Voice Service"]
+            R_Auto --> Social["Social Autopilot"]
+            R_Vis --> Vision["Vision Service"]
         end
     end
 ```
@@ -256,59 +259,70 @@ npm start
 ```text
 Chirag-clone/
 ├── .env                        # Environment Config (Secrets)
-├── .pre-commit-config.yaml     # Linting Config (NEW)
-├── pyproject.toml              # Python Config (NEW)
+├── .pre-commit-config.yaml     # Linting Config
+├── pyproject.toml              # Python Config
 ├── requirements.txt            # Python Dependencies
-├── docker-compose.yml          # Container Orchestration (Redis + Chroma + App)
+├── install_deps.py             # Robust Installer (NEW)
+├── docker-compose.yml          # Container Orchestration
 ├── Dockerfile                  # Production Build Definition
 ├── CHANGELOG.md                # Project History
 ├── README.md                   # Documentation
+├── testing.md                  # Testing Guide
 │
 ├── backend/
-│   ├── main.py                 # FastAPI Application Entry Point (HTTP + WebSocket)
+│   ├── main.py                 # FastAPI Application Application & Router Registration
 │   ├── config.py               # Configuration Settings
 │   ├── gunicorn.conf.py        # Gunicorn Config
 │   │
-│   ├── routes/                 # API Routes (NEW)
-│   │   └── auth.py             # OAuth2 Routes
+│   ├── routes/                 # Modular API Routes (v2.7)
+│   │   ├── auth.py             # OAuth2 Routes
+│   │   ├── chat.py             # Chat & Messaging
+│   │   ├── training.py         # Training Center
+│   │   ├── dashboard.py        # Analytics & Health
+│   │   ├── autopilot.py        # Social Bots
+│   │   ├── voice.py            # Real-time Voice
+│   │   ├── cognitive.py        # Active Learning
+│   │   ├── knowledge.py        # RAG & Documents
+│   │   ├── vision.py           # Eye Mode
+│   │   └── features.py         # Miscellaneous
 │   │
-│   ├── services/                   # Core Business Logic
-│   │   ├── __init__.py
+│   ├── services/               # Business Logic Microservices
 │   │   ├── accuracy_service.py     # Verification Logic
 │   │   ├── active_learning_service.py # Proactive Questioning
 │   │   ├── analytics_service.py    # Dashboard Metrics
 │   │   ├── async_job_service.py    # Background Tasks
-│   │   ├── auth_service.py         # OAuth2 & JWT Logic 
+│   │   ├── auth_service.py         # OAuth2 & JWT Logic
 │   │   ├── avatar_service.py       # 3D Avatar Logic
 │   │   ├── backup_service.py       # Data Backup
 │   │   ├── cache_service.py        # Redis/Local Cache
 │   │   ├── calendar_service.py     # Google Calendar Integration
-│   │   ├── circuit_breaker.py      # Fault Tolerance 
 │   │   ├── chat_service.py         # Main Conversation Logic
+│   │   ├── circuit_breaker.py      # Fault Tolerance
 │   │   ├── conversation_analytics_service.py # Topic/Heatmap Analysis
 │   │   ├── core_memory_service.py  # Long-term Memory Summarization
 │   │   ├── creative_service.py     # Dreams/Poems/Stories Engine
-│   │   ├── deep_research.py        # Autonomous Research Agent 
+│   │   ├── deep_research.py        # Autonomous Research Agent
 │   │   ├── discord_bot_service.py  # Discord Integration
 │   │   ├── emotion_service.py      # Sentiment Analysis
 │   │   ├── gmail_bot_service.py    # Gmail Integration
-│   │   ├── hybrid_rag.py           # BM25 + Semantic Search 
+│   │   ├── http_pool.py            # Connection Pooling
+│   │   ├── hybrid_rag.py           # BM25 + Semantic Search
 │   │   ├── knowledge_service.py    # RAG/Document/Brain Station
 │   │   ├── learning_service.py     # Training Logic
 │   │   ├── linkedin_bot_service.py # LinkedIn Integration
 │   │   ├── llm_service.py          # Gemini/OpenAI Wrapper
 │   │   ├── logger.py               # Structured Logging
 │   │   ├── memory_search_service.py # Advanced Vector Search
-│   │   ├── memory_service.py       # Vector DB Wrapper
+│   │   ├── memory_service.py       # Vector DB Wrapper (Mock supported)
 │   │   ├── middleware.py           # Legacy Middleware
-│   │   ├── model_fallback.py       # LLM Cascade Fallback 
+│   │   ├── model_fallback.py       # LLM Cascade Fallback
 │   │   ├── mood_service.py         # Emotional State
 │   │   ├── personality_history_service.py # Personality Drift Tracking
 │   │   ├── personality_service.py  # Identity Management
-│   │   ├── prompt_guard.py         # Injection Protection 
+│   │   ├── prompt_guard.py         # Injection Protection
 │   │   ├── rate_limiter.py         # API Throttling
 │   │   ├── realtime_voice_service.py # WebSocket Visualizer/Voice
-│   │   ├── rewind_service.py       # Screen Memory 
+│   │   ├── rewind_service.py       # Screen Memory
 │   │   ├── scheduler_service.py    # Cron Jobs
 │   │   ├── search_service.py       # Web Search
 │   │   ├── telegram_bot_service.py # Telegram Integration
@@ -318,92 +332,88 @@ Chirag-clone/
 │   │   ├── voice_service.py        # TTS/STT (ElevenLabs/Whisper)
 │   │   └── whatsapp_bot_service.py # WhatsApp Integration
 │   │
-│   ├── middleware/                 # Middleware Layer
-│   │   └── security.py             # CSP & Sanitization 
+│   ├── middleware/             # Middleware Layer
+│   │   └── security.py         # CSP & Sanitization
 │   │
-│   ├── models/
-│   │   └── validation.py           # Pydantic v2 Models 
+│   ├── models/                 # Pydantic Schemas
+│   │   └── validation.py       # Request Validation
 │   │
-│   ├── migrations/                 # Alembic Database Migrations 
+│   ├── migrations/             # Database Migrations
 │   │   └── versions/
 │   │
-│   ├── parsers/                    # Chat Log Parsers
-│   │   ├── __init__.py
-│   │   ├── discord_parser.py       # Discord JSON Parser
-│   │   ├── instagram_parser.py     # Instagram JSON Parser
-│   │   ├── smart_parser.py         # Auto-format Detector
-│   │   └── whatsapp_parser.py      # WhatsApp Text Parser
+│   ├── parsers/                # Chat Parsers
+│   │   ├── discord_parser.py
+│   │   ├── instagram_parser.py
+│   │   ├── smart_parser.py     # Heuristic/LLM Parser
+│   │   └── whatsapp_parser.py
 │   │
-│   │   ├── tests/                      # Test Suite
-│   │   │   ├── test_main.py             # API Tests
-│   │   │   ├── test_auth.py             # Auth & Security Tests 
-│   │   │   ├── test_voice.py            # Real-time Voice Tests 
-│   │   │   ├── test_prompt_guard.py     # Injection Protection Tests 
-│   │   │   ├── test_hybrid_rag.py       # Knowledge Retrieval Tests 
-│   │   │   ├── test_circuit_breaker.py  # Fault Tolerance Tests 
-│   │   │   └── test_integration.py      # E2E Tests
-│   │
-│   └── data/                       # Local Storage
-│       ├── chroma_db/              # Vector Database
-│       ├── knowledge/              # PDFs & Docs (Brain Station)
-│       └── personality_profile.json # Learned Traits
+│   ├── tests/                  # Backend Tests
+│   │   ├── conftest.py         # Test Fixtures
+│   │   ├── test_auth.py        # Auth & Security Tests
+│   │   ├── test_circuit_breaker.py
+│   │   ├── test_deep_research.py
+│   │   ├── test_hybrid_rag.py  # RAG Logic
+│   │   ├── test_integration.py # E2E API Tests
+│   │   ├── test_llm.py         # LLM Wrapper Tests
+│   │   ├── test_local_voice.py # Offline Voice Tests
+│   │   ├── test_main.py        # Core Routes
+│   │   ├── test_parsers.py     # Chat Parsing
+│   │   ├── test_prompt_guard.py # Security Guardrails
+│   │   ├── test_rewind.py      # Screen Memory
+│   │   ├── test_services.py    # Service Logic
+│   │   └── test_voice.py       # Realtime Voice
+│   └── data/                   # Local Storage (Excluded from Git)
 │
 ├── frontend-react/
 │   ├── index.html
 │   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── tsconfig.json
-├── .prettierrc                 # Formatting Config 
 │   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── tsconfig.json
 │   │
 │   └── src/
-│       ├── main.tsx                # React Entry Point
-│       ├── index.css               # Global Styles/Tailwind
-│       ├── App.tsx                 # Routing & Layout
+│       ├── main.tsx            # React Entry Point
+│       ├── App.tsx             # Routing & Layout
+│       ├── index.css           # Global Styles
 │       │
-│       ├── components/             # React Components
+│       ├── components/         # React Components
 │       │   ├── AudioVisualizer.tsx # Web Audio API Viz
 │       │   ├── AutopilotPage.tsx   # Bot Control Dashboard
 │       │   ├── Avatar3D.tsx        # 3D Avatar with Lip-Sync
 │       │   ├── ChatInterface.tsx   # Main Chat UI + Avatar
-│       │   ├── CommandPalette.tsx  # Quick Actions 
+│       │   ├── CommandPalette.tsx  # Quick Actions
 │       │   ├── Dashboard.tsx       # Analytics Home
+│       │   ├── ErrorBoundary.tsx   # React Error Boundary
 │       │   ├── Layout.tsx          # Navigation Wrapper
-│       │   ├── LoginPage.tsx       # Social Login (NEW)
+│       │   ├── LoginPage.tsx       # Social Login
 │       │   ├── MemoryGraph.tsx     # Interactive Knowledge Graph
 │       │   ├── ProfilePage.tsx     # Bot Profile Settings
-│       │   ├── SettingsPanel.tsx   # Preferences & Theme 
+│       │   ├── SettingsPanel.tsx   # Preferences & Theme
+│       │   ├── Skeleton.tsx        # Loading States
 │       │   ├── ThinkingBubble.tsx  # CoT Visualization
+│       │   ├── Toast.tsx           # Notifications
 │       │   ├── TrainingCenter.tsx  # Brain Station + Training
 │       │   ├── VoiceChat.tsx       # Live Voice Streaming
 │       │   │
-│       │   ├── __tests__/          # Component Tests 
+│       │   ├── __tests__/          # Component Tests
+│       │   │   ├── Dashboard.test.tsx
 │       │   │   ├── LoginPage.test.tsx
-│       │   │   ├── VoiceChat.test.tsx
-│       │   │   └── Dashboard.test.tsx
+│       │   │   └── VoiceChat.test.tsx
 │       │
-│       ├── utils/
-│       │   └── lazyLoad.tsx        # Lazy Loading HOCs 
-│       │
-│       ├── e2e/                    # End-to-End Tests 
-│       │   └── app.spec.ts         # Playwright Spec
-│       │
-│       ├── services/
-│       │   └── api.ts              # API Client
-│       │
-│       └── assets/                 # Static Assets
+│       ├── hooks/              # Custom React Hooks
+│       ├── services/           # Frontend Services (API)
+│       ├── utils/              # Utilities
+│       └── e2e/                # Playwright Tests
 │
-├── desktop-widget/                 # Electron Desktop App
-│   ├── package.json                # Electron Dependencies
-│   ├── main.js                     # Main Process (Screen Capture)
-│   ├── preload.js                  # Secure IPC Bridge
-│   ├── index.html                  # Widget UI
-│   ├── renderer.js                 # Front Logic (Eye Mode)
-│   └── styles.css                  # Glassmorphism Theme
+└── desktop-widget/             # Electron App
+    ├── main.js
+    ├── preload.js
+    ├── index.html
+    └── renderer.js
 ```
 
-## � API Reference
+## API Reference
 
 ### Health & System
 
@@ -504,4 +514,4 @@ Chirag-clone/
 
 ---
 
-**v2.6 "Production Ready" Release** - [View Changelog](CHANGELOG.md)
+**v2.7.0 "Refactored Core" Release** - [View Changelog](CHANGELOG.md)
