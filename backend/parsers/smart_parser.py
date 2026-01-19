@@ -5,6 +5,9 @@ Extracts conversation pairs from messy, unformatted text or direct copy-pastes.
 from typing import List, Tuple, Dict
 import re
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SmartParser:
@@ -126,7 +129,7 @@ JSON OUTPUT:"""
             }
             
         except Exception as e:
-            print(f"LLM parsing failed: {e}")
+            logger.warning(f"LLM parsing failed: {e}")
             # Fall back to heuristic
             return self.parse_content(content)
     

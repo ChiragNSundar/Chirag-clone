@@ -2,15 +2,18 @@
   "name": "Chirag",
   "common_phrases": [],
   "emoji_patterns": {},
-  "vocabulary": {},
-  "avg_message_length": 0,
+  "vocabulary": {
+    "nothing": 1,
+    "much": 1
+  },
+  "avg_message_length": 12.0,
   "typing_quirks": [],
   "tone_markers": {
-    "casual": 0.5,
-    "formal": 0.5,
+    "casual": 0.0,
+    "formal": 0.0,
     "sarcastic": 0.0,
     "enthusiastic": 0.5,
-    "brief": 0.7500000000000002
+    "brief": 1.0
   },
   "facts": [
     "i like playing games",
@@ -80,6 +83,10 @@
     {
       "context": "Test context",
       "response": "Test response"
+    },
+    {
+      "context": "Hey, what's up?",
+      "response": "nothing much"
     }
   ]
 }

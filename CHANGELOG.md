@@ -1,24 +1,62 @@
 # Changelog
 
+## [2.7.0] - 2026-01-19
+
+### 🏗️ Major Backend Refactoring
+
+- **Modular Router Architecture**: Completely refactored `main.py` from 2267 lines to ~200 lines by extracting all endpoints into dedicated router modules.
+  
+#### New Router Files
+
+| Router | Endpoints | Description |
+|--------|-----------|-------------|
+| `routes/chat.py` | `/api/chat/*` | Chat messaging |
+| `routes/training.py` | `/api/training/*` | Uploads, facts, journal, examples |
+| `routes/dashboard.py` | `/api/dashboard/*`, `/api/health`, `/api/profile`, `/api/analytics/*` | Stats, health, analytics |
+| `routes/autopilot.py` | `/api/autopilot/*` | Discord, Telegram, Twitter, LinkedIn, Gmail, WhatsApp |
+| `routes/voice.py` | `/api/voice/*` | TTS, STT, real-time WebSocket streaming |
+| `routes/cognitive.py` | `/api/cognitive/*` | Core memory, active learning |
+| `routes/knowledge.py` | `/api/knowledge/*` | Document management, querying |
+| `routes/vision.py` | `/api/vision/*` | Desktop and image analysis |
+| `routes/features.py` | Creative, calendar, quiz, research, rewind | Miscellaneous features |
+
+### 🔧 Code Quality
+
+- **Improved Logging**: Replaced `print()` statements in `smart_parser.py` with proper `logger.warning()`.
+- **Cleaner Imports**: Centralized service imports within each router module.
+- **Better Testability**: Isolated router modules are easier to unit test.
+
+### 📁 File Changes
+
+- **Modified**: `backend/main.py` (reduced from 2267 to ~200 lines)
+- **Modified**: `backend/parsers/smart_parser.py` (improved logging)
+- **Added**: 9 new router files in `backend/routes/`
+
+---
+
 ## [2.6.0] - 2026-01-17
 
 ### 🛠️ Developer Experience
+
 - **Pre-commit Hooks**: Added `.pre-commit-config.yaml` with Black, isort, Prettier, ESLint.
 - **pyproject.toml**: Centralized Python tooling configuration.
 - **Prettier/ESLint**: Consistent frontend code formatting.
 
 ### 🎙️ Voice Enhancements
+
 - **Duplex Voice**: Added barge-in capability for interrupting bot mid-speech.
 - **VAD Integration**: Voice Activity Detection using `webrtcvad` with energy-based fallback.
 - **VoiceState Enum**: Enhanced state machine for conversation tracking.
 
 ### 🔐 Security & Auth
+
 - **Google-Only Auth**: Simplified authentication to exclusively use Google OAuth2 (GitHub removed), ensuring stricter access control.
 - **Circuit Breakers**: Added `CircuitBreaker` pattern to `backend/services/circuit_breaker.py` preventing cascading failures.
 - **Hybrid RAG**: Implemented Reciprocal Rank Fusion combining BM25 keyword search with semantic vector search.
 - **Prompt Guard**: 5-level threat detection system identifying prompt injection.
 
 ### 🧪 Test Suite Expansion
+
 - **Backend Coverage**: Added comprehensive tests for `auth_service`, `realtime_voice_service`, `prompt_guard`, `hybrid_rag`, and `circuit_breaker`.
 - **Frontend Tests**: Added Vitest mocks and component tests for `VoiceChat`, `Dashboard`, and `LoginPage`.
 - **Reliability**: Implemented mocks for complex services (WebSocket, MediaRecorder, OpenAI).
@@ -28,17 +66,20 @@
 ## [2.5.0] - 2026-01-17
 
 ### 🚀 Major Features
+
 - **Production Robustness**: Introduced a comprehensive suite of reliability features.
-    - **Circuit Breakers**: Added `CircuitBreaker` pattern to `backend/services/circuit_breaker.py` preventing cascading failures from external API outages.
-    - **Hybrid RAG**: Implemented Reciprocal Rank Fusion combining BM25 keyword search with semantic vector search in `backend/services/hybrid_rag.py`.
-    - **Model Fallback**: Automated fallback system (Gemini → GPT-4o → Local) in `backend/services/model_fallback.py`.
+  - **Circuit Breakers**: Added `CircuitBreaker` pattern to `backend/services/circuit_breaker.py` preventing cascading failures from external API outages.
+  - **Hybrid RAG**: Implemented Reciprocal Rank Fusion combining BM25 keyword search with semantic vector search in `backend/services/hybrid_rag.py`.
+  - **Model Fallback**: Automated fallback system (Gemini → GPT-4o → Local) in `backend/services/model_fallback.py`.
 
 ### 🔒 Security
+
 - **Prompt Guard**: 5-level threat detection system identifying prompt injection, role-playing attacks, and jailbreaks.
 - **Security Middleware**: Added CSP, XSS protection, and SQL injection detection in `backend/middleware/security.py`.
 - **Strict Validation**: Migrated all data models to strict Pydantic v2 schemas in `backend/models/validation.py`.
 
 ### 🏗️ Infrastructure
+
 - **Docker Compose**: Enhanced stack with Redis (caching) and ChromaDB (vector storage) services.
 - **E2E Testing**: Added Playwright test suite (`frontend-react/e2e/`) covering navigation, chat, and accessibility.
 - **Migrations**: Setup Alembic for database migrations.
@@ -46,6 +87,7 @@
 ## [2.4.2] - 2026-01-17
 
 ### ⚡ Performance & UX
+
 - **Command Palette**: Added `Cmd+K` interface for global navigation and quick actions.
 - **Lazy Loading**: Implemented code-splitting for all major routes (Dashboard, Training, etc.) reducing initial bundle size.
 - **Settings Panel**: New centralized settings UI with theme toggle (Dark/Light/System) and preference persistence.
@@ -54,6 +96,7 @@
 ## [2.4.1] - 2026-01-17
 
 ### 🧪 Quality Assurance
+
 - **Frontend Tests**: Added Vitest unit tests for Dashboard, ChatInterface, and ThinkingBubble.
 - **Components**: Added `ErrorBoundary`, `Toast` notifications, and accessible `Skeleton` loaders.
 - **Hooks**: Added `useUtilities` collection (debounce, localStorage, mediaQuery).
@@ -61,11 +104,11 @@
 ## [2.4.0] - 2026-01-17
 
 ### 🌟 Core Capabilities
+
 - **Deep Research**: Agentic web research capable of recursive searching and report generation.
 - **Rewind Memory**: Desktop screen recording buffer allowing "What was I looking at?" queries.
 - **Local Voice**: Offline-first TTS/STT using `faster-whisper` and `piper-tts`.
 - **Performance Monitor**: Middleware for tracking API latency and error rates.
-
 
 ## [2.3.1] - 2026-01-16
 

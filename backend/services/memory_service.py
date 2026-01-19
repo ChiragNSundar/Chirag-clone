@@ -1,8 +1,14 @@
 """
 Memory Service - Vector database operations using ChromaDB for conversation memory.
 """
-import chromadb
-from chromadb.config import Settings
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMA_AVAILABLE = True
+except ImportError:
+    CHROMA_AVAILABLE = False
+    print("[WARNING] ChromaDB not found. Using in-memory mock service.")
+
 from typing import List, Dict, Optional, Tuple
 import json
 import hashlib
@@ -10,26 +16,84 @@ from datetime import datetime
 from config import Config
 
 
+class MockCollection:
+    def __init__(self, name):
+        self.name = name
+        self.data = {}  # id -> {document, metadata}
+        
+    def add(self, documents, ids, metadatas=None):
+        for i, doc_id in enumerate(ids):
+            self.data[doc_id] = {
+                "document": documents[i],
+                "metadata": metadatas[i] if metadatas else {}
+            }
+            
+    def update(self, documents, ids, metadatas=None):
+        self.add(documents, ids, metadatas)
+        
+    def query(self, query_texts, n_results=5):
+        # fast simple keyword match for mock
+        results = {"ids": [], "documents": [], "metadatas": []}
+        q = query_texts[0].lower()
+        
+        matches = []
+        for doc_id, item in self.data.items():
+            if q in item["document"].lower():
+                matches.append(item)
+                
+        # Limit results
+        matches = matches[:n_results]
+        
+        results["metadatas"] = [[m["metadata"] for m in matches]]
+        results["documents"] = [[m["document"] for m in matches]]
+        return results
+
+    def get(self, where=None, limit=None):
+        # Simple mock implementation
+        results = {"ids": [], "documents": [], "metadatas": []}
+        items = list(self.data.items())
+        if limit:
+            items = items[:limit]
+            
+        for doc_id, item in items:
+            results["ids"].append(doc_id)
+            results["documents"].append(item["document"])
+            results["metadatas"].append(item["metadata"])
+            
+        return results
+        
+    def count(self):
+        return len(self.data)
+        
+    def peek(self, limit=10):
+        return self.get(limit=limit)
+
+
 class MemoryService:
     """Service for managing conversation memory using ChromaDB."""
     
     def __init__(self):
-        self.client = chromadb.PersistentClient(
-            path=Config.CHROMA_DB_PATH,
-            settings=Settings(anonymized_telemetry=False)
-        )
-        
-        # Collection for training conversations
-        self.training_collection = self.client.get_or_create_collection(
-            name="training_conversations",
-            metadata={"description": "Conversation examples for few-shot learning"}
-        )
-        
-        # Collection for ongoing conversations
-        self.conversation_collection = self.client.get_or_create_collection(
-            name="conversations",
-            metadata={"description": "Recent conversation history"}
-        )
+        if CHROMA_AVAILABLE:
+            self.client = chromadb.PersistentClient(
+                path=Config.CHROMA_DB_PATH,
+                settings=Settings(anonymized_telemetry=False)
+            )
+            
+            # Collection for training conversations
+            self.training_collection = self.client.get_or_create_collection(
+                name="training_conversations",
+                metadata={"description": "Conversation examples for few-shot learning"}
+            )
+            
+            # Collection for ongoing conversations
+            self.conversation_collection = self.client.get_or_create_collection(
+                name="conversations",
+                metadata={"description": "Recent conversation history"}
+            )
+        else:
+            self.client = None
+            self.training_collection = MockCollection("training_conversations")
+            self.conversation_collection = MockCollection("conversations")
     
     def _generate_id(self, text: str) -> str:
         """Generate a unique ID for a piece of text."""
@@ -44,15 +108,6 @@ class MemoryService:
     ) -> str:
         """
         Add a training example (context -> response pair).
-        
-        Args:
-            context: The context/prompt that led to the response
-            response: Your actual response
-            source: Where this came from (whatsapp, discord, manual, etc.)
-            metadata: Additional metadata
-            
-        Returns:
-            The ID of the added example
         """
         doc_id = self._generate_id(context + response)
         
@@ -76,11 +131,12 @@ class MemoryService:
             )
         except Exception as e:
             # Might already exist, try update
-            self.training_collection.update(
-                documents=[full_text],
-                ids=[doc_id],
-                metadatas=[meta]
-            )
+            if hasattr(self.training_collection, 'update'):
+                self.training_collection.update(
+                    documents=[full_text],
+                    ids=[doc_id],
+                    metadatas=[meta]
+                )
         
         return doc_id
     
@@ -89,16 +145,7 @@ class MemoryService:
         examples: List[Tuple[str, str]],
         source: str = "import"
     ) -> int:
-        """
-        Add multiple training examples at once.
-        
-        Args:
-            examples: List of (context, response) tuples
-            source: Source of the examples
-            
-        Returns:
-            Number of examples added
-        """
+        """Add multiple training examples at once."""
         if not examples:
             return 0
         
@@ -156,16 +203,7 @@ class MemoryService:
         query: str,
         n_results: int = 5
     ) -> List[Dict]:
-        """
-        Find similar training examples for few-shot learning.
-        
-        Args:
-            query: The current conversation context
-            n_results: Number of examples to retrieve
-            
-        Returns:
-            List of similar examples with context and response
-        """
+        """Find similar training examples for few-shot learning."""
         try:
             results = self.training_collection.query(
                 query_texts=[query],
@@ -173,13 +211,21 @@ class MemoryService:
             )
             
             examples = []
-            if results and results['metadatas']:
-                for meta in results['metadatas'][0]:
-                    examples.append({
-                        'context': meta.get('context', ''),
-                        'response': meta.get('response', ''),
-                        'source': meta.get('source', 'unknown')
-                    })
+            if results and results.get('metadatas'):
+                # Handle mock vs real structure differences if needed
+                metas = results['metadatas'][0] if isinstance(results['metadatas'], list) and len(results['metadatas']) > 0 and isinstance(results['metadatas'][0], list) else results['metadatas']
+                
+                # Mock returns a single list sometimes depending on implementation, real returns list of lists
+                if isinstance(metas, list) and len(metas) > 0 and isinstance(metas[0], list):
+                     metas = metas[0]
+
+                for meta in metas:
+                    if isinstance(meta, dict):
+                        examples.append({
+                            'context': meta.get('context', ''),
+                            'response': meta.get('response', ''),
+                            'source': meta.get('source', 'unknown')
+                        })
             
             return examples
         except Exception as e:
@@ -192,14 +238,7 @@ class MemoryService:
         role: str,
         content: str
     ) -> None:
-        """
-        Add a message to conversation history.
-        
-        Args:
-            session_id: The conversation session ID
-            role: 'user' or 'assistant'
-            content: Message content
-        """
+        """Add a message to conversation history."""
         doc_id = f"{session_id}_{datetime.now().timestamp()}"
         
         self.conversation_collection.add(
@@ -217,16 +256,7 @@ class MemoryService:
         session_id: str,
         limit: int = 20
     ) -> List[Dict]:
-        """
-        Get recent conversation history for a session.
-        
-        Args:
-            session_id: The conversation session ID
-            limit: Maximum number of messages to retrieve
-            
-        Returns:
-            List of messages in chronological order
-        """
+        """Get recent conversation history for a session."""
         try:
             results = self.conversation_collection.get(
                 where={"session_id": session_id},
@@ -234,16 +264,26 @@ class MemoryService:
             )
             
             messages = []
-            if results and results['metadatas']:
-                for i, meta in enumerate(results['metadatas']):
-                    messages.append({
-                        'role': meta.get('role', 'user'),
-                        'content': results['documents'][i],
-                        'timestamp': meta.get('timestamp', '')
-                    })
+            if results and results.get('metadatas'):
+                documents = results['documents']
+                metadatas = results['metadatas']
+                
+                # Handling structure differences
+                if isinstance(documents, list) and len(documents) > 0 and isinstance(documents[0], list):
+                     documents = documents[0]
+                if isinstance(metadatas, list) and len(metadatas) > 0 and isinstance(metadatas[0], list):
+                     metadatas = metadatas[0]
+
+                for i, meta in enumerate(metadatas):
+                    if i < len(documents):
+                         messages.append({
+                             'role': meta.get('role', 'user'),
+                             'content': documents[i],
+                             'timestamp': meta.get('timestamp', '')
+                         })
             
             # Sort by timestamp
-            messages.sort(key=lambda x: x['timestamp'])
+            messages.sort(key=lambda x: x.get('timestamp', ''))
             return messages
             
         except Exception as e:
@@ -258,8 +298,13 @@ class MemoryService:
             # Sample some data for source breakdown
             sample = self.training_collection.peek(limit=100)
             sources = {}
-            if sample and sample['metadatas']:
-                for meta in sample['metadatas']:
+            
+            if sample and sample.get('metadatas'):
+                metadatas = sample['metadatas']
+                if isinstance(metadatas, list) and len(metadatas) > 0 and isinstance(metadatas[0], list):
+                     metadatas = metadatas[0]
+
+                for meta in metadatas:
                     source = meta.get('source', 'unknown')
                     sources[source] = sources.get(source, 0) + 1
             
@@ -271,18 +316,17 @@ class MemoryService:
             return {'total_examples': 0, 'sources': {}}
     
     def get_all_examples_with_metadata(self, limit: int = 500) -> List[Dict]:
-        """
-        Get all training examples with full metadata for timeline.
-        
-        Returns:
-            List of examples with content, source, timestamp, etc.
-        """
+        """Get all training examples with full metadata for timeline."""
         try:
             results = self.training_collection.peek(limit=limit)
             
             examples = []
-            if results and results['metadatas']:
-                for i, meta in enumerate(results['metadatas']):
+            if results and results.get('metadatas'):
+                metadatas = results['metadatas']
+                if isinstance(metadatas, list) and len(metadatas) > 0 and isinstance(metadatas[0], list):
+                     metadatas = metadatas[0]
+
+                for i, meta in enumerate(metadatas):
                     examples.append({
                         'type': 'training',
                         'content': meta.get('response', '')[:100],
@@ -298,12 +342,25 @@ class MemoryService:
     
     def clear_training_data(self) -> None:
         """Clear all training data (use with caution!)."""
-        self.client.delete_collection("training_conversations")
-        self.training_collection = self.client.get_or_create_collection(
-            name="training_conversations",
-            metadata={"description": "Conversation examples for few-shot learning"}
-        )
+        if CHROMA_AVAILABLE:
+            self.client.delete_collection("training_conversations")
+            self.training_collection = self.client.get_or_create_collection(
+                name="training_conversations",
+                metadata={"description": "Conversation examples for few-shot learning"}
+            )
+        else:
+            self.training_collection = MockCollection("training_conversations")
 
+
+# Singleton instance
+_memory_service = None
+
+def get_memory_service() -> MemoryService:
+    """Get the singleton memory service instance."""
+    global _memory_service
+    if _memory_service is None:
+        _memory_service = MemoryService()
+    return _memory_service
 
 # Singleton instance
 _memory_service = None
