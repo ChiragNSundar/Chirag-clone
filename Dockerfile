@@ -35,8 +35,8 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 FROM python:3.11-slim
 
 LABEL maintainer="Chirag"
-LABEL description="Chirag Clone - Personal AI Digital Twin v2.6"
-LABEL version="2.6.0"
+LABEL description="Chirag Clone - Personal AI Digital Twin v2.7"
+LABEL version="2.7.0"
 
 # ============== Security Hardening ==============
 # Create non-root user with specific UID/GID
@@ -66,8 +66,8 @@ RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 # Copy backend
 COPY --chown=chirag:chirag backend/ ./backend/
 
-# Copy frontend build
-COPY --from=frontend-builder --chown=chirag:chirag /app/frontend/dist ./frontend/
+# Copy frontend build (matching main.py path expectation: parent/frontend-react/dist)
+COPY --from=frontend-builder --chown=chirag:chirag /app/frontend/dist ./frontend-react/dist/
 
 # ============== Data Directories ==============
 RUN mkdir -p \
