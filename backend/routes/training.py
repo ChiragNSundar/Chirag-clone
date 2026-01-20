@@ -3,7 +3,7 @@ Training Routes - Endpoints for training the AI clone.
 Includes file uploads (WhatsApp, Instagram, Discord), facts, journal entries,
 training examples, and training chat.
 """
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 import logging
@@ -52,13 +52,27 @@ def _get_personality_service():
 # ============= Auth Endpoint =============
 
 import os
+from fastapi import Header
 TRAINING_PIN = os.environ.get("TRAINING_PIN", "1234")
+
+async def verify_pin(x_training_pin: str = Header(None, alias="X-Training-PIN")):
+    """Dependency to verify training PIN from header.
+    
+    Use as a dependency on endpoints that need protection:
+    @router.get("/protected", dependencies=[Depends(verify_pin)])
+    """
+    if x_training_pin != TRAINING_PIN:
+        raise HTTPException(
+            status_code=401, 
+            detail="Training PIN required. Pass X-Training-PIN header."
+        )
+    return True
 
 @router.post("/auth")
 async def verify_training_auth(pin: str = Form(...)):
-    """Verify training PIN"""
+    """Verify training PIN and return success for frontend session."""
     if pin == TRAINING_PIN:
-        return {"success": True, "message": "Authenticated"}
+        return {"success": True, "message": "Authenticated", "pin": pin}
     raise HTTPException(status_code=401, detail="Invalid PIN")
 
 
@@ -432,7 +446,7 @@ class ImportRequest(BaseModel):
     merge: bool = True  # If True, merges with existing. If False, replaces.
 
 
-@router.get("/export")
+@router.get("/export", dependencies=[Depends(verify_pin)])
 async def export_all_brain_data():
     """Export all learned data (training examples, personality profile) as JSON.
     
@@ -478,7 +492,7 @@ async def export_all_brain_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/import")
+@router.post("/import", dependencies=[Depends(verify_pin)])
 async def import_brain_data(file: UploadFile = File(...), merge: bool = Form(True)):
     """Import previously exported brain data.
     

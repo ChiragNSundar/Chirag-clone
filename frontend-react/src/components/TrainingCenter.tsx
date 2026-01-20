@@ -140,6 +140,9 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const [importing, setImporting] = useState(false);
     const importFileRef = useRef<HTMLInputElement>(null);
 
+    // Get stored PIN for authenticated API calls
+    const getTrainingPin = () => sessionStorage.getItem('training_pin') || '';
+
     const loadFacts = async () => {
         try {
             const data = await api.getFacts();
@@ -219,7 +222,9 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const exportBrain = async () => {
         setExporting(true);
         try {
-            const res = await fetch('http://localhost:8000/api/training/export');
+            const res = await fetch('http://localhost:8000/api/training/export', {
+                headers: { 'X-Training-PIN': getTrainingPin() }
+            });
             if (!res.ok) throw new Error('Export failed');
             const data = await res.json();
 
@@ -257,7 +262,8 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
 
             const res = await fetch('http://localhost:8000/api/training/import', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: { 'X-Training-PIN': getTrainingPin() }
             });
 
             if (!res.ok) {
@@ -1072,6 +1078,8 @@ const TrainingAuth = ({ onSuccess }: { onSuccess: () => void }) => {
             const isValid = await api.validatePin(pin);
 
             if (isValid) {
+                // Store PIN for authenticated API calls
+                sessionStorage.setItem('training_pin', pin);
                 onSuccess();
             } else {
                 setError('Invalid PIN');
