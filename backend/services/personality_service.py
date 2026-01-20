@@ -247,6 +247,88 @@ class PersonalityService:
     def get_system_prompt(self) -> str:
         """Get the system prompt for the LLM."""
         return self.profile.to_prompt()
+    
+    def export_profile(self) -> dict:
+        """Export complete personality profile for backup/transfer.
+        
+        Returns all personality data without truncation.
+        """
+        profile = self.profile
+        return {
+            'name': profile.name,
+            'common_phrases': profile.common_phrases,
+            'emoji_patterns': profile.emoji_patterns,
+            'vocabulary': dict(profile.vocabulary),  # Full vocabulary
+            'avg_message_length': profile.avg_message_length,
+            'typing_quirks': profile.typing_quirks,
+            'tone_markers': profile.tone_markers,
+            'facts': profile.facts,
+            'response_examples': profile.response_examples  # Full examples
+        }
+    
+    def import_profile(self, data: dict, merge: bool = True) -> None:
+        """Import personality profile from export data.
+        
+        Args:
+            data: Dictionary containing personality profile data
+            merge: If True, merges with existing data. If False, replaces entirely.
+        """
+        if not merge:
+            # Full replacement
+            self.profile = PersonalityProfile.from_dict(data)
+        else:
+            # Merge mode - add to existing data
+            if 'name' in data:
+                self.profile.name = data['name']
+            
+            if 'common_phrases' in data:
+                existing = set(self.profile.common_phrases)
+                for phrase in data['common_phrases']:
+                    if phrase not in existing:
+                        self.profile.common_phrases.append(phrase)
+            
+            if 'emoji_patterns' in data:
+                for emoji, count in data['emoji_patterns'].items():
+                    self.profile.emoji_patterns[emoji] = self.profile.emoji_patterns.get(emoji, 0) + count
+            
+            if 'vocabulary' in data:
+                for word, count in data['vocabulary'].items():
+                    self.profile.vocabulary[word] = self.profile.vocabulary.get(word, 0) + count
+            
+            if 'avg_message_length' in data and data['avg_message_length'] > 0:
+                if self.profile.avg_message_length == 0:
+                    self.profile.avg_message_length = data['avg_message_length']
+                else:
+                    # Average the two
+                    self.profile.avg_message_length = (self.profile.avg_message_length + data['avg_message_length']) / 2
+            
+            if 'typing_quirks' in data:
+                existing = set(self.profile.typing_quirks)
+                for quirk in data['typing_quirks']:
+                    if quirk not in existing:
+                        self.profile.typing_quirks.append(quirk)
+            
+            if 'tone_markers' in data:
+                for marker, value in data['tone_markers'].items():
+                    if marker in self.profile.tone_markers:
+                        self.profile.tone_markers[marker] = (self.profile.tone_markers[marker] + value) / 2
+                    else:
+                        self.profile.tone_markers[marker] = value
+            
+            if 'facts' in data:
+                existing = set(self.profile.facts)
+                for fact in data['facts']:
+                    if fact not in existing:
+                        self.profile.facts.append(fact)
+            
+            if 'response_examples' in data:
+                existing_keys = {(ex['context'], ex['response']) for ex in self.profile.response_examples}
+                for ex in data['response_examples']:
+                    key = (ex.get('context', ''), ex.get('response', ''))
+                    if key not in existing_keys:
+                        self.profile.response_examples.append(ex)
+        
+        self.save_profile()
 
 
 # Singleton instance

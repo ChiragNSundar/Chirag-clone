@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Upload, MessageSquare, BookOpen,
     Lock, Plus, Trash2, CheckCircle, AlertCircle,
-    RefreshCcw, PenLine, Instagram, Hash, Brain, Search, Link, FileText
+    RefreshCcw, PenLine, Instagram, Hash, Brain, Search, Link, FileText,
+    Download, HardDriveUpload
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { api } from '../services/api';
@@ -135,6 +136,9 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const importFileRef = useRef<HTMLInputElement>(null);
 
     const loadFacts = async () => {
         try {
@@ -212,6 +216,69 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         }
     };
 
+    const exportBrain = async () => {
+        setExporting(true);
+        try {
+            const res = await fetch('http://localhost:8000/api/training/export');
+            if (!res.ok) throw new Error('Export failed');
+            const data = await res.json();
+
+            // Create and download the file
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `brain-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setMessage({
+                type: 'success',
+                text: `Exported ${data.metadata?.total_training_examples || 0} training examples and ${data.metadata?.total_facts || 0} facts`
+            });
+        } catch (e) {
+            setMessage({ type: 'error', text: 'Export failed' });
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setImporting(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('merge', 'true');
+
+            const res = await fetch('http://localhost:8000/api/training/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Import failed');
+            }
+
+            const result = await res.json();
+            setMessage({
+                type: 'success',
+                text: `Imported ${result.imported?.training_examples || 0} training examples and ${result.imported?.personality?.facts || 0} facts`
+            });
+            loadFacts(); // Refresh facts list
+        } catch (e) {
+            setMessage({ type: 'error', text: e instanceof Error ? e.message : 'Import failed' });
+        } finally {
+            setImporting(false);
+            if (importFileRef.current) importFileRef.current.value = '';
+        }
+    };
+
     return (
         <div className="p-6 max-w-5xl mx-auto">
             <motion.div
@@ -226,13 +293,35 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                     </h1>
                     <p className="text-zinc-500">Teach your digital twin how to be you</p>
                 </div>
-                <button
-                    onClick={() => setShowResetConfirm(true)}
-                    className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm flex items-center gap-2"
-                >
-                    <Trash2 size={16} />
-                    Reset All
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={exportBrain}
+                        disabled={exporting}
+                        className="px-4 py-2 bg-primary/20 text-primary hover:bg-primary/30 rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {exporting ? <RefreshCcw size={16} className="animate-spin" /> : <Download size={16} />}
+                        Export Brain
+                    </button>
+                    <label className="px-4 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg text-sm flex items-center gap-2 cursor-pointer">
+                        {importing ? <RefreshCcw size={16} className="animate-spin" /> : <HardDriveUpload size={16} />}
+                        Import Brain
+                        <input
+                            ref={importFileRef}
+                            type="file"
+                            accept=".json"
+                            onChange={handleImportFile}
+                            className="hidden"
+                            disabled={importing}
+                        />
+                    </label>
+                    <button
+                        onClick={() => setShowResetConfirm(true)}
+                        className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-sm flex items-center gap-2"
+                    >
+                        <Trash2 size={16} />
+                        Reset All
+                    </button>
+                </div>
             </motion.div>
 
             {/* Reset Confirmation Modal */}

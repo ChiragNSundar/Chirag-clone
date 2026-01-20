@@ -35,8 +35,8 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 FROM python:3.11-slim
 
 LABEL maintainer="Chirag"
-LABEL description="Chirag Clone - Personal AI Digital Twin v2.8"
-LABEL version="2.8.0"
+LABEL description="Chirag Clone - Personal AI Digital Twin v2.8.1"
+LABEL version="2.8.1"
 
 # ============== Security Hardening ==============
 # Create non-root user with specific UID/GID

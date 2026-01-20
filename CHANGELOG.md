@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.8.1] - 2026-01-20
+
+### 🧠 Export/Import Brain Feature (Training Center)
+
+- **Export Brain**: Download all learned data as a portable JSON file for backup or transfer.
+  - Training examples (context/response pairs with sources and timestamps)
+  - Complete personality profile (facts, quirks, emoji patterns, vocabulary, tone markers)
+  - Format versioning (`v1.0`) for future compatibility
+  
+- **Import Brain**: Restore AI behavior from a previously exported file.
+  - Merge mode (default): Adds to existing data without duplication
+  - Replace mode: Full data replacement for fresh installs
+
+### 📡 New API Endpoints
+
+- `GET /api/training/export` - Export all learned data as JSON
+- `POST /api/training/import` - Import from exported JSON file
+
+### 🧪 New Tests
+
+- Added `test_export_import.py` with 12 tests covering:
+  - MemoryService export/import roundtrip
+  - PersonalityService export/import with merge and replace modes
+  - Export format validation and JSON serialization
+
+### 📁 File Changes
+
+- **Modified**: `backend/routes/training.py` (new export/import endpoints)
+- **Modified**: `backend/services/memory_service.py` (export/import methods)
+- **Modified**: `backend/services/personality_service.py` (export/import methods)
+- **Modified**: `frontend-react/src/components/TrainingCenter.tsx` (Export/Import buttons)
+- **Added**: `backend/tests/test_export_import.py`
+
+---
+
 ## [2.8.0] - 2026-01-19
 
 ### 🌐 Progressive Web App (PWA)

@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -114,6 +114,7 @@ Teach your clone how to be you:
 - **Interactive Training**: "Interview mode" where the bot asks you questions.
 - **Journal**: Daily thought recording and reflection.
 - **Facts**: Manual entry for key personal details.
+- **Export/Import Brain** (v2.8.1): Backup and transfer all learned data as portable JSON.
 
 ### 🤖 Social Autopilot (`/autopilot`)
 
@@ -425,7 +426,8 @@ Chirag-clone/
 │   │   ├── test_prompt_guard.py # Security Guardrails
 │   │   ├── test_rewind.py      # Screen Memory
 │   │   ├── test_services.py    # Service Logic
-│   │   └── test_voice.py       # Realtime Voice
+│   │   ├── test_voice.py       # Realtime Voice
+│   │   └── test_export_import.py # Brain Export/Import (NEW)
 │   └── data/                   # Local Storage (Excluded from Git)
 │
 ├── frontend-react/
@@ -558,6 +560,8 @@ Chirag-clone/
 - `GET /api/training/chat/prompt`: Get training prompt.
 - `DELETE /api/training/reset`: Reset training session.
 - `POST /api/training/journal`: Add a journal entry.
+- `GET /api/training/export`: Export all learned data as JSON.
+- `POST /api/training/import`: Import previously exported data.
 
 ### 🤖 Autopilot Agents
 
@@ -578,4 +582,4 @@ Chirag-clone/
 
 ---
 
-**v2.7.0 "Refactored Core" Release** - [View Changelog](CHANGELOG.md)
+**v2.8.1 "Export Brain" Release** - [View Changelog](CHANGELOG.md)

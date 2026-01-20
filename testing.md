@@ -26,31 +26,37 @@ The testing strategy follows the **Testing Pyramid**:
 ## 📂 Test Suites Breakdown
 
 ### 1. `test_auth.py` (Authentication & Security) ✅
+
 - **JWT Generation**: Validates token creation and signature verification.
 - **OAuth URL**: Tests Google OAuth2 URL construction and state parameter generation.
 - **Admin Whitelist**: Verifies that only `ALLOWED_ADMIN_EMAILS` can access protected routes.
 - **Dependency Injection**: Tests `require_admin` dependency raises 403 for unauthorized users.
 
 ### 2. `test_voice.py` (Real-Time Audio) 🎙️
+
 - **VoiceState Enum**: Tests state machine transitions (Listening -> Thinking -> Speaking).
 - **VAD Logic**: Verifies Voice Activity Detection logic, including energy-based fallback.
 - **Barge-In**: Tests logic for interrupting the bot when user speaks.
 
 ### 3. `test_prompt_guard.py` (Security) 🛡️
+
 - **Injection Detection**: Tests identification of "Ignore all instructions" type attacks.
 - **Sanitization**: Verifies HTML/Script tag stripping.
 - **Threat Levels**: Checks classification of input safety (Safe, Risky, Critical).
 
 ### 4. `test_hybrid_rag.py` (Knowledge) 🧠
+
 - **Search Algorithms**: Tests BM25 (keyword) and Semantic (vector) search independently.
 - **Fusion**: Verifies Reciprocal Rank Fusion (RRF) correctly combines scores.
 - **Document Handling**: Tests adding and indexing documents.
 
 ### 5. `test_circuit_breaker.py` (Resilience) 🔌
+
 - **State Transitions**: CLOSED -> OPEN (failures) -> HALF_OPEN (timeout) -> CLOSED (success).
 - **Thresholds**: asserts that failure counts trigger state changes correctly.
 
 ### 6. Frontend Tests (Vitest) ⚛️
+
 - **`LoginPage.test.tsx`**: Tests Google Sign-In button rendering, OAuth status checking, and error display.
 - **`VoiceChat.test.tsx`**: Mocks `WebSocket` and `MediaRecorder` to test real-time voice controls and status indicators.
 - **`Dashboard.test.tsx`**: Tests analytics data fetching, chart rendering, and loading states.
@@ -58,12 +64,21 @@ The testing strategy follows the **Testing Pyramid**:
 - **`ThinkingBubble.test.tsx`**: Tests thinking step rendering and animations.
 
 ### 7. Hook Tests (`useUtilities.test.ts`) 🪝
+
 - **`useDebounce`**: Tests debouncing behavior and timer cancellation.
 - **`useLocalStorage`**: Tests read/write/update with mocked localStorage.
 - **`usePrevious`**: Tests previous value tracking across renders.
 - **`useWindowSize`**: Tests window dimension reporting.
 - **`useCopyToClipboard`**: Tests clipboard API integration.
 - **`useAsync`**: Tests async function execution, loading, and error states.
+
+### 8. `test_export_import.py` (Brain Export/Import) 💾
+
+- **Memory Export**: Tests `export_all_training_examples()` returns complete data.
+- **Memory Import**: Tests `import_training_examples()` with roundtrip validation.
+- **Personality Export**: Tests `export_profile()` contains all fields.
+- **Personality Import**: Tests merge mode (adds to existing) and replace mode (full reset).
+- **Format Validation**: Verifies JSON serialization and format versioning.
 
 ---
 
@@ -103,6 +118,7 @@ npx playwright test
 We use `unittest.mock` and `vitest.vi` extensively to avoid external API calls.
 
 **Backend Mocking:**
+
 ```python
 @patch('services.llm_service.generate_response')
 def test_chat(mock_generate):
@@ -110,6 +126,7 @@ def test_chat(mock_generate):
 ```
 
 **Frontend Mocking:**
+
 ```typescript
 global.fetch = vi.fn(() => Promise.resolve({
     json: () => Promise.resolve({ success: true })

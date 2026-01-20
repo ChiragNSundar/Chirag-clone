@@ -420,3 +420,130 @@ async def reset_all_training():
     except Exception as e:
         logger.error(f"Reset error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============= Export/Import Endpoints =============
+
+from datetime import datetime as dt
+
+class ImportRequest(BaseModel):
+    """Request model for brain import."""
+    data: dict
+    merge: bool = True  # If True, merges with existing. If False, replaces.
+
+
+@router.get("/export")
+async def export_all_brain_data():
+    """Export all learned data (training examples, personality profile) as JSON.
+    
+    Returns a comprehensive export file that can be imported on a fresh install
+    to restore the AI's learned behavior exactly.
+    """
+    try:
+        memory = _get_memory_service()
+        personality = _get_personality_service()
+        
+        # Get all training examples
+        training_examples = memory.export_all_training_examples()
+        
+        # Get complete personality profile
+        personality_profile = personality.export_profile()
+        
+        # Get training stats for metadata
+        stats = memory.get_training_stats()
+        
+        export_data = {
+            "format_version": "1.0",
+            "app_name": "Chirag-clone",
+            "app_description": "AI Digital Twin Training Data Export",
+            "exported_at": dt.now().isoformat(),
+            "metadata": {
+                "total_training_examples": len(training_examples),
+                "total_facts": len(personality_profile.get('facts', [])),
+                "total_response_examples": len(personality_profile.get('response_examples', [])),
+                "sources": stats.get('sources', {}),
+                "personality_name": personality_profile.get('name', 'Unknown')
+            },
+            "personality_profile": personality_profile,
+            "training_examples": training_examples
+        }
+        
+        logger.info(f"Exported brain data: {len(training_examples)} examples, "
+                   f"{len(personality_profile.get('facts', []))} facts")
+        
+        return export_data
+        
+    except Exception as e:
+        logger.error(f"Export error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/import")
+async def import_brain_data(file: UploadFile = File(...), merge: bool = Form(True)):
+    """Import previously exported brain data.
+    
+    Args:
+        file: JSON file from a previous export
+        merge: If True (default), merges with existing data. If False, replaces all data.
+    
+    Returns:
+        Import status with counts of imported items
+    """
+    import json as json_module
+    
+    try:
+        # Read and parse the file
+        content = await file.read()
+        try:
+            data = json_module.loads(content.decode('utf-8'))
+        except json_module.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON file: {e}")
+        
+        # Validate format version
+        format_version = data.get('format_version', '')
+        if not format_version:
+            raise HTTPException(status_code=400, detail="Invalid export file: missing format_version")
+        
+        if format_version not in ['1.0']:
+            raise HTTPException(status_code=400, 
+                detail=f"Unsupported format version: {format_version}. Supported: 1.0")
+        
+        memory = _get_memory_service()
+        personality = _get_personality_service()
+        
+        results = {
+            "success": True,
+            "format_version": format_version,
+            "merge_mode": merge,
+            "imported": {}
+        }
+        
+        # Import personality profile
+        if 'personality_profile' in data:
+            personality.import_profile(data['personality_profile'], merge=merge)
+            profile = personality.get_profile()
+            results["imported"]["personality"] = {
+                "name": profile.name,
+                "facts": len(profile.facts),
+                "response_examples": len(profile.response_examples),
+                "typing_quirks": len(profile.typing_quirks)
+            }
+        
+        # Import training examples
+        if 'training_examples' in data:
+            examples = data['training_examples']
+            imported_count = memory.import_training_examples(examples, clear_existing=not merge)
+            results["imported"]["training_examples"] = imported_count
+        
+        # Log the import
+        logger.info(f"Imported brain data: {results['imported']}")
+        
+        results["message"] = "Brain data imported successfully"
+        return results
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Import error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

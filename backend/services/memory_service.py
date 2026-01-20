@@ -340,6 +340,88 @@ class MemoryService:
             print(f"Error getting examples: {e}")
             return []
     
+    def export_all_training_examples(self) -> List[Dict]:
+        """Export ALL training examples with full metadata for backup/export.
+        
+        Returns complete data without truncation for ML training purposes.
+        """
+        try:
+            # Get total count first
+            total = self.training_collection.count()
+            if total == 0:
+                return []
+            
+            # Retrieve all examples (in batches if needed for large datasets)
+            results = self.training_collection.peek(limit=max(total, 1000))
+            
+            examples = []
+            if results and results.get('metadatas'):
+                metadatas = results['metadatas']
+                documents = results.get('documents', [])
+                ids = results.get('ids', [])
+                
+                # Handle nested list structure
+                if isinstance(metadatas, list) and len(metadatas) > 0 and isinstance(metadatas[0], list):
+                    metadatas = metadatas[0]
+                if isinstance(documents, list) and len(documents) > 0 and isinstance(documents[0], list):
+                    documents = documents[0]
+                if isinstance(ids, list) and len(ids) > 0 and isinstance(ids[0], list):
+                    ids = ids[0]
+                
+                for i, meta in enumerate(metadatas):
+                    example = {
+                        'id': ids[i] if i < len(ids) else None,
+                        'context': meta.get('context', ''),
+                        'response': meta.get('response', ''),
+                        'source': meta.get('source', 'unknown'),
+                        'timestamp': meta.get('timestamp', ''),
+                        'full_document': documents[i] if i < len(documents) else ''
+                    }
+                    examples.append(example)
+            
+            return examples
+        except Exception as e:
+            print(f"Error exporting training examples: {e}")
+            return []
+    
+    def import_training_examples(self, examples: List[Dict], clear_existing: bool = False) -> int:
+        """Import training examples from export data.
+        
+        Args:
+            examples: List of training example dicts with context, response, source, timestamp
+            clear_existing: If True, clears existing data before import
+            
+        Returns:
+            Number of examples successfully imported
+        """
+        if clear_existing:
+            self.clear_training_data()
+        
+        if not examples:
+            return 0
+        
+        imported = 0
+        for ex in examples:
+            try:
+                context = ex.get('context', '')
+                response = ex.get('response', '')
+                source = ex.get('source', 'import')
+                timestamp = ex.get('timestamp', datetime.now().isoformat())
+                
+                if context and response:
+                    self.add_training_example(
+                        context=context,
+                        response=response,
+                        source=source,
+                        metadata={'original_timestamp': timestamp}
+                    )
+                    imported += 1
+            except Exception as e:
+                print(f"Error importing example: {e}")
+                continue
+        
+        return imported
+    
     def clear_training_data(self) -> None:
         """Clear all training data (use with caution!)."""
         if CHROMA_AVAILABLE:
