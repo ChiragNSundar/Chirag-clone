@@ -80,6 +80,18 @@ The testing strategy follows the **Testing Pyramid**:
 - **Personality Import**: Tests merge mode (adds to existing) and replace mode (full reset).
 - **Format Validation**: Verifies JSON serialization and format versioning.
 
+### 9. `test_voice_cloning.py` (Voice Studio) 🎙️
+
+- **Service Layer**: Tests `clone_voice`, `get_cloned_voices`, `delete_voice` with mocks.
+- **API Security**: Verifies `DELETE /api/voice/{id}` requires `X-Training-PIN` header.
+- **Mocking**: Mocks `elevenlabs` module to avoid real API calls.
+
+### 10. `test_finetune.py` (Local Fine-Tuning) 🧠
+
+- **Dataset Export**: Tests `FineTuneService.export_dataset` generates validity ChatML JSONL.
+- **Statistics**: Verifies `get_dataset_stats` counts training and personality examples correctly.
+- **API Endpoints**: Tests `/api/finetune/stats` and `/api/finetune/export` responses.
+
 ---
 
 ## 🏃 Method of Execution

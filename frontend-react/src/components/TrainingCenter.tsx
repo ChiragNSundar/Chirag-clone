@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Upload, MessageSquare, BookOpen,
-    Lock, Plus, Trash2, CheckCircle, AlertCircle,
-    RefreshCcw, PenLine, Instagram, Hash, Brain, Search, Link, FileText,
-    Download, HardDriveUpload
+    Upload, MessageSquare, BookOpen, PenLine, Save, Trash2, Brain,
+    Mic, FileJson, CheckCircle, AlertCircle, Download, HardDriveDownload, Database,
+    RefreshCw, Info, Lock, Plus, Instagram, Hash, Search, Link, FileText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { api } from '../services/api';
+import { VoiceStudio } from './VoiceStudio';
 
 interface TrainingCenterProps {
     isAuthenticated: boolean;
     onAuthenticate: () => void;
 }
 
-type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts' | 'brain';
+type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts' | 'brain' | 'voice_studio' | 'finetune';
 
 const UploadCard = ({
     title,
@@ -105,7 +105,7 @@ const UploadCard = ({
                     disabled={uploading || !fieldValue.trim()}
                     className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    {uploading ? <RefreshCcw className="animate-spin" size={16} /> : <Upload size={16} />}
+                    {uploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
                     {uploading ? 'Processing...' : 'Upload & Train'}
                 </button>
             </div>
@@ -141,6 +141,108 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
     const importFileRef = useRef<HTMLInputElement>(null);
 
     // Get stored PIN for authenticated API calls
+    // Fine-Tuning state
+    const [ftStats, setFtStats] = useState<any>(null);
+    const [exportingFt, setExportingFt] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'finetune') {
+            fetchFtStats();
+        }
+    }, [activeTab]);
+
+    const fetchFtStats = async () => {
+        try {
+            const res = await fetch('http://localhost:8000/api/finetune/stats');
+            if (res.ok) setFtStats(await res.json());
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleFtExport = async () => {
+        setExportingFt(true);
+        try {
+            const res = await fetch('http://localhost:8000/api/finetune/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ format: 'chatml' })
+            });
+            if (res.ok) {
+                setMessage({ type: 'success', text: 'Dataset exported! Click download.' });
+                fetchFtStats();
+            }
+        } catch (e) {
+            setMessage({ type: 'error', text: 'Export failed' });
+        } finally {
+            setExportingFt(false);
+        }
+    };
+
+    const renderFineTuneTab = () => (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+                <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Database className="w-5 h-5 text-purple-400" />
+                    Local Fine-Tuning Pipeline
+                </h3>
+                <p className="text-white/60 mb-6">
+                    Create a custom version of the AI model trained specifically on your data.
+                    This prepares a dataset from your conversation history and personality examples.
+                </p>
+
+                {ftStats && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-white/5 p-4 rounded-lg">
+                            <div className="text-sm text-white/50">Training Examples</div>
+                            <div className="text-2xl font-bold">{ftStats.training_examples}</div>
+                        </div>
+                        <div className="bg-white/5 p-4 rounded-lg">
+                            <div className="text-sm text-white/50">Personality Examples</div>
+                            <div className="text-2xl font-bold">{ftStats.personality_examples}</div>
+                        </div>
+                        <div className="bg-white/5 p-4 rounded-lg">
+                            <div className="text-sm text-white/50">Total Dataset Rows</div>
+                            <div className="text-2xl font-bold text-green-400">{ftStats.total_rows}</div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                        onClick={handleFtExport}
+                        disabled={exportingFt}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        {exportingFt ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FileJson className="w-5 h-5" />}
+                        Prepare Dataset (JSONL)
+                    </button>
+
+                    <a
+                        href="http://localhost:8000/api/finetune/download"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors border border-white/10"
+                    >
+                        <Download className="w-5 h-5" />
+                        Download Dataset
+                    </a>
+                </div>
+            </div>
+
+            <div className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-xl">
+                <h4 className="font-semibold text-blue-300 mb-2 flex items-center gap-2">
+                    <Info className="w-4 h-4" /> Next Steps
+                </h4>
+                <ul className="list-disc list-inside text-sm text-white/70 space-y-2">
+                    <li>Download the dataset file (finetune_dataset.jsonl).</li>
+                    <li>Use it with OpenAI's Fine-tuning API or a local trainer like <code>unsloth</code> or <code>autotrain</code>.</li>
+                    <li>The dataset uses the standardized ChatML format.</li>
+                </ul>
+            </div>
+        </div>
+    );
+
     const getTrainingPin = () => sessionStorage.getItem('training_pin') || '';
 
     const loadFacts = async () => {
@@ -201,6 +303,8 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         { id: 'documents', label: 'Documents', icon: BookOpen },
         { id: 'facts', label: 'Facts', icon: BookOpen },
         { id: 'brain', label: 'Brain Station', icon: Brain },
+        { id: 'voice_studio', label: 'Voice Studio', icon: Mic },
+        { id: 'finetune', label: 'Fine-Tuning', icon: Database },
     ];
 
     const resetAllLearning = async () => {
@@ -285,6 +389,149 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         }
     };
 
+    const renderActiveTabContent = () => {
+        switch (activeTab) {
+            case 'chats':
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <UploadCard
+                            title="WhatsApp"
+                            icon={MessageSquare}
+                            description="Export your WhatsApp chat and upload the .txt file"
+                            accept=".txt"
+                            fieldName="your_name"
+                            fieldLabel="Your name in the chat"
+                            endpoint="/api/training/upload/whatsapp"
+                        />
+                        <UploadCard
+                            title="Instagram"
+                            icon={Instagram}
+                            description="Download your data from Instagram and upload the messages JSON"
+                            accept=".json"
+                            fieldName="your_username"
+                            fieldLabel="Your Instagram username"
+                            endpoint="/api/training/upload/instagram"
+                        />
+                        <UploadCard
+                            title="Discord"
+                            icon={Hash}
+                            description="Use a Discord data exporter and upload the JSON"
+                            accept=".json,.txt"
+                            fieldName="your_username"
+                            fieldLabel="Your Discord username"
+                            endpoint="/api/training/upload/discord"
+                        />
+                    </div>
+                );
+            case 'journal':
+                return (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="glass-panel p-6 max-w-2xl"
+                    >
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <PenLine size={20} className="text-primary" />
+                            Write Your Thoughts
+                        </h3>
+                        <p className="text-sm text-zinc-400 mb-4">
+                            Share random thoughts, opinions, or daily reflections. This helps me understand how you think.
+                        </p>
+                        <textarea
+                            value={journalText}
+                            onChange={(e) => setJournalText(e.target.value)}
+                            placeholder="What's on your mind? Write freely..."
+                            className="w-full h-40 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary resize-none"
+                        />
+                        <button
+                            onClick={addJournalEntry}
+                            disabled={loading || !journalText.trim()}
+                            className="mt-4 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {loading ? <RefreshCw className="animate-spin" size={16} /> : <Plus size={16} />}
+                            Save Thought
+                        </button>
+                    </motion.div>
+                );
+            case 'facts':
+                return (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="glass-panel p-6 max-w-2xl"
+                    >
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <BookOpen size={20} className="text-primary" />
+                            Personal Facts
+                        </h3>
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                type="text"
+                                value={factText}
+                                onChange={(e) => setFactText(e.target.value)}
+                                placeholder="Add a fact about yourself..."
+                                className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
+                            />
+                            <button
+                                onClick={addFact}
+                                disabled={loading || !factText.trim()}
+                                className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        </div>
+                        <ul className="space-y-2">
+                            {facts.map((fact, i) => (
+                                <li key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                                    <span className="text-zinc-300">{fact}</span>
+                                    <button
+                                        onClick={() => deleteFact(i)}
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </li>
+                            ))}
+                            {facts.length === 0 && (
+                                <p className="text-zinc-500 text-center py-4">No facts yet. Add some!</p>
+                            )}
+                        </ul>
+                    </motion.div>
+                );
+            case 'train_chat':
+                return <TrainByChattingTab />;
+            case 'documents':
+                return (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="glass-panel p-6 max-w-2xl"
+                    >
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <BookOpen size={20} className="text-primary" />
+                            Upload Documents
+                        </h3>
+                        <p className="text-sm text-zinc-400 mb-4">
+                            Upload PDFs, text files, or any documents that reflect how you write and think.
+                        </p>
+                        <DocumentUpload />
+                    </motion.div>
+                );
+            case 'brain':
+                return <BrainStationTab />;
+            case 'voice_studio':
+                return (
+                    <div className="glass-panel p-0 h-[600px] overflow-hidden">
+                        <VoiceStudio />
+                    </div>
+                );
+            case 'finetune':
+                return renderFineTuneTab();
+            default:
+                return null;
+        }
+    };
+
     return (
         <div className="p-6 max-w-5xl mx-auto">
             <motion.div
@@ -305,11 +552,11 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                         disabled={exporting}
                         className="px-4 py-2 bg-primary/20 text-primary hover:bg-primary/30 rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
                     >
-                        {exporting ? <RefreshCcw size={16} className="animate-spin" /> : <Download size={16} />}
+                        {exporting ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
                         Export Brain
                     </button>
                     <label className="px-4 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg text-sm flex items-center gap-2 cursor-pointer">
-                        {importing ? <RefreshCcw size={16} className="animate-spin" /> : <HardDriveUpload size={16} />}
+                        {importing ? <RefreshCw size={16} className="animate-spin" /> : <Upload size={16} />}
                         Import Brain
                         <input
                             ref={importFileRef}
@@ -407,137 +654,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
             </AnimatePresence>
 
             {/* Content */}
-            {activeTab === 'chats' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <UploadCard
-                        title="WhatsApp"
-                        icon={MessageSquare}
-                        description="Export your WhatsApp chat and upload the .txt file"
-                        accept=".txt"
-                        fieldName="your_name"
-                        fieldLabel="Your name in the chat"
-                        endpoint="/api/training/upload/whatsapp"
-                    />
-                    <UploadCard
-                        title="Instagram"
-                        icon={Instagram}
-                        description="Download your data from Instagram and upload the messages JSON"
-                        accept=".json"
-                        fieldName="your_username"
-                        fieldLabel="Your Instagram username"
-                        endpoint="/api/training/upload/instagram"
-                    />
-                    <UploadCard
-                        title="Discord"
-                        icon={Hash}
-                        description="Use a Discord data exporter and upload the JSON"
-                        accept=".json,.txt"
-                        fieldName="your_username"
-                        fieldLabel="Your Discord username"
-                        endpoint="/api/training/upload/discord"
-                    />
-                </div>
-            )}
-
-            {activeTab === 'journal' && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="glass-panel p-6 max-w-2xl"
-                >
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <PenLine size={20} className="text-primary" />
-                        Write Your Thoughts
-                    </h3>
-                    <p className="text-sm text-zinc-400 mb-4">
-                        Share random thoughts, opinions, or daily reflections. This helps me understand how you think.
-                    </p>
-                    <textarea
-                        value={journalText}
-                        onChange={(e) => setJournalText(e.target.value)}
-                        placeholder="What's on your mind? Write freely..."
-                        className="w-full h-40 px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary resize-none"
-                    />
-                    <button
-                        onClick={addJournalEntry}
-                        disabled={loading || !journalText.trim()}
-                        className="mt-4 px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
-                    >
-                        {loading ? <RefreshCcw className="animate-spin" size={16} /> : <Plus size={16} />}
-                        Save Thought
-                    </button>
-                </motion.div>
-            )}
-
-            {activeTab === 'facts' && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="glass-panel p-6 max-w-2xl"
-                >
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <BookOpen size={20} className="text-primary" />
-                        Personal Facts
-                    </h3>
-                    <div className="flex gap-2 mb-4">
-                        <input
-                            type="text"
-                            value={factText}
-                            onChange={(e) => setFactText(e.target.value)}
-                            placeholder="Add a fact about yourself..."
-                            className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
-                        />
-                        <button
-                            onClick={addFact}
-                            disabled={loading || !factText.trim()}
-                            className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50"
-                        >
-                            <Plus size={20} />
-                        </button>
-                    </div>
-                    <ul className="space-y-2">
-                        {facts.map((fact, i) => (
-                            <li key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                                <span className="text-zinc-300">{fact}</span>
-                                <button
-                                    onClick={() => deleteFact(i)}
-                                    className="text-red-400 hover:text-red-300"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </li>
-                        ))}
-                        {facts.length === 0 && (
-                            <p className="text-zinc-500 text-center py-4">No facts yet. Add some!</p>
-                        )}
-                    </ul>
-                </motion.div>
-            )}
-
-            {activeTab === 'train_chat' && (
-                <TrainByChattingTab />
-            )}
-
-            {activeTab === 'documents' && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="glass-panel p-6 max-w-2xl"
-                >
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <BookOpen size={20} className="text-primary" />
-                        Upload Documents
-                    </h3>
-                    <p className="text-sm text-zinc-400 mb-4">
-                        Upload PDFs, text files, or any documents that reflect how you write and think.
-                    </p>
-                    <DocumentUpload />
-                </motion.div>
-            )}
-
-            {activeTab === 'brain' && (
-                <BrainStationTab />
-            )}
+            {renderActiveTabContent()}
         </div>
     );
 };
@@ -625,14 +742,14 @@ const TrainByChattingTab = () => {
                         disabled={loading || !response.trim()}
                         className="flex-1 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {loading ? <RefreshCcw className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                        {loading ? <RefreshCw className="animate-spin" size={16} /> : <CheckCircle size={16} />}
                         Submit & Learn
                     </button>
                     <button
                         onClick={fetchPrompt}
                         className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg"
                     >
-                        <RefreshCcw size={16} />
+                        <RefreshCw size={16} />
                     </button>
                 </div>
             </div>
@@ -689,7 +806,7 @@ const DocumentUpload = () => {
                 disabled={uploading}
                 className="w-full py-2 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
             >
-                {uploading ? <RefreshCcw className="animate-spin" size={16} /> : <Upload size={16} />}
+                {uploading ? <RefreshCw className="animate-spin" size={16} /> : <Upload size={16} />}
                 {uploading ? 'Processing...' : 'Upload & Learn'}
             </button>
 
@@ -1123,7 +1240,7 @@ const TrainingAuth = ({ onSuccess }: { onSuccess: () => void }) => {
                         disabled={loading || !pin}
                         className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {loading ? <RefreshCcw className="animate-spin" size={16} /> : <Lock size={16} />}
+                        {loading ? <RefreshCw className="animate-spin" size={16} /> : <Lock size={16} />}
                         Unlock
                     </button>
                 </form>

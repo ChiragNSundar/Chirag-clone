@@ -1,5 +1,39 @@
 # Changelog
 
+## [2.9.0] - 2026-01-20
+
+### 🎙️ Voice Cloning Studio (ElevenLabs)
+
+- **Clone Voice**: Upload audio samples to clone your voice directly from the UI.
+- **Security**: Protected by `TRAINING_PIN` (same as Training Center validation).
+- **Backend**: `VoiceCloningService` integration with ElevenLabs API.
+
+### 🌐 Agentic Web Browsing
+
+- **Headless Browser**: Integrated Playwright for automated web interactions.
+- **Capabilities**: Navigate, extract text, and take screenshots for the AI.
+- **Service**: New `BrowserService` and `/api/agent/browse` endpoint.
+
+### 🕸️ GraphRAG (Structured Reasoning)
+
+- **Knowledge Graph**: Automatically extracts entities and relationships from ingested documents.
+- **NetworkX Integration**: Uses graph algorithms to find relevant context beyond simple vector search.
+- **Context Injection**: Graph data is seamlessly injected into the chat context.
+
+### 🧠 Local Fine-Tuning Pipeline
+
+- **Dataset Generation**: Export "Brain" (memories + personality) to ChatML JSONL format.
+- **Training Script**: Standalone `tools/train_lora.py` for easy LoRA fine-tuning.
+- **Stats Dashboard**: View dataset size and recommended epochs in Training Center.
+
+### 🧪 Tests & Infrastructure
+
+- **New Tests**: `test_voice_cloning.py` and `test_finetune.py`.
+- **Docker**: Added Playwright browser installation to Dockerfile.
+- **Dependencies**: Added `networkx` and `playwright`.
+
+---
+
 ## [2.8.1] - 2026-01-20
 
 ### 🧠 Export/Import Brain Feature (Training Center)

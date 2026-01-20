@@ -1,12 +1,20 @@
 """
 Voice Routes - Text-to-speech, speech-to-text, and real-time voice streaming.
 """
-from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Form, Depends, Header
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import logging
 import asyncio
 import json
+import os
+
+TRAINING_PIN = os.environ.get("TRAINING_PIN", "1234")
+
+async def verify_pin(x_training_pin: str = Header(None, alias="X-Training-PIN")):
+    if x_training_pin != TRAINING_PIN:
+        raise HTTPException(status_code=401, detail="Training PIN required")
+    return True
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +46,12 @@ def _get_voice_service():
     from services.voice_service import get_voice_service
     return get_voice_service()
 
-def _get_realtime_voice_service():
     from services.realtime_voice_service import get_realtime_voice_service
     return get_realtime_voice_service()
+
+def _get_voice_cloning_service():
+    from services.voice_cloning_service import get_voice_cloning_service
+    return get_voice_cloning_service()
 
 
 # ============= Basic Voice Endpoints =============
@@ -100,6 +111,75 @@ async def get_available_voices():
     except Exception as e:
         logger.error(f"Get voices error: {e}")
         return {"voices": []}
+
+
+# ============= Voice Cloning Endpoints =============
+
+@router.post("/clone", dependencies=[Depends(verify_pin)])
+async def clone_voice(
+    name: str = Form(...),
+    description: str = Form(...),
+    files: list[UploadFile] = File(...)
+):
+    """Clone a voice from uploaded audio files."""
+    import tempfile
+    import os
+    import shutil
+    
+    service = _get_voice_cloning_service()
+    if not service.enabled:
+        raise HTTPException(status_code=400, detail="Voice cloning disabled (missing API key)")
+    
+    # Save uploaded files temporarily
+    temp_files = []
+    temp_dir = tempfile.mkdtemp()
+    
+    try:
+        for file in files:
+            file_path = os.path.join(temp_dir, file.filename)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            temp_files.append(file_path)
+            
+        # Call cloning service
+        result = await asyncio.to_thread(
+            service.clone_voice,
+            name=name,
+            description=description,
+            file_paths=temp_files
+        )
+        
+        if 'error' in result:
+            raise HTTPException(status_code=400, detail=result['error'])
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"Clone endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # Cleanup temp files
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@router.get("/cloned")
+async def get_cloned_voices():
+    """List all voices including cloned ones."""
+    service = _get_voice_cloning_service()
+    return service.get_cloned_voices()
+
+
+@router.delete("/{voice_id}", dependencies=[Depends(verify_pin)])
+async def delete_cloned_voice(voice_id: str):
+    """Delete a cloned voice."""
+    try:
+        service = _get_voice_cloning_service()
+        if service.delete_voice(voice_id):
+            return {"success": True}
+        raise HTTPException(status_code=400, detail="Failed to delete voice")
+    except Exception as e:
+        logger.error(f"Delete voice error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============= Real-Time Voice Streaming =============

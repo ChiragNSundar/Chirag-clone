@@ -179,9 +179,17 @@ app.include_router(knowledge_router)
 from routes.vision import router as vision_router
 app.include_router(vision_router)
 
+# Agent routes (web browsing)
+from routes.agent import router as agent_router
+app.include_router(agent_router)
+
 # Features routes (creative, personality history, calendar, quiz, research, rewind)
 from routes.features import router as features_router
 app.include_router(features_router)
+
+# Fine-tune routes (dataset preparation)
+from routes.finetune import router as finetune_router
+app.include_router(finetune_router)
 
 # ============= Static Frontend Serving =============
 

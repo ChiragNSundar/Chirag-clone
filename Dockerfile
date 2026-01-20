@@ -62,6 +62,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
+# Install Playwright Browsers
+RUN playwright install --with-deps chromium
+
 # ============== Application Code ==============
 # Copy backend
 COPY --chown=chirag:chirag backend/ ./backend/

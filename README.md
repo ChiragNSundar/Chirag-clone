@@ -73,6 +73,13 @@
 - **Prompt Guard**: 5-level threat detection against prompt injection and jailbreaks.
 - **Model Fallback**: Automatic failover (Gemini → GPT-4o → Local Llama) to ensure 24/7 uptime.
 
+### 🚀 Frontier Capabilities (v2.9)
+
+- **Voice Cloning Studio**: Clone your own voice directly from the UI (ElevenLabs integration).
+- **Agentic Web Browsing**: Bot can autonomously navigate websites, read content, and take screenshots.
+- **GraphRAG**: Uses Knowledge Graphs for structured, multi-hop reasoning on your documents.
+- **Local Fine-Tuning**: Export your digital twin's "Brain" and fine-tune a local LLM.
+
 ### 🌟 Advanced Intelligence (v2.4)
 
 - **Deep Research**: Autonomous multi-step web research with source citation.

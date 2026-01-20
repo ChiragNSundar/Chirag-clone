@@ -177,7 +177,55 @@ class KnowledgeService:
         self.documents[doc_id] = doc_meta
         self._save_metadata()
         
+        # Update Graph (GraphRAG)
+        try:
+            self._update_graph_context(content)
+        except Exception as e:
+            print(f"Graph update failed: {e}")
+
         return doc_meta
+    
+    def _update_graph_context(self, text: str):
+        """
+        Extract knowledge graph triples using LLM and update GraphService.
+        """
+        if len(text) > 2000:
+             # Process first 2000 chars for graph to avoid massive context
+             text = text[:2000]
+
+        try:
+            from services.llm_service import get_llm_service
+            from services.graph_service import get_graph_service
+            
+            llm = get_llm_service()
+            graph = get_graph_service()
+            
+            prompt = """
+            Extract key entities and relationships from this text.
+            Return ONLY a JSON array of triples: [{"source": "Entity1", "relation": "verb_phrase", "target": "Entity2"}].
+            Keep entities concise (1-3 words). Relations should be active verbs.
+            Limit to top 10 most important relations.
+            
+            Text:
+            """ + text
+            
+            response = llm.generate_response(
+                system_prompt="You are a knowledge graph extractor. Output strict JSON only.",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=500
+            )
+            
+            # Clean response
+            response = response.replace("```json", "").replace("```", "").strip()
+            if "[" in response:
+                triples = json.loads(response)
+                # Convert to tuples
+                edge_list = [(t['source'], t['relation'], t['target']) for t in triples if 'source' in t and 'target' in t]
+                graph.add_triples(edge_list)
+                
+        except Exception as e:
+            print(f"Graph extraction error: {e}")
     
     def add_document_from_file(
         self,

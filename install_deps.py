@@ -214,6 +214,16 @@ def install_backend_batch(root: Path, skip_problematic: bool = True) -> bool:
             except:
                 pass
         
+        # Install Playwright browsers
+        print_info("Installing Playwright browsers...")
+        try:
+            subprocess.run(
+                [sys.executable, '-m', 'playwright', 'install', 'chromium'],
+                capture_output=True, timeout=120
+            )
+        except Exception as e:
+            print_warn(f"Playwright browser install failed: {e}")
+
         return True
         
     finally:

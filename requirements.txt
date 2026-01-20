@@ -165,4 +165,13 @@ PyJWT>=2.8.0
 authlib>=1.3.0
 
 # Voice Activity Detection (v2.6)
-webrtcvad>=2.0.10
+
+# Agentic Browsing (v2.8)
+playwright>=1.40.0
+pytest-playwright>=0.4.0
+
+# GraphRAG (v2.9)
+networkx>=3.0
+
+# Configuration
+python-dotenv>=1.0.0

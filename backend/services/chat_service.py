@@ -12,6 +12,7 @@ from .learning_service import get_learning_service
 from .analytics_service import get_analytics_service
 from .mood_service import get_mood_service
 from .knowledge_service import get_knowledge_service
+from .graph_service import get_graph_service
 from .search_service import get_search_service
 from .vision_service import get_vision_service
 from config import Config
@@ -120,6 +121,15 @@ class ChatService:
                     system_prompt += f"\n\n{knowledge_text}"
             except Exception as e:
                 print(f"Knowledge query error: {e}")
+
+            # GRAPH KNOWLEDGE (GraphRAG) INJECTION
+            try:
+                graph = get_graph_service()
+                graph_context = graph.get_relevant_context(user_message)
+                if graph_context:
+                    system_prompt += f"\n\n{graph_context}"
+            except Exception as e:
+                print(f"Graph query error: {e}")
         
         # WEB SEARCH INJECTION
         if not training_mode:
