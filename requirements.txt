@@ -64,7 +64,7 @@ networkx==3.6.1
 nltk==3.9.2
 numpy==1.26.2
 oauthlib==3.3.1
-onnxruntime==1.23.2
+# onnxruntime>=1.16.0
 openai==1.6.1
 # opentelemetry removed to allow auto-resolution
 overrides==7.7.0
@@ -176,3 +176,10 @@ networkx>=3.0
 # Configuration
 aiosqlite>=0.19.0
 python-multipart>=0.0.6
+
+# v3.0 Features
+notion-client>=2.0.0
+slack-sdk>=3.20.0
+# Wake Word (Disabled on Python 3.14 due to onnxruntime incompatibility)
+# openwakeword>=0.5.0
+# onnxruntime>=1.16.0

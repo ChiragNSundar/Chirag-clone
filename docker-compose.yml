@@ -60,6 +60,14 @@ services:
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
 
+      # v3.0 Features (Notion, Slack, Ollama)
+      - NOTION_API_KEY=${NOTION_API_KEY:-}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID:-}
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_FIRST_CLASS=${OLLAMA_FIRST_CLASS:-false}
+      - WAKE_WORD_MODEL=${WAKE_WORD_MODEL:-hey_jarvis}
+
       # Performance tuning
       - MALLOC_ARENA_MAX=2
       - PYTHONHASHSEED=random

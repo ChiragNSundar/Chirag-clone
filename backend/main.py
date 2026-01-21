@@ -203,6 +203,11 @@ if frontend_path.exists():
     
     @app.get("/{path:path}")
     async def serve_spa_routes(path: str):
+        # Return 404 for API routes that fell through
+        if path.startswith("api/"):
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+            
         # Serve index.html for all non-API routes (SPA routing)
         file_path = frontend_path / path
         if file_path.exists() and file_path.is_file():

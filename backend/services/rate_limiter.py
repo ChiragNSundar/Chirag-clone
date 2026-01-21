@@ -94,6 +94,14 @@ class RateLimiter:
                 'window': window
             }
 
+    def get_headers(self, rate_info: dict) -> dict:
+        """Generate headers dict from rate info."""
+        return {
+            'X-RateLimit-Limit': str(rate_info.get('limit', 0)),
+            'X-RateLimit-Remaining': str(rate_info.get('remaining', 0)),
+            'X-RateLimit-Reset': str(rate_info.get('reset', 0))
+        }
+
 # Singleton instance
 _rate_limiter = RateLimiter()
 

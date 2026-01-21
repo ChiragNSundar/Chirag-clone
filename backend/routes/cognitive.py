@@ -128,3 +128,125 @@ async def get_cognitive_learning_stats():
     except Exception as e:
         logger.error(f"Learning stats error: {e}")
         return {"core_memory_stats": {}, "training_stats": {}}
+
+
+# ============= Memory Editing =============
+
+class MemoryEditRequest(BaseModel):
+    content: str
+    category: Optional[str] = None
+
+
+class MemoryMergeRequest(BaseModel):
+    memory_ids: list[str]
+    merged_content: str
+
+
+@router.get("/memories")
+async def list_memories(category: Optional[str] = None, limit: int = 100):
+    """List core memories with IDs for editing."""
+    try:
+        service = _get_core_memory_service()
+        memories = service.get_core_memories(category=category, limit=limit)
+        return {"memories": memories, "total": len(memories)}
+    except Exception as e:
+        logger.error(f"List memories error: {e}")
+        return {"memories": [], "total": 0}
+
+
+@router.patch("/memories/{memory_id}")
+async def edit_memory(memory_id: str, data: MemoryEditRequest):
+    """Edit a memory's content."""
+    try:
+        service = _get_core_memory_service()
+        success = service.update_core_memory(
+            memory_id=memory_id,
+            content=data.content,
+            category=data.category
+        )
+        return {"success": success}
+    except Exception as e:
+        logger.error(f"Edit memory error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/memories/merge")
+async def merge_memories(data: MemoryMergeRequest):
+    """Merge two or more memories into one."""
+    try:
+        service = _get_core_memory_service()
+        # Delete old memories
+        for mem_id in data.memory_ids:
+            service.delete_core_memory(mem_id)
+        # Add merged
+        new_memory = service.add_core_memory(content=data.merged_content)
+        return {"success": True, "new_memory": new_memory}
+    except Exception as e:
+        logger.error(f"Merge memories error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ============= Daily Briefing =============
+
+@router.get("/briefing/today")
+async def get_today_briefing(audio: bool = False):
+    """Get today's daily briefing."""
+    try:
+        from services.daily_briefing_service import get_briefing_service
+        briefing = get_briefing_service()
+        return briefing.get_briefing(audio=audio)
+    except Exception as e:
+        logger.error(f"Briefing error: {e}")
+        return {"text": "Could not generate briefing", "error": str(e)}
+
+
+# ============= Notion Sync =============
+
+@router.get("/notion/status")
+async def get_notion_status():
+    """Get Notion sync service status."""
+    try:
+        from services.notion_sync_service import get_notion_service
+        return get_notion_service().get_status()
+    except Exception as e:
+        logger.error(f"Notion status error: {e}")
+        return {"configured": False, "error": str(e)}
+
+
+@router.post("/notion/sync")
+async def trigger_notion_sync():
+    """Trigger manual Notion sync."""
+    try:
+        from services.notion_sync_service import get_notion_service
+        notion = get_notion_service()
+        result = await asyncio.to_thread(notion.sync_to_knowledge_base)
+        return result
+    except Exception as e:
+        logger.error(f"Notion sync error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ============= Wake Word =============
+
+@router.get("/wakeword/status")
+async def get_wake_word_status():
+    """Get wake word service status."""
+    try:
+        from services.wake_word_service import get_wake_word_service
+        return get_wake_word_service().get_status()
+    except Exception as e:
+        logger.error(f"Wake word status error: {e}")
+        return {"available": False, "error": str(e)}
+
+
+@router.post("/wakeword/set")
+async def set_wake_word(model: str):
+    """Change the active wake word model."""
+    try:
+        from services.wake_word_service import get_wake_word_service
+        service = get_wake_word_service()
+        success = service.set_wake_word(model)
+        return {"success": success, "active_model": service.wake_word}
+    except Exception as e:
+        logger.error(f"Set wake word error: {e}")
+        return {"success": False, "error": str(e)}

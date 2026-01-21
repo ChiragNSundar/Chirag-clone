@@ -72,7 +72,7 @@ class TestChatEndpoints:
         
     def test_chat_accepts_valid_payload(self):
         """Valid chat payload should be accepted (may fail on LLM but pass validation)."""
-        with patch('main.get_chat_service') as mock_service:
+        with patch('routes.chat._get_chat_service') as mock_service:
             mock_svc = MagicMock()
             mock_svc.generate_response.return_value = ("Hello!", 0.9, {"mood": "happy"})
             mock_service.return_value = mock_svc

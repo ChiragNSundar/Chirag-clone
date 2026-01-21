@@ -237,7 +237,129 @@ Suggestion:"""
             
         except Exception as e:
             logger.error(f"Error creating event: {e}")
+    
+    def update_event(
+        self,
+        event_id: str,
+        summary: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        description: Optional[str] = None,
+        location: Optional[str] = None
+    ) -> Optional[Dict]:
+        """Update an existing calendar event."""
+        if not self.service:
             return None
+        
+        try:
+            # Get existing event first
+            event = self.service.events().get(
+                calendarId='primary',
+                eventId=event_id
+            ).execute()
+            
+            # Update fields if provided
+            if summary:
+                event['summary'] = summary
+            if description:
+                event['description'] = description
+            if location:
+                event['location'] = location
+            if start_time:
+                event['start'] = {'dateTime': start_time, 'timeZone': 'UTC'}
+            if end_time:
+                event['end'] = {'dateTime': end_time, 'timeZone': 'UTC'}
+            
+            updated_event = self.service.events().update(
+                calendarId='primary',
+                eventId=event_id,
+                body=event
+            ).execute()
+            
+            return {
+                'id': updated_event.get('id'),
+                'link': updated_event.get('htmlLink'),
+                'updated': True
+            }
+            
+        except Exception as e:
+            logger.error(f"Error updating event: {e}")
+            return None
+    
+    def delete_event(self, event_id: str) -> bool:
+        """Delete a calendar event."""
+        if not self.service:
+            return False
+        
+        try:
+            self.service.events().delete(
+                calendarId='primary',
+                eventId=event_id
+            ).execute()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting event: {e}")
+            return False
+    
+    def negotiate_meeting(self, context: str) -> Dict:
+        """
+        Use LLM to parse meeting request from email/DM and suggest scheduling action.
+        
+        Args:
+            context: The email or message text containing meeting request
+            
+        Returns:
+            Dict with suggested action, parsed details, and response
+        """
+        profile = self.personality.get_profile()
+        
+        # Get free slots for next 7 days
+        today = datetime.utcnow().date()
+        
+        prompt = f"""You are {profile.name}'s calendar agent. Analyze this message and extract meeting details:
+
+Message:
+"{context}"
+
+Extract and respond in JSON format:
+{{
+    "has_meeting_request": true/false,
+    "suggested_title": "Meeting title",
+    "suggested_duration": 30,  // minutes
+    "preferred_day": "Monday/Tuesday/etc or null",
+    "preferred_time": "morning/afternoon/specific time or null",
+    "urgency": "high/medium/low",
+    "response_draft": "A polite response to send back"
+}}
+
+JSON:"""
+
+        try:
+            response = self.llm.generate_response(
+                system_prompt="You are a calendar scheduling assistant. Output strict JSON only.",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=300
+            )
+            
+            # Parse JSON response
+            import json
+            response_clean = response.replace("```json", "").replace("```", "").strip()
+            
+            if "{" in response_clean:
+                parsed = json.loads(response_clean)
+                return {
+                    'success': True,
+                    'analysis': parsed,
+                    'context': context[:200]
+                }
+            
+            return {'success': False, 'error': 'Could not parse response'}
+            
+        except Exception as e:
+            logger.error(f"Meeting negotiation error: {e}")
+            return {'success': False, 'error': str(e)}
     
     def get_today_summary(self) -> str:
         """Get an AI-generated summary of today's schedule."""

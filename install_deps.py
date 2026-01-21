@@ -48,6 +48,9 @@ ESSENTIAL_PACKAGES = [
     'aiohttp',
     'python-multipart',
     'aiosqlite',
+    'notion-client',
+    'slack-sdk',
+    # 'openwakeword',  <-- Disabled on Python 3.14
 ]
 
 # ============= Cross-Platform Print =============

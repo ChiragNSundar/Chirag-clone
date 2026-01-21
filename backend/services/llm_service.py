@@ -80,6 +80,15 @@ class LLMService:
         self._init_error = None
         self._lazy_init_done = False
         
+        # Ollama First-Class: Auto-detect if Ollama is running
+        if Config.OLLAMA_AUTO_DETECT and self.provider != 'ollama':
+            if self._check_ollama_available():
+                if Config.OLLAMA_FIRST_CLASS:
+                    logger.info("🦙 Ollama detected and OLLAMA_FIRST_CLASS=true, using as primary provider")
+                    self.provider = 'ollama'
+                else:
+                    logger.info("🦙 Ollama detected, available as fallback (set OLLAMA_FIRST_CLASS=true to use as primary)")
+        
         # Key Rotation
         self._current_key_index = 0
         self._key_rotation_lock = Lock()
@@ -92,6 +101,19 @@ class LLMService:
         failure_threshold = getattr(Config, 'CIRCUIT_BREAKER_THRESHOLD', 5)
         reset_timeout = getattr(Config, 'CIRCUIT_BREAKER_TIMEOUT', 60)
         self._circuit_breaker = CircuitBreaker(failure_threshold, reset_timeout)
+    
+    def _check_ollama_available(self) -> bool:
+        """Check if Ollama is running and accessible."""
+        try:
+            response = requests.get(f"{Config.OLLAMA_BASE_URL}/api/tags", timeout=2)
+            if response.status_code == 200:
+                models = response.json().get('models', [])
+                if models:
+                    logger.info(f"🦙 Ollama running with {len(models)} model(s): {[m.get('name', 'unknown') for m in models[:3]]}")
+                    return True
+            return False
+        except Exception:
+            return False
     
     def _rotate_key(self) -> bool:
         """

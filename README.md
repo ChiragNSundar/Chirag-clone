@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.9.1-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -113,20 +113,30 @@
 - **URL Ingestion**: Feed it web pages to learn from instantly.
 - **Semantic Search**: Find any fact or document with natural language queries.
 
+### 🚀 v3.0 Features (New!)
+
+#### 🧠 Cognitive Upgrades
+- **Notion Sync**: Connect your Notion workspace to the Brain Station for automatic knowledge ingestion.
+- **Daily Briefing**: Get morning audio briefings covering your calendar, drafts, and system stats.
+- **Memory Garden**: Edit and merge core memories directly.
+
+#### 🎙️ Voice & Autopilot
+- **Wake Word**: Say "Hey Chirag" to activate listening mode (powered by `openWakeWord`).
+- **Calendar Agent**: The bot can now negotiate meeting times, and create/update/delete events.
+- **Slack Integration**: Auto-draft replies for DMs and thread mentions.
+
 ### 🏛️ Training Center
-
-Teach your clone how to be you:
-
 - **Chat Uploads**: Learn from WhatsApp, Instagram, Discord archives.
 - **Interactive Training**: "Interview mode" where the bot asks you questions.
 - **Journal**: Daily thought recording and reflection.
 - **Facts**: Manual entry for key personal details.
-- **Export/Import Brain** (v2.8.1): Backup and transfer all learned data as portable JSON.
+- **Export/Import Brain**: Backup and transfer all learned data as portable JSON.
 
 ### 🤖 Social Autopilot (`/autopilot`)
 
 Handle your socials while you sleep:
 
+- **Slack**: Auto-drafts professional replies and summarizes threads.
 - **Discord/Telegram**: Smart auto-replies to DMs.
 - **Twitter/LinkedIn**: Draft tweets and professional replies in your style.
 - **Gmail**: Voice-to-email drafting.
@@ -595,4 +605,4 @@ Chirag-clone/
 
 ---
 
-**v2.9.1 "Fixes & Improvements" Release** - [View Changelog](CHANGELOG.md)
+**v3.0.0 "Major Feature" Release** - [View Changelog](CHANGELOG.md)

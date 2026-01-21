@@ -92,6 +92,18 @@ The testing strategy follows the **Testing Pyramid**:
 - **Statistics**: Verifies `get_dataset_stats` counts training and personality examples correctly.
 - **API Endpoints**: Tests `/api/finetune/stats` and `/api/finetune/export` responses.
 
+### 11. `test_cognitive.py` (Knowledge & Sync) 🧠
+
+- **Memory Editing**: Tests `update_core_memory` and `merge_core_memories` logic.
+- **Notion Sync**: specific tests for `_extract_text_from_block` and page sync mocking.
+- **Daily Briefing**: Verifies briefing text generation includes calendar/drafts/knowledge stats.
+
+### 12. `test_autopilot_v3.py` (New Agents) 🤖
+
+- **Calendar Agent**: Tests `negotiate_meeting` JSON parsing and `update_event/delete_event` calls.
+- **Slack Bot**: Tests `generate_reply_draft` style and `summarize_thread` context handling.
+- **Wake Word**: Tests `process_audio_chunk` with mock audio data and threshold logic.
+
 ---
 
 ## 🏃 Method of Execution

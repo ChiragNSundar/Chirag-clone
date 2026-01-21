@@ -41,11 +41,15 @@ class Config:
     
     # OpenAI (Fallback)
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+    
+    # Ollama (Local LLM - First Class Support)
     OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+    OLLAMA_FIRST_CLASS = os.getenv('OLLAMA_FIRST_CLASS', 'False').lower() == 'true'
+    OLLAMA_AUTO_DETECT = os.getenv('OLLAMA_AUTO_DETECT', 'True').lower() == 'true'
     
     # Model Settings
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
-    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama2')
+    OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
     
     # Personality Settings
     BOT_NAME = os.getenv('BOT_NAME', 'Chirag')

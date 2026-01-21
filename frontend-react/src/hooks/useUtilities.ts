@@ -48,15 +48,13 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
 // ============= usePrevious =============
 
 export function usePrevious<T>(value: T): T | undefined {
-    const [previous, setPrevious] = useState<T | undefined>(undefined);
-    const currentRef = useRef<T>(value);
+    const ref = useRef<T>(undefined);
 
     useEffect(() => {
-        setPrevious(currentRef.current);
-        currentRef.current = value;
+        ref.current = value;
     }, [value]);
 
-    return previous;
+    return ref.current;
 }
 
 // ============= useOnClickOutside =============
