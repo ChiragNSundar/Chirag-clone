@@ -1,7 +1,6 @@
-# ============================================================
 # Chirag Clone v2.8 - Production Dockerfile
 # Multi-stage build with security hardening and performance optimizations
-# ============================================================
+# NOTE: Uses python:3.11-slim because onnxruntime>=1.20 has issues with 3.12+
 
 # Stage 1: Build frontend
 FROM node:20-alpine AS frontend-builder

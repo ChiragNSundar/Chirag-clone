@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.9.1] - 2026-01-21
+
+### 🛠️ Fixes & Improvements
+
+- **Duplicate Code Removal**: Deleted redundant `src/hooks/useToast.ts` which conflicted with `src/components/Toast.tsx`.
+- **Backend Stability**:
+  - Updated dependency installer to verify `aiosqlite` and `python-multipart`.
+  - Added specific version constraints for `onnxruntime` compatibility.
+- **Documentation**: Updated `Dockerfile` and setup scripts to reflect Python 3.11 requirement.
+
 ## [2.9.0] - 2026-01-20
 
 ### 🎙️ Voice Cloning Studio (ElevenLabs)

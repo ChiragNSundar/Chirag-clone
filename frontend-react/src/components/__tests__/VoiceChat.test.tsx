@@ -18,17 +18,17 @@ const mockMediaRecorder = {
     onstop: vi.fn(),
     state: 'inactive'
 };
-(global as any).MediaRecorder = vi.fn(() => mockMediaRecorder);
+(global as unknown as { MediaRecorder: typeof MediaRecorder }).MediaRecorder = vi.fn(() => mockMediaRecorder) as unknown as typeof MediaRecorder;
 
 // Mock Audio
 const mockAudioPlay = vi.fn();
 const mockAudioPause = vi.fn();
-(global as any).Audio = vi.fn(() => ({
+(global as unknown as { Audio: typeof Audio }).Audio = vi.fn(() => ({
     play: mockAudioPlay.mockResolvedValue(undefined),
     pause: mockAudioPause,
     onended: null,
     onerror: null
-}));
+})) as unknown as typeof Audio;
 
 // Mock WebSocket
 const mockWebSocket = {
@@ -40,8 +40,8 @@ const mockWebSocket = {
     onclose: null,
     onerror: null
 };
-(global as any).WebSocket = vi.fn(() => mockWebSocket);
-(global as any).WebSocket.OPEN = 1;
+(global as unknown as { WebSocket: typeof WebSocket }).WebSocket = vi.fn(() => mockWebSocket) as unknown as typeof WebSocket;
+(global as unknown as { WebSocket: { OPEN: number } }).WebSocket.OPEN = 1;
 
 // Mock fetch
 global.fetch = vi.fn();

@@ -1,7 +1,6 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Upload, Play, Trash2, StopCircle, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { Mic, Square, Upload, Trash2, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ClonedVoice {
     voice_id: string;
@@ -27,7 +26,7 @@ export const VoiceStudio = () => {
         if (activeTab === 'list') {
             fetchVoices();
         }
-    }, [activeTab]);
+    }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const getTrainingPin = () => sessionStorage.getItem('training_pin') || '';
 
@@ -65,7 +64,7 @@ export const VoiceStudio = () => {
 
             mediaRecorder.start();
             setRecording(true);
-        } catch (e) {
+        } catch {
             alert('Could not access microphone');
         }
     };
@@ -108,7 +107,7 @@ export const VoiceStudio = () => {
                 const error = await res.json();
                 alert(`Error: ${error.detail}`);
             }
-        } catch (e) {
+        } catch {
             alert('Failed to clone voice');
         } finally {
             setLoading(false);

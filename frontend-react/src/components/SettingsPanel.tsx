@@ -36,6 +36,7 @@ const DEFAULT_SETTINGS: Settings = {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSettings() {
     const context = useContext(SettingsContext);
     if (!context) {

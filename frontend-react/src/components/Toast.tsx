@@ -28,6 +28,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
     const context = useContext(ToastContext);
     if (!context) {
@@ -41,6 +42,10 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
+    const dismissToast = useCallback((id: string) => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, []);
+
     const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
         const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const duration = toast.duration ?? 5000;
@@ -53,11 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 dismissToast(id);
             }, duration);
         }
-    }, []);
-
-    const dismissToast = useCallback((id: string) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
+    }, [dismissToast]);
 
     const success = useCallback((title: string, message?: string) => {
         showToast({ type: 'success', title, message });

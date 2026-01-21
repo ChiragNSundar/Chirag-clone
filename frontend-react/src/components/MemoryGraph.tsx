@@ -16,7 +16,7 @@ interface NodeData {
     label: string;
     type?: string;
     content?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 interface DetailPanelProps {
@@ -151,15 +151,15 @@ export const MemoryGraph = () => {
 
             const center = { x: 400, y: 300 };
 
-            const transformedNodes = data.nodes.map((node: any, i: number) => {
+            const transformedNodes = data.nodes.map((node, i: number) => {
                 let pos = { x: center.x, y: center.y };
                 const nodeType = node.type || 'leaf';
 
                 if (nodeType === 'core') {
                     pos = { x: center.x, y: center.y };
                 } else if (nodeType === 'category') {
-                    const categoryCount = data.nodes.filter((n: any) => n.type === 'category').length;
-                    const categoryIndex = data.nodes.filter((n: any, idx: number) => n.type === 'category' && idx < i).length;
+                    const categoryCount = data.nodes.filter((n) => n.type === 'category').length;
+                    const categoryIndex = data.nodes.filter((n, idx: number) => n.type === 'category' && idx < i).length;
                     const angle = (categoryIndex * 2 * Math.PI) / categoryCount;
                     pos = {
                         x: center.x + Math.cos(angle) * 200,
@@ -188,7 +188,7 @@ export const MemoryGraph = () => {
                 };
             });
 
-            const transformedEdges = data.edges.map((edge: any) => ({
+            const transformedEdges = data.edges.map((edge) => ({
                 id: edge.id,
                 source: edge.source,
                 target: edge.target,
@@ -274,7 +274,7 @@ export const MemoryGraph = () => {
                 <Background color="#3f3f46" gap={24} size={1} />
                 <Controls
                     className="bg-zinc-900/90 border border-white/10 rounded-lg overflow-hidden"
-                    style={{ button: { background: 'transparent', color: 'white', border: 'none' } } as any}
+                    
                 />
                 <MiniMap
                     className="bg-zinc-900/90 border border-white/10 rounded-lg"

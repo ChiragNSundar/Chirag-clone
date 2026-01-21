@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useSyncExternalStore } from 'react';
 
 // ============= useDebounce =============
 
@@ -48,13 +48,15 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
 // ============= usePrevious =============
 
 export function usePrevious<T>(value: T): T | undefined {
-    const ref = useRef<T | undefined>(undefined);
+    const [previous, setPrevious] = useState<T | undefined>(undefined);
+    const currentRef = useRef<T>(value);
 
     useEffect(() => {
-        ref.current = value;
+        setPrevious(currentRef.current);
+        currentRef.current = value;
     }, [value]);
 
-    return ref.current;
+    return previous;
 }
 
 // ============= useOnClickOutside =============
@@ -112,21 +114,23 @@ export function useWindowSize(): WindowSize {
 // ============= useMediaQuery =============
 
 export function useMediaQuery(query: string): boolean {
-    const [matches, setMatches] = useState(false);
+    const getSnapshot = () => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
+    };
 
-    useEffect(() => {
+    const getServerSnapshot = () => false;
+
+    const subscribe = (callback: () => void) => {
+        if (typeof window === 'undefined') return () => { };
         const media = window.matchMedia(query);
+        media.addEventListener('change', callback);
+        return () => media.removeEventListener('change', callback);
+    };
 
-        if (media.matches !== matches) {
-            setMatches(media.matches);
-        }
-
-        const listener = () => setMatches(media.matches);
-        media.addEventListener('change', listener);
-
-        return () => media.removeEventListener('change', listener);
-    }, [matches, query]);
-
+    // useSyncExternalStore is the recommended way to subscribe to external stores
+    // It avoids the need for setState in useEffect
+    const matches = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
     return matches;
 }
 
@@ -285,20 +289,37 @@ export function useAsync<T>(
         error: null
     });
 
+    const mountedRef = useRef(true);
+    const hasRun = useRef(false);
+
     const execute = useCallback(async () => {
         setState(prev => ({ ...prev, loading: true, error: null }));
         try {
             const data = await asyncFunction();
-            setState({ data, loading: false, error: null });
+            if (mountedRef.current) {
+                setState({ data, loading: false, error: null });
+            }
         } catch (error) {
-            setState({ data: null, loading: false, error: error as Error });
+            if (mountedRef.current) {
+                setState({ data: null, loading: false, error: error as Error });
+            }
         }
     }, [asyncFunction]);
 
     useEffect(() => {
-        if (immediate) {
-            execute();
+        mountedRef.current = true;
+        if (immediate && !hasRun.current) {
+            hasRun.current = true;
+            // Schedule execution asynchronously to avoid synchronous setState in effect
+            queueMicrotask(() => {
+                if (mountedRef.current) {
+                    execute();
+                }
+            });
         }
+        return () => {
+            mountedRef.current = false;
+        };
     }, [immediate, execute]);
 
     return { ...state, execute };

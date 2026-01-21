@@ -47,6 +47,7 @@ ESSENTIAL_PACKAGES = [
     'requests',
     'aiohttp',
     'python-multipart',
+    'aiosqlite',
 ]
 
 # ============= Cross-Platform Print =============

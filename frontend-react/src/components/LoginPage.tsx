@@ -57,7 +57,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 setError('Failed to initiate Google login');
                 setIsLoading(false);
             }
-        } catch (err) {
+        } catch {
             setError('Failed to connect to server');
             setIsLoading(false);
         }

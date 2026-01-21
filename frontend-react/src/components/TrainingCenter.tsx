@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Upload, MessageSquare, BookOpen, PenLine, Save, Trash2, Brain,
-    Mic, FileJson, CheckCircle, AlertCircle, Download, HardDriveDownload, Database,
+    Upload, MessageSquare, BookOpen, PenLine, Trash2, Brain,
+    Mic, FileJson, CheckCircle, AlertCircle, Download, Database,
     RefreshCw, Info, Lock, Plus, Instagram, Hash, Search, Link, FileText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -63,7 +63,7 @@ const UploadCard = ({
             } else {
                 setResult({ success: false, message: data.detail || 'Upload failed' });
             }
-        } catch (e) {
+        } catch {
             setResult({ success: false, message: 'Upload failed' });
         } finally {
             setUploading(false);
@@ -142,7 +142,12 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
 
     // Get stored PIN for authenticated API calls
     // Fine-Tuning state
-    const [ftStats, setFtStats] = useState<any>(null);
+    interface FineTuneStats {
+        training_examples: number;
+        personality_examples: number;
+        total_rows: number;
+    }
+    const [ftStats, setFtStats] = useState<FineTuneStats | null>(null);
     const [exportingFt, setExportingFt] = useState(false);
 
     useEffect(() => {
@@ -155,8 +160,8 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         try {
             const res = await fetch('http://localhost:8000/api/finetune/stats');
             if (res.ok) setFtStats(await res.json());
-        } catch (e) {
-            console.error(e);
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -172,7 +177,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                 setMessage({ type: 'success', text: 'Dataset exported! Click download.' });
                 fetchFtStats();
             }
-        } catch (e) {
+        } catch {
             setMessage({ type: 'error', text: 'Export failed' });
         } finally {
             setExportingFt(false);
@@ -347,7 +352,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                 type: 'success',
                 text: `Exported ${data.metadata?.total_training_examples || 0} training examples and ${data.metadata?.total_facts || 0} facts`
             });
-        } catch (e) {
+        } catch {
             setMessage({ type: 'error', text: 'Export failed' });
         } finally {
             setExporting(false);
@@ -786,7 +791,7 @@ const DocumentUpload = () => {
             } else {
                 setResult({ success: false, message: data.detail || 'Upload failed' });
             }
-        } catch (e) {
+        } catch {
             setResult({ success: false, message: 'Upload failed' });
         } finally {
             setUploading(false);

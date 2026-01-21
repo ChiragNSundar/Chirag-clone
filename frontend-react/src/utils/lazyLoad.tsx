@@ -1,4 +1,5 @@
 import { Suspense, lazy, type ComponentType } from 'react';
+import { preloadComponent, type LazyComponent } from './lazyLoadUtils';
 
 // ============= Lazy Loaded Components =============
 // All components use named exports, so we map them to default
@@ -81,43 +82,37 @@ export function LazyWrapper({ children, fallback }: LazyWrapperProps) {
 
 // ============= Route Config Helper =============
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function createLazyRoute<P extends object>(
     Component: ComponentType<P>,
     fallback?: React.ReactNode
 ) {
-    return function LazyRoute(props: P) {
+    function LazyRoute(props: P) {
         return (
             <Suspense fallback={fallback ?? <PageFallback />}>
                 <Component {...props} />
             </Suspense>
         );
-    };
-}
-
-// ============= Preload Helper =============
-
-type LazyComponent = () => Promise<{ default: ComponentType<unknown> }>;
-
-const preloadedComponents = new Set<LazyComponent>();
-
-export function preloadComponent(lazyComponent: LazyComponent) {
-    if (preloadedComponents.has(lazyComponent)) return;
-
-    preloadedComponents.add(lazyComponent);
-    lazyComponent();
+    }
+    return LazyRoute;
 }
 
 // Preload on hover
+// eslint-disable-next-line react-refresh/only-export-components
 export function withPreload<P extends object>(
     LazyComponent: React.LazyExoticComponent<ComponentType<P>>,
     loader: LazyComponent
 ) {
-    return function PreloadableComponent(props: P) {
+    function PreloadableComponent(props: P) {
         return (
             <div onMouseEnter={() => preloadComponent(loader)}>
                 <LazyComponent {...props} />
             </div>
         );
-    };
+    }
+    return PreloadableComponent;
 }
 
+// Re-export utilities
+// eslint-disable-next-line react-refresh/only-export-components
+export { preloadComponent } from './lazyLoadUtils';

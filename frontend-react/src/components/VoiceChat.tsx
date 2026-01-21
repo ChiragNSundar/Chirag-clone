@@ -50,22 +50,122 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
             .catch(() => setVoiceStatus({ tts_enabled: false, stt_enabled: false }));
     }, []);
 
+    // speakText function (defined here so it can be used in the effect below)
+    const speakText = useCallback(async (text: string) => {
+        if (!voiceStatus?.tts_enabled) return;
+
+        setIsSpeaking(true);
+
+        try {
+            const response = await fetch('/api/voice/speak', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+
+            const result = await response.json();
+
+            if (result.audio_base64) {
+                const audio = new Audio(`data:audio/mp3;base64,${result.audio_base64}`);
+                audioRef.current = audio;
+
+                audio.onended = () => setIsSpeaking(false);
+                audio.onerror = () => setIsSpeaking(false);
+
+                await audio.play();
+            } else {
+                setIsSpeaking(false);
+            }
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            setIsSpeaking(false);
+        }
+    }, [voiceStatus?.tts_enabled]);
+
     // Auto-speak when textToSpeak changes (only in non-live mode)
     useEffect(() => {
         if (textToSpeak && voiceEnabled && voiceStatus?.tts_enabled && !isLiveMode) {
             speakText(textToSpeak);
         }
-    }, [textToSpeak, voiceEnabled, voiceStatus?.tts_enabled, isLiveMode]);
+    }, [textToSpeak, voiceEnabled, voiceStatus?.tts_enabled, isLiveMode, speakText]);
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            disconnectWebSocket();
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
+    // Stop speaking helper (needs to be defined before handleWebSocketMessage)
+    const stopSpeaking = useCallback(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+        setIsSpeaking(false);
+
+        // Notify WebSocket if in live mode
+        if (websocketRef.current?.readyState === WebSocket.OPEN) {
+            websocketRef.current.send(JSON.stringify({ type: 'interrupt' }));
+        }
+    }, []);
+
+    const disconnectWebSocket = useCallback(() => {
+        if (websocketRef.current) {
+            websocketRef.current.close();
+            websocketRef.current = null;
+        }
+        setIsConnected(false);
+    }, []);
+
+    // Play audio helper
+    const playAudioFromBase64 = useCallback((base64: string, format: string) => {
+        setIsSpeaking(true);
+        const audio = new Audio(`data:audio/${format};base64,${base64}`);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+            setIsSpeaking(false);
+            // Notify server that playback finished
+            if (websocketRef.current?.readyState === WebSocket.OPEN) {
+                websocketRef.current.send(JSON.stringify({ type: 'bot_speech_complete' }));
             }
         };
+        audio.onerror = () => setIsSpeaking(false);
+
+        audio.play().catch(() => setIsSpeaking(false));
     }, []);
+
+    // Handle WebSocket messages
+    const handleWebSocketMessage = useCallback((data: WebSocketMessage) => {
+        switch (data.type) {
+            case 'connected':
+                console.log('Session ID:', data.session_id);
+                break;
+
+            case 'transcript':
+                if (data.text) {
+                    onTranscript(data.text);
+                }
+                break;
+
+            case 'response':
+                setIsProcessing(false);
+                if (data.text && onBotResponse) {
+                    onBotResponse(data.text);
+                }
+                if (data.audio_base64 && voiceEnabled) {
+                    playAudioFromBase64(data.audio_base64, data.format || 'mp3');
+                }
+                break;
+
+            case 'interrupted':
+                stopSpeaking();
+                break;
+
+            case 'error':
+                console.error('WebSocket error:', data.message);
+                setIsProcessing(false);
+                break;
+
+            case 'status':
+                // Update UI based on status if needed
+                break;
+        }
+    }, [onTranscript, onBotResponse, voiceEnabled, playAudioFromBase64, stopSpeaking]);
 
     // Connect to WebSocket for live mode
     const connectWebSocket = useCallback(() => {
@@ -102,69 +202,17 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
         };
 
         websocketRef.current = ws;
-    }, []);
+    }, [handleWebSocketMessage]);
 
-    const disconnectWebSocket = useCallback(() => {
-        if (websocketRef.current) {
-            websocketRef.current.close();
-            websocketRef.current = null;
-        }
-        setIsConnected(false);
-    }, []);
-
-    const handleWebSocketMessage = useCallback((data: WebSocketMessage) => {
-        switch (data.type) {
-            case 'connected':
-                console.log('Session ID:', data.session_id);
-                break;
-
-            case 'transcript':
-                if (data.text) {
-                    onTranscript(data.text);
-                }
-                break;
-
-            case 'response':
-                setIsProcessing(false);
-                if (data.text && onBotResponse) {
-                    onBotResponse(data.text);
-                }
-                if (data.audio_base64 && voiceEnabled) {
-                    playAudioFromBase64(data.audio_base64, data.format || 'mp3');
-                }
-                break;
-
-            case 'interrupted':
-                stopSpeaking();
-                break;
-
-            case 'error':
-                console.error('WebSocket error:', data.message);
-                setIsProcessing(false);
-                break;
-
-            case 'status':
-                // Update UI based on status if needed
-                break;
-        }
-    }, [onTranscript, onBotResponse, voiceEnabled]);
-
-    const playAudioFromBase64 = (base64: string, format: string) => {
-        setIsSpeaking(true);
-        const audio = new Audio(`data:audio/${format};base64,${base64}`);
-        audioRef.current = audio;
-
-        audio.onended = () => {
-            setIsSpeaking(false);
-            // Notify server that playback finished
-            if (websocketRef.current?.readyState === WebSocket.OPEN) {
-                websocketRef.current.send(JSON.stringify({ type: 'bot_speech_complete' }));
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            disconnectWebSocket();
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
             }
         };
-        audio.onerror = () => setIsSpeaking(false);
-
-        audio.play().catch(() => setIsSpeaking(false));
-    };
+    }, [disconnectWebSocket]);
 
     // Toggle live mode
     const toggleLiveMode = useCallback(() => {
@@ -172,7 +220,11 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
             // Disable live mode
             disconnectWebSocket();
             if (isRecording) {
-                stopRecording();
+                // Don't call stopRecording here to avoid circular dependency
+                if (mediaRecorderRef.current) {
+                    mediaRecorderRef.current.stop();
+                    setIsRecording(false);
+                }
             }
             setIsLiveMode(false);
         } else {
@@ -239,7 +291,7 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
         } catch (error) {
             console.error('Error accessing microphone:', error);
         }
-    }, [voiceStatus, isLiveMode]);
+    }, [voiceStatus, isLiveMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const stopRecording = useCallback(() => {
         if (mediaRecorderRef.current && isRecording) {
@@ -294,53 +346,9 @@ export function VoiceChat({ onTranscript, textToSpeak, isEnabled = true, onBotRe
         }
     };
 
-    const speakText = async (text: string) => {
-        if (!voiceStatus?.tts_enabled) return;
-
-        setIsSpeaking(true);
-
-        try {
-            const response = await fetch('/api/voice/speak', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            });
-
-            const result = await response.json();
-
-            if (result.audio_base64) {
-                const audio = new Audio(`data:audio/mp3;base64,${result.audio_base64}`);
-                audioRef.current = audio;
-
-                audio.onended = () => setIsSpeaking(false);
-                audio.onerror = () => setIsSpeaking(false);
-
-                await audio.play();
-            } else {
-                setIsSpeaking(false);
-            }
-        } catch (error) {
-            console.error('Error playing audio:', error);
-            setIsSpeaking(false);
-        }
-    };
-
-    const stopSpeaking = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current = null;
-        }
-        setIsSpeaking(false);
-
-        // Notify WebSocket if in live mode
-        if (isLiveMode && websocketRef.current?.readyState === WebSocket.OPEN) {
-            websocketRef.current.send(JSON.stringify({ type: 'interrupt' }));
-        }
-    };
-
     const interruptBot = useCallback(() => {
         stopSpeaking();
-    }, []);
+    }, [stopSpeaking]);
 
     if (!isEnabled) return null;
 

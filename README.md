@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-2.8.1-blue.svg)
+![Version](https://img.shields.io/badge/version-2.9.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -228,14 +228,20 @@ cp .env.example .env
 # GEMINI_API_KEY=...
 # ELEVENLABS_API_KEY=...
 
-# 3. Launch with Robust Installer (Recommended)
+# 3. Install Dependencies
+# This script installs both Python and Node.js dependencies automatically
 python install_deps.py
 
-# 4. Start Backend
-cd backend && python -m uvicorn main:app --reload
+# 4. Start Backend (Terminal 1)
+cd backend
+python3 main.py
+# The server will start on http://localhost:8000
 
-# 5. Start Frontend
-cd frontend-react && npm run dev
+# 5. Start Frontend (Terminal 2)
+# Open a new terminal window/tab
+cd frontend-react
+npm run dev
+# The app will be available at http://localhost:5173
 ```
 
 - **Frontend**: <http://localhost:5173>
@@ -589,4 +595,4 @@ Chirag-clone/
 
 ---
 
-**v2.8.1 "Export Brain" Release** - [View Changelog](CHANGELOG.md)
+**v2.9.1 "Fixes & Improvements" Release** - [View Changelog](CHANGELOG.md)

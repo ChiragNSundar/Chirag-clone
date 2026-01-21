@@ -31,19 +31,47 @@ export interface ChatResponse {
 export interface GraphNode {
     id: string;
     label: string;
-    type: 'root' | 'category' | 'leaf';
+    type: 'root' | 'category' | 'leaf' | 'core';
     data: { label: string };
+    content?: string;
+    metadata?: Record<string, unknown>;
 }
 
 export interface GraphEdge {
     id: string;
     source: string;
     target: string;
+    animated?: boolean;
 }
 
 export interface GraphData {
     nodes: GraphNode[];
     edges: GraphEdge[];
+}
+
+// ============= Knowledge Types =============
+
+export interface KnowledgeDocument {
+    id: string;
+    title: string;
+    category: string;
+    source: string;
+    created_at: string;
+    chunks_count: number;
+}
+
+export interface KnowledgeStats {
+    total_documents: number;
+    total_chunks: number;
+    categories: Record<string, number>;
+}
+
+export interface KnowledgeQueryResult {
+    id: string;
+    content: string;
+    document_id: string;
+    score: number;
+    metadata: Record<string, unknown>;
 }
 
 export const api = {
@@ -160,12 +188,12 @@ export const api = {
 
     // ============= Knowledge API =============
 
-    async getKnowledgeDocuments(): Promise<{ documents: any[] }> {
+    async getKnowledgeDocuments(): Promise<{ documents: KnowledgeDocument[] }> {
         const res = await fetch(`${API_BASE}/knowledge/documents`);
         return res.json();
     },
 
-    async getKnowledgeStats(): Promise<any> {
+    async getKnowledgeStats(): Promise<KnowledgeStats> {
         const res = await fetch(`${API_BASE}/knowledge/stats`);
         return res.json();
     },
@@ -189,7 +217,7 @@ export const api = {
         return res.json();
     },
 
-    async queryKnowledge(query: string, nResults: number = 5): Promise<{ results: any[] }> {
+    async queryKnowledge(query: string, nResults: number = 5): Promise<{ results: KnowledgeQueryResult[] }> {
         const res = await fetch(`${API_BASE}/knowledge/query`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
