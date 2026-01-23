@@ -78,6 +78,7 @@ RUN mkdir -p \
     /app/backend/data/audio_cache \
     /app/backend/data/knowledge \
     /app/backend/data/rewind \
+    /app/backend/data/cache \
     /app/backend/logs \
     /app/backend/migrations/versions \
     && chown -R chirag:chirag /app

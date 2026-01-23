@@ -6,7 +6,7 @@ This is a refactored version of the original main.py with endpoints organized in
 All endpoint logic has been moved to routes/ modules for better maintainability.
 """
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -16,10 +16,10 @@ import time
 import pathlib
 
 from config import Config, validate_config
+from services.logger import get_logger
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure logging using new service
+logger = get_logger(__name__)
 
 # Import robustness utilities
 from services.robustness import (
@@ -27,8 +27,11 @@ from services.robustness import (
     GlobalExceptionMiddleware,
 )
 
+from backend.database import init_db
+
 # Validate configuration at startup
 config_warnings = validate_config()
+init_db()  # Initialize SQLModel DB
 for warning in config_warnings:
     logger.warning(f"[CONFIG] {warning}")
 
@@ -37,7 +40,8 @@ for warning in config_warnings:
 app = FastAPI(
     title="Chirag Clone API",
     description="Personal AI Clone Bot API - v2.3 with Real-Time Voice, Vision, and Brain Station",
-    version="2.3.0"
+    version="2.3.0",
+    default_response_class=ORJSONResponse
 )
 
 # ============= Middleware Configuration =============

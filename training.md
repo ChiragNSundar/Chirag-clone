@@ -89,7 +89,7 @@ pip install --no-deps "xformers<0.0.26" "trl<0.9.0" peft accelerate bitsandbytes
 
 The script `tools/train_lora.py` handles everything.
 
-**Example: Train Llama 3 (8B)**
+#### Example: Train Llama 3 (8B)
 
 ```bash
 python tools/train_lora.py \
@@ -100,7 +100,7 @@ python tools/train_lora.py \
     --output adapters/chirag-v1
 ```
 
-**Example: Train Phi-3 (Fast & Lightweight)**
+#### Example: Train Phi-3 (Fast & Lightweight)
 
 ```bash
 python tools/train_lora.py \

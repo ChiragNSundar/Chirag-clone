@@ -68,5 +68,17 @@ export default mergeConfig(viteConfig, {
       exclude: ['node_modules/', 'src/test/']
     },
     exclude: ['node_modules', 'e2e', 'dist']
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'],
+          'vendor-3d': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-utils': ['date-fns', 'recharts']
+        }
+      }
+    }
   }
 })

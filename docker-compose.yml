@@ -74,6 +74,7 @@ services:
     volumes:
       - chirag_data:/app/backend/data
       - chirag_logs:/app/backend/logs
+      - chirag_cache:/app/backend/data/cache
     restart: unless-stopped
     depends_on:
       redis:
@@ -144,6 +145,8 @@ volumes:
   chirag_data:
     driver: local
   chirag_logs:
+    driver: local
+  chirag_cache:
     driver: local
   redis_data:
     driver: local

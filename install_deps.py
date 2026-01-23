@@ -50,6 +50,10 @@ ESSENTIAL_PACKAGES = [
     'aiosqlite',
     'notion-client',
     'slack-sdk',
+    'diskcache',
+    'sqlmodel',
+    'structlog',
+    'orjson',
     # 'openwakeword',  <-- Disabled on Python 3.14
 ]
 

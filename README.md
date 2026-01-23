@@ -27,6 +27,9 @@
 - **Framework**: FastAPI (Python 3.11)
 - **AI/LLM**: Google Gemini 2.0 Flash (Primary), OpenAI (Fallback)
 - **Robustness**: Circuit Breakers + Rate Limiting + Model Fallback
+- **Database**: SQLModel (SQLite) + ChromaDB (Hybrid Storage)
+- **Caching**: DiskCache (Persistent) + Redis
+- **Logging**: Structlog (JSON Production Logs)
 - **Vector DB**: ChromaDB (Local persistence)
 - **Real-Time**: WebSockets for Voice & Vision
 - **Auth**: OAuth2 (Google) + JWT + Admin Access Control

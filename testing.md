@@ -95,6 +95,8 @@ The testing strategy follows the **Testing Pyramid**:
 ### 11. `test_cognitive.py` (Knowledge & Sync) 🧠
 
 - **Memory Editing**: Tests `update_core_memory` and `merge_core_memories` logic.
+- **Database Limits**: Validates SQLModel constraints and relation integrity.
+- **Hybrid Sync**: Verifies data written to SQLite is correctly synced to ChromaDB.
 - **Notion Sync**: specific tests for `_extract_text_from_block` and page sync mocking.
 - **Daily Briefing**: Verifies briefing text generation includes calendar/drafts/knowledge stats.
 

@@ -14,6 +14,11 @@ import json
 import hashlib
 from datetime import datetime
 from config import Config
+from backend.database import engine, TrainingExample
+from sqlmodel import Session, select
+from services.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class MockCollection:
@@ -94,6 +99,9 @@ class MemoryService:
             self.client = None
             self.training_collection = MockCollection("training_conversations")
             self.conversation_collection = MockCollection("conversations")
+            
+        # Migrate data if needed
+        self._migrate_chroma_to_sql()
     
     def _generate_id(self, text: str) -> str:
         """Generate a unique ID for a piece of text."""
@@ -123,6 +131,22 @@ class MemoryService:
         if metadata:
             meta.update(metadata)
         
+        # Save to SQLite (Source of Truth)
+        try:
+            with Session(engine) as session:
+                example = TrainingExample(
+                    context=context,
+                    response=response,
+                    source=source,
+                    chroma_id=doc_id,
+                    timestamp=datetime.now()
+                )
+                session.add(example)
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to save to SQLite: {e}")
+
+        # Save to ChromaDB (Search Index)
         try:
             self.training_collection.add(
                 documents=[full_text],
@@ -130,6 +154,7 @@ class MemoryService:
                 metadatas=[meta]
             )
         except Exception as e:
+            logger.error(f"ChromaDB insert error: {e}")
             # Might already exist, try update
             if hasattr(self.training_collection, 'update'):
                 self.training_collection.update(
@@ -422,8 +447,51 @@ class MemoryService:
         
         return imported
     
+    def _migrate_chroma_to_sql(self):
+        """Migrate existing ChromaDB data to SQLite if SQLite is empty."""
+        try:
+            with Session(engine) as session:
+                count = session.query(TrainingExample).count()
+                if count > 0:
+                    return  # Already has data
+            
+            logger.info("Migrating data from ChromaDB to SQLite...")
+            examples = self.export_all_training_examples()
+            
+            with Session(engine) as session:
+                for ex in examples:
+                    # Parse timestamp format if needed, simplistic approach:
+                    ts = datetime.now()
+                    try:
+                        if ex.get('timestamp'):
+                            ts = datetime.fromisoformat(ex['timestamp'])
+                    except:
+                        pass
+                        
+                    db_ex = TrainingExample(
+                        context=ex.get('context', ''),
+                        response=ex.get('response', ''),
+                        source=ex.get('source', 'unknown'),
+                        chroma_id=ex.get('id'),
+                        timestamp=ts
+                    )
+                    session.add(db_ex)
+                session.commit()
+            logger.info(f"Migration complete: {len(examples)} records migrated.")
+            
+        except Exception as e:
+            logger.error(f"Migration failed: {e}")
+
     def clear_training_data(self) -> None:
         """Clear all training data (use with caution!)."""
+        # Clear SQLite
+        try:
+            with Session(engine) as session:
+                session.query(TrainingExample).delete()
+                session.commit()
+        except Exception as e:
+            logger.error(f"Failed to clear SQLite: {e}")
+
         if CHROMA_AVAILABLE:
             self.client.delete_collection("training_conversations")
             self.training_collection = self.client.get_or_create_collection(
