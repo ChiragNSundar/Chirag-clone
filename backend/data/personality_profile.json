@@ -8,7 +8,7 @@
   "tone_markers": {
     "casual": 0.5,
     "formal": 0.5,
-    "brief": 0.8000000000000003
+    "brief": 1.0
   },
   "facts": [
     "Only this fact"
@@ -33,6 +33,46 @@
     {
       "context": "Test context",
       "response": "Test response"
+    },
+    {
+      "context": "Hello",
+      "response": "Hi there!"
+    },
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
+    {
+      "context": "Hello",
+      "response": "Hi there!"
+    },
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
+    {
+      "context": "Hello",
+      "response": "Hi there!"
+    },
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
+    {
+      "context": "Hello",
+      "response": "Hi there!"
+    },
+    {
+      "context": "Hello",
+      "response": "Hi there!"
     },
     {
       "context": "Hello",

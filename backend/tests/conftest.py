@@ -119,8 +119,10 @@ from unittest.mock import MagicMock
 try:
     import chromadb
 except ImportError:
-    sys.modules["chromadb"] = MagicMock()
-    sys.modules["chromadb.config"] = MagicMock()
+    # Do NOT mock chromadb globally, as MemoryService has its own fallback
+    # sys.modules["chromadb"] = MagicMock()
+    # sys.modules["chromadb.config"] = MagicMock()
+    pass
 
 # Mock PyAudio
 sys.modules["pyaudio"] = MagicMock()

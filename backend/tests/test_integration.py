@@ -42,12 +42,13 @@ class TestChatWorkflow:
     
     def test_chat_with_mocked_llm(self):
         """Test chat endpoint with mocked LLM service."""
-        with patch('main.get_chat_service') as mock_get_svc:
+        with patch('routes.chat._get_chat_service') as mock_get_svc:
             mock_svc = MagicMock()
             mock_svc.generate_response.return_value = (
                 "Hello! I'm Chirag's digital twin.",
                 0.85,
-                {"primary": "friendly", "energy": 0.7}
+                {"primary": "friendly", "energy": 0.7},
+                {}  # thinking_data is now returned as 4th element
             )
             
             async def async_mock():
@@ -113,12 +114,12 @@ class TestAutopilotWorkflow:
         status_response = client.get("/api/autopilot/status")
         assert status_response.status_code == 200
         
-        # Try updating settings (may fail if not implemented, but shouldn't crash)
-        settings_response = client.post("/api/autopilot/settings", json={
+        # Try updating discord settings (the available settings endpoint)
+        settings_response = client.post("/api/autopilot/discord/settings", json={
             "auto_reply_dms": True,
             "auto_reply_mentions": True
         })
-        # Any response is acceptable (may not be implemented)
+        # Any response is acceptable (may not be configured)
         assert settings_response.status_code in [200, 404, 422, 500]
 
 
@@ -192,21 +193,21 @@ class TestVoiceEndpoints:
         assert "stt_available" in data
     
     def test_voice_speak_requires_text(self):
-        """Test that speak endpoint requires text parameter."""
-        response = client.post("/api/voice/speak", json={})
+        """Test that TTS endpoint requires text parameter."""
+        response = client.post("/api/voice/tts", json={})
         assert response.status_code == 422
     
     def test_voice_speak_with_text(self):
-        """Test speak endpoint with valid text."""
-        response = client.post("/api/voice/speak", json={
+        """Test TTS endpoint with valid text."""
+        response = client.post("/api/voice/tts", json={
             "text": "Hello, this is a test."
         })
         # May fail if ElevenLabs not configured, but should not crash
         assert response.status_code in [200, 500, 503]
     
     def test_voice_listen_empty_audio(self):
-        """Test listen endpoint with missing audio."""
-        response = client.post("/api/voice/listen", json={})
+        """Test STT endpoint with missing audio."""
+        response = client.post("/api/voice/stt", json={})
         # Should fail gracefully
         assert response.status_code in [400, 422, 500]
 
@@ -220,19 +221,19 @@ class TestVisionEndpoints:
     
     def test_vision_analyze_requires_image(self):
         """Test that vision analyze requires image data."""
-        response = client.post("/api/vision/analyze", json={})
+        response = client.post("/api/vision/analyze-image", json={})
         assert response.status_code == 422
     
     def test_vision_desktop_requires_image(self):
         """Test desktop vision endpoint requires image."""
-        response = client.post("/api/vision/desktop", json={})
+        response = client.post("/api/vision/analyze-desktop", json={})
         assert response.status_code == 422
     
     def test_vision_desktop_with_base64(self):
         """Test desktop vision with minimal base64 image stub."""
         # Minimal 1x1 PNG base64
         tiny_png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        response = client.post("/api/vision/desktop", json={
+        response = client.post("/api/vision/analyze-desktop", json={
             "image_base64": tiny_png
         })
         # May fail if Gemini Vision not configured, but should accept payload
@@ -277,7 +278,7 @@ class TestKnowledgeEndpoints:
     
     def test_knowledge_text_upload(self):
         """Test uploading text content to knowledge base."""
-        response = client.post("/api/knowledge/text", json={
+        response = client.post("/api/knowledge/add-text", json={
             "content": "This is a test fact about the user.",
             "title": "Test Document"
         })
@@ -286,7 +287,7 @@ class TestKnowledgeEndpoints:
     
     def test_knowledge_url_ingest(self):
         """Test URL ingestion (may fail if network blocked)."""
-        response = client.post("/api/knowledge/url", json={
+        response = client.post("/api/knowledge/add-url", json={
             "url": "https://example.com"
         })
         # Network may be blocked in test env, that's ok
@@ -294,7 +295,7 @@ class TestKnowledgeEndpoints:
     
     def test_knowledge_delete_nonexistent(self):
         """Test deleting a non-existent document."""
-        response = client.delete("/api/knowledge/document/nonexistent-id-12345")
+        response = client.delete("/api/knowledge/documents/nonexistent-id-12345")
         # Should return 404 or handle gracefully
         assert response.status_code in [200, 404, 500]
 
@@ -333,7 +334,7 @@ class TestBrainStationWorkflow:
     def test_upload_then_query(self):
         """Test uploading content then querying it."""
         # Upload some content
-        upload_response = client.post("/api/knowledge/text", json={
+        upload_response = client.post("/api/knowledge/add-text", json={
             "content": "The capital of France is Paris. Paris is known for the Eiffel Tower.",
             "title": "France Facts"
         })

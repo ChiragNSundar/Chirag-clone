@@ -31,6 +31,9 @@ class TestMemoryServiceExport:
             )
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
+            # Force MockCollection for isolation
+            module.CHROMA_AVAILABLE = False
+            # Re-initialize with mock
             return module.MemoryService()  # Create fresh instance for testing
         except Exception as e:
             pytest.skip(f"MemoryService not available: {e}")

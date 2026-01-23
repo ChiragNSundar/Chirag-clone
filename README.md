@@ -1,6 +1,6 @@
 # 🧠 Chirag Clone - Personal Digital Twin
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-green.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88%25-green.svg)
 ![Auth](https://img.shields.io/badge/auth-OAuth2-orange.svg)
@@ -116,16 +116,19 @@
 ### 🚀 v3.0 Features (New!)
 
 #### 🧠 Cognitive Upgrades
+
 - **Notion Sync**: Connect your Notion workspace to the Brain Station for automatic knowledge ingestion.
 - **Daily Briefing**: Get morning audio briefings covering your calendar, drafts, and system stats.
 - **Memory Garden**: Edit and merge core memories directly.
 
 #### 🎙️ Voice & Autopilot
+
 - **Wake Word**: Say "Hey Chirag" to activate listening mode (powered by `openWakeWord`).
 - **Calendar Agent**: The bot can now negotiate meeting times, and create/update/delete events.
 - **Slack Integration**: Auto-draft replies for DMs and thread mentions.
 
 ### 🏛️ Training Center
+
 - **Chat Uploads**: Learn from WhatsApp, Instagram, Discord archives.
 - **Interactive Training**: "Interview mode" where the bot asks you questions.
 - **Journal**: Daily thought recording and reflection.

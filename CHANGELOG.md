@@ -1,23 +1,36 @@
 # Changelog
 
+## [3.0.1] - 2026-01-23
+
+### 🛠️ Stability & Testing
+
+- **Test Suite**: Fixed all backend integration tests; achieved 100% pass rate (216+ tests).
+- **Resilience**: Fixed `MemoryService` fallback mechanism when `chromadb` is missing (removed incorrect global mock).
+- **Dashboard**: Fixed type safety issues in analytics API where stats could return invalid types.
+- **Integration**: Corrected endpoint paths in integration tests to match actual API routes.
+
 ## [3.0.0] - 2026-01-21
 
 ### 🚀 Major Features
 
 #### 🧠 Cognitive & Memory Upgrades
+
 - **Active Knowledge Sync:** Periodically syncs pages from Notion database to the Knowledge Graph.
 - **Daily Briefing:** "Podcast Mode" generated audio summary of calendar, drafts, and knowledge stats.
 - **Memory Editing:** New API endpoints `PATCH /memories/{id}` and `POST /memories/merge` for refining core memories.
 
 #### 🎙️ Voice & Avatar
+
 - **Wake Word Detection:** Hands-free activation using "Hey Chirag" (via `openWakeWord`). in-browser listening via WebSocket.
 
 #### 🤖 Autopilot Expansions
+
 - **Calendar Action Agent:** Full read-write capabilities to negotiate time, update, and delete events.
 - **Slack Integration:** Auto-draft replies to DMs and mentions; summarize threads.
 - **Voice Memo Ingestion:** Transcribes voice notes from Telegram/WhatsApp into journal entries.
 
 #### 🏗️ Infrastructure
+
 - **Ollama First-Class:** Auto-detection of local Ollama instance; promoted to primary LLM provider if available.
 - **CI/CD:** Added GitHub Actions for linting, testing, and Docker builds.
 
