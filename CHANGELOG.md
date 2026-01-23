@@ -4,16 +4,36 @@
 
 ### ⚡ Performance & Robustness
 
-- **Hybrid Database**: Migrated training data source-of-truth to **SQLite** (via SQLModel) while keeping ChromaDB for semantic search. This ensures data integrity and easier management.
-- **Persistent Caching**: Switched from in-memory cache to **DiskCache**, allowing the cache to survive server restarts and share state across worker processes.
-- **Structured Logging**: Implemented **Structlog** for production-grade JSON logging, making observability and debugging significantly easier.
-- **Optimized Serialization**: Switched to `orjson` for faster API response encoding.
-- **Frontend Optimization**: Configured Vite manual chunk splitting to reduce initial load times for large dependencies (Three.js, React).
+#### 💾 Hybrid Database (SQLite + ChromaDB)
+
+- **Dual-Write Architecture**: Training examples are now written to **SQLite** (via `SQLModel`) as the primary source of truth, while simultaneously indexed in **ChromaDB** for semantic search. This decoupling prevents vector store corruption from causing data loss.
+- **Auto-Migration**: Implemented `MemoryService._migrate_chroma_to_sql()` which automatically backfills the SQLite database from existing ChromaDB vectors on startup if the SQL DB is empty.
+- **Relational Schema**: Defined `TrainingExample` model in `backend/database.py` with proper timestamps and source tracking.
+
+#### ⚡ Persistent Caching
+
+- **Disk-Backed Cache**: Replaced the ephemeral in-memory dictionary in `CacheService` with **DiskCache** (SQLite-based).
+  - **Impact**: Cache entries now survive server restarts and redeployments.
+  - **Concurrency**: Cache is now process-safe, allowing multiple Gunicorn/Uvicorn workers to share the same cache state.
+  - **Docker Volumes**: Added `chirag_cache` volume to `docker-compose.yml` to persist cache data across container rebuilds.
+
+#### 📊 Structured Logging
+
+- **Structlog Integration**: Replaced standard python logging with **Structlog**.
+  - **Production**: Logs are output as structured JSON objects for easy parsing by log aggregators (e.g., Datadog, ELK).
+  - **Development**: Logs use a colored console renderer for readability.
+  - **Context**: Logs now automatically include timestamps, log levels, and stack traces in a consistent format.
+
+#### 🚀 API Optimization
+
+- **High-Performance Serialization**: Switched FastAPI's default response class to `ORJSONResponse`.
+  - **Speed**: `orjson` allows for 2-5x faster JSON serialization compared to the standard library, significantly reducing latency for large payloads (e.g., chat history).
 
 ### 🐛 Fixes
 
-- Fixed potential data loss in training examples by backing them with a relational DB.
-- Improved Docker caching layers.
+- **Data Integrity**: Fixed potential data loss in training examples by backing them with a relational DB.
+- **Frontend Build**: Configured Vite manual chunk splitting to reduce initial load times for large dependencies (Three.js, React).
+- **Docker**: Improved Docker caching layers for faster builds.
 
 ---
 
