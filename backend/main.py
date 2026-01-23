@@ -191,6 +191,10 @@ app.include_router(features_router)
 from routes.finetune import router as finetune_router
 app.include_router(finetune_router)
 
+# Local training routes (LoRA fine-tuning, training jobs)
+from routes.local_training import router as local_training_router
+app.include_router(local_training_router)
+
 # ============= Static Frontend Serving =============
 
 frontend_path = pathlib.Path(__file__).parent.parent / "frontend-react" / "dist"

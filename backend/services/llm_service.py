@@ -478,6 +478,284 @@ class LLMService:
             self._embedding_model = SentenceTransformer(Config.EMBEDDING_MODEL)
         return self._embedding_model.encode(text).tolist()
     
+    # ============= Custom Adapter Loading =============
+    
+    def load_custom_adapter(self, adapter_path: str) -> Dict[str, Any]:
+        """
+        Load a custom LoRA adapter for inference.
+        
+        This registers the adapter with Ollama if using local inference,
+        or updates the model path for direct loading.
+        
+        Args:
+            adapter_path: Path to the trained adapter directory
+            
+        Returns:
+            Dict with success status and adapter info
+        """
+        import os
+        
+        if not os.path.exists(adapter_path):
+            return {"success": False, "error": f"Adapter not found: {adapter_path}"}
+        
+        # Check for adapter files
+        adapter_config = os.path.join(adapter_path, "adapter_config.json")
+        if not os.path.exists(adapter_config):
+            return {"success": False, "error": "Invalid adapter: missing adapter_config.json"}
+        
+        # Store current adapter info
+        self._current_adapter = adapter_path
+        self._adapter_loaded = True
+        
+        # If using Ollama, check for GGUF and register
+        if self.provider == 'ollama':
+            gguf_dir = os.path.join(adapter_path, "gguf")
+            if os.path.exists(gguf_dir):
+                gguf_files = [f for f in os.listdir(gguf_dir) if f.endswith('.gguf')]
+                if gguf_files:
+                    gguf_path = os.path.join(gguf_dir, gguf_files[0])
+                    adapter_name = os.path.basename(adapter_path)
+                    
+                    # Create Modelfile for Ollama
+                    self._register_ollama_model(gguf_path, adapter_name)
+                    
+                    # Update model to use the custom adapter
+                    self.model = adapter_name
+                    
+                    logger.info(f"Loaded GGUF adapter: {adapter_name}")
+                    return {
+                        "success": True,
+                        "adapter": adapter_name,
+                        "path": gguf_path,
+                        "provider": "ollama"
+                    }
+        
+        # For other providers, we note the adapter but can't directly load
+        # The adapter would need to be merged with the base model first
+        logger.info(f"Adapter registered: {adapter_path}")
+        return {
+            "success": True,
+            "adapter": os.path.basename(adapter_path),
+            "path": adapter_path,
+            "provider": self.provider,
+            "note": "Adapter registered. For cloud providers, merge adapter with base model first."
+        }
+    
+    def _register_ollama_model(self, gguf_path: str, model_name: str) -> bool:
+        """Register a GGUF model with Ollama."""
+        import subprocess
+        import tempfile
+        
+        modelfile_content = f"""FROM {gguf_path}
+
+TEMPLATE \"\"\"<|im_start|>system
+{{{{ .System }}}}<|im_end|>
+<|im_start|>user
+{{{{ .Prompt }}}}<|im_end|>
+<|im_start|>assistant
+\"\"\"
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+"""
+        
+        try:
+            # Write temporary Modelfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.modelfile', delete=False) as f:
+                f.write(modelfile_content)
+                modelfile_path = f.name
+            
+            # Run ollama create
+            result = subprocess.run(
+                ["ollama", "create", model_name, "-f", modelfile_path],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 min timeout for model creation
+            )
+            
+            import os
+            os.unlink(modelfile_path)
+            
+            if result.returncode == 0:
+                logger.info(f"Registered Ollama model: {model_name}")
+                return True
+            else:
+                logger.error(f"Failed to register Ollama model: {result.stderr}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            logger.error("Ollama model creation timed out")
+            return False
+        except FileNotFoundError:
+            logger.error("Ollama CLI not found. Please install Ollama.")
+            return False
+        except Exception as e:
+            logger.error(f"Error registering Ollama model: {e}")
+            return False
+    
+    def unload_adapter(self) -> Dict[str, Any]:
+        """
+        Unload the current custom adapter and revert to base model.
+        
+        Returns:
+            Dict with success status
+        """
+        if not hasattr(self, '_adapter_loaded') or not self._adapter_loaded:
+            return {"success": True, "message": "No adapter was loaded"}
+        
+        # Reset to default model
+        if self.provider == 'gemini':
+            self.model = Config.GEMINI_MODEL
+        elif self.provider == 'openai':
+            self.model = Config.OPENAI_MODEL
+        elif self.provider == 'ollama':
+            self.model = Config.OLLAMA_MODEL
+        
+        self._current_adapter = None
+        self._adapter_loaded = False
+        
+        logger.info(f"Adapter unloaded, reverted to base model: {self.model}")
+        return {
+            "success": True,
+            "message": f"Reverted to base model: {self.model}"
+        }
+    
+    def get_current_adapter(self) -> Optional[str]:
+        """Get the path of the currently loaded adapter, if any."""
+        if hasattr(self, '_current_adapter') and self._current_adapter:
+            return self._current_adapter
+        return None
+    
+    def list_available_adapters(self) -> List[Dict[str, Any]]:
+        """
+        List all available trained adapters.
+        
+        Returns:
+            List of adapter info dicts
+        """
+        import os
+        
+        adapters_dir = getattr(Config, 'LOCAL_ADAPTERS_DIR', './adapters')
+        adapters = []
+        
+        if not os.path.exists(adapters_dir):
+            return adapters
+        
+        for name in os.listdir(adapters_dir):
+            adapter_path = os.path.join(adapters_dir, name)
+            if not os.path.isdir(adapter_path):
+                continue
+            
+            # Check for adapter files
+            adapter_config = os.path.join(adapter_path, "adapter_config.json")
+            training_config = os.path.join(adapter_path, "training_config.json")
+            
+            if not (os.path.exists(adapter_config) or os.path.exists(training_config)):
+                continue
+            
+            # Get adapter info
+            adapter_info = {
+                "name": name,
+                "path": adapter_path,
+                "has_config": os.path.exists(adapter_config),
+                "has_gguf": os.path.exists(os.path.join(adapter_path, "gguf")),
+                "is_loaded": (hasattr(self, '_current_adapter') and 
+                             self._current_adapter == adapter_path)
+            }
+            
+            # Try to get base model from training config
+            if os.path.exists(training_config):
+                try:
+                    with open(training_config) as f:
+                        cfg = json.load(f)
+                        adapter_info["base_model"] = cfg.get("model_name", "unknown")
+                except Exception:
+                    pass
+            
+            adapters.append(adapter_info)
+        
+        return adapters
+    
+    def benchmark_model(
+        self,
+        prompts: List[str] = None,
+        num_runs: int = 3
+    ) -> Dict[str, Any]:
+        """
+        Benchmark the current model configuration.
+        
+        Args:
+            prompts: List of test prompts (uses defaults if None)
+            num_runs: Number of runs per prompt for averaging
+            
+        Returns:
+            Benchmark results with timing and quality metrics
+        """
+        import time
+        
+        if prompts is None:
+            prompts = [
+                "Hello, how are you doing today?",
+                "What's your favorite thing to do?",
+                "Can you tell me something interesting?",
+            ]
+        
+        results = {
+            "model": self.model,
+            "provider": self.provider,
+            "adapter": self.get_current_adapter(),
+            "runs": [],
+            "avg_latency_ms": 0,
+            "avg_tokens_per_second": 0,
+        }
+        
+        system_prompt = "You are a helpful assistant. Keep responses brief."
+        total_latency = 0
+        total_tokens = 0
+        
+        for prompt in prompts:
+            for run in range(num_runs):
+                messages = [{"role": "user", "content": prompt}]
+                
+                start = time.time()
+                try:
+                    response = self.generate_response(
+                        system_prompt=system_prompt,
+                        messages=messages,
+                        temperature=0.7,
+                        max_tokens=100
+                    )
+                    latency = (time.time() - start) * 1000  # ms
+                    
+                    # Rough token count (chars / 4)
+                    tokens = len(response) / 4
+                    tokens_per_sec = tokens / (latency / 1000) if latency > 0 else 0
+                    
+                    results["runs"].append({
+                        "prompt": prompt[:50] + "...",
+                        "latency_ms": round(latency, 2),
+                        "response_length": len(response),
+                        "tokens_per_second": round(tokens_per_sec, 2)
+                    })
+                    
+                    total_latency += latency
+                    total_tokens += tokens_per_sec
+                    
+                except Exception as e:
+                    results["runs"].append({
+                        "prompt": prompt[:50] + "...",
+                        "error": str(e)
+                    })
+        
+        successful_runs = [r for r in results["runs"] if "error" not in r]
+        if successful_runs:
+            results["avg_latency_ms"] = round(total_latency / len(successful_runs), 2)
+            results["avg_tokens_per_second"] = round(total_tokens / len(successful_runs), 2)
+        
+        return results
+    
     def get_circuit_state(self) -> dict:
         """Get current circuit breaker state for health checks."""
         return {

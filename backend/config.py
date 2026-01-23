@@ -84,6 +84,18 @@ class Config:
     RATE_LIMIT_ENABLED = os.getenv('RATE_LIMIT_ENABLED', 'True').lower() == 'true'
     RATE_LIMIT_CHAT = 30                 # Requests per minute for chat
     RATE_LIMIT_DEFAULT = 100             # Default requests per minute
+    
+    # Local Training Settings
+    LOCAL_TRAINING_ENABLED = os.getenv('LOCAL_TRAINING_ENABLED', 'true').lower() == 'true'
+    LOCAL_ADAPTERS_DIR = os.getenv('LOCAL_ADAPTERS_DIR', os.path.join(BASE_DIR, '..', 'adapters'))
+    LOCAL_MODELS_DIR = os.getenv('LOCAL_MODELS_DIR', os.path.join(BASE_DIR, '..', 'models'))
+    DEFAULT_BASE_MODEL = os.getenv('DEFAULT_BASE_MODEL', 'unsloth/phi-2-bnb-4bit')
+    GPU_MEMORY_FRACTION = float(os.getenv('GPU_MEMORY_FRACTION', '0.9'))
+    
+    # LoRA Training Defaults
+    DEFAULT_LORA_R = int(os.getenv('DEFAULT_LORA_R', '16'))
+    DEFAULT_LORA_ALPHA = int(os.getenv('DEFAULT_LORA_ALPHA', '32'))
+    DEFAULT_MAX_SEQ_LENGTH = int(os.getenv('DEFAULT_MAX_SEQ_LENGTH', '2048'))
 
 
 def validate_config() -> List[str]:
