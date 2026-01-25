@@ -325,6 +325,8 @@ export const ChatInterface = () => {
                         <button
                             onClick={handleSend}
                             disabled={(!input.trim() && !selectedImage) || isLoading}
+                            aria-label="Send message"
+                            data-testid="send-button"
                             className="p-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send size={20} />

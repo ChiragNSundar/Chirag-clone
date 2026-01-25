@@ -2,7 +2,7 @@
  * ChatInterface.test.tsx - Tests for ChatInterface component  
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatInterface } from './ChatInterface';
 
@@ -59,7 +59,7 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         const input = screen.getByPlaceholderText(/type a message/i);
-        await userEvent.type(input, 'Hello, Clone!');
+        fireEvent.change(input, { target: { value: 'Hello, Clone!' } });
 
         expect(input).toHaveValue('Hello, Clone!');
     });
@@ -67,8 +67,7 @@ describe('ChatInterface', () => {
     it('disables send button when input is empty', () => {
         render(<ChatInterface />);
 
-        const buttons = screen.getAllByRole('button');
-        const sendButton = buttons[buttons.length - 1];
+        const sendButton = screen.getByTestId('send-button');
         expect(sendButton).toBeDisabled();
     });
 
@@ -76,10 +75,9 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         const input = screen.getByPlaceholderText(/type a message/i);
-        await userEvent.type(input, 'Hello');
+        fireEvent.change(input, { target: { value: 'Hello' } });
 
-        const buttons = screen.getAllByRole('button');
-        const sendButton = buttons[buttons.length - 1];
+        const sendButton = screen.getByTestId('send-button');
         expect(sendButton).not.toBeDisabled();
     });
 
@@ -96,14 +94,14 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         const input = screen.getByPlaceholderText(/type a message/i);
-        await userEvent.type(input, 'Hello');
+        fireEvent.change(input, { target: { value: 'Hello' } });
 
-        const buttons = screen.getAllByRole('button');
-        const sendButton = buttons[buttons.length - 1];
+        const sendButton = screen.getByTestId('send-button');
+        await waitFor(() => expect(sendButton).toBeEnabled());
         await userEvent.click(sendButton);
 
         await waitFor(() => {
-            expect(api.sendMessage).toHaveBeenCalledWith('Hello', expect.any(String));
+            expect(api.sendMessage).toHaveBeenCalledWith('Hello', expect.any(String), false, undefined);
         });
 
         await waitFor(() => {
@@ -124,16 +122,16 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         const input = screen.getByPlaceholderText(/type a message/i);
-        await userEvent.type(input, 'Test message{enter}');
+        fireEvent.change(input, { target: { value: 'Test message' } });
+        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
 
         await waitFor(() => {
-            expect(api.sendMessage).toHaveBeenCalledWith('Test message', expect.any(String));
+            expect(api.sendMessage).toHaveBeenCalledWith('Test message', expect.any(String), false, undefined);
         });
     });
 
     it('shows thinking indicator while waiting for response', async () => {
-        // Create a delayed promise
-        let resolvePromise: (value: unknown) => void;
+        let resolvePromise: (value: unknown) => void = () => { };
         const delayedPromise = new Promise((resolve) => {
             resolvePromise = resolve;
         });
@@ -143,20 +141,25 @@ describe('ChatInterface', () => {
         render(<ChatInterface />);
 
         const input = screen.getByPlaceholderText('Type a message...');
-        // The first button might be the microphone/voice button, second is send
-        const buttons = screen.getAllByRole('button');
-        const sendButton = buttons[buttons.length - 1];
+        const sendButton = screen.getByTestId('send-button');
 
         await userEvent.type(input, 'Hello');
+        await waitFor(() => expect(sendButton).toBeEnabled());
+
         await userEvent.click(sendButton);
+
+        // Verify message appeared (confirms handleSend ran)
+        await waitFor(() => {
+            expect(screen.getByText('Hello')).toBeInTheDocument();
+        });
 
         // Check for thinking indicator
         await waitFor(() => {
             expect(screen.getByTestId('thinking-indicator')).toBeInTheDocument();
         });
 
-        // Resolve the promise
-        resolvePromise!({
+        // Resolve
+        resolvePromise({
             response: 'Done',
             confidence: 0.9,
             mood: { emoji: '👍' },
