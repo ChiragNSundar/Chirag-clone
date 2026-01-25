@@ -19,6 +19,7 @@ class ChatMessage(BaseModel):
     message: str = Field(..., min_length=1, max_length=Config.MAX_MESSAGE_LENGTH)
     session_id: str = Field(default="default", max_length=100)
     training_mode: bool = False
+    image: Optional[str] = None  # Base64 encoded image
     
     @validator('message')
     def sanitize_message(cls, v):
@@ -51,6 +52,7 @@ async def chat_message(data: ChatMessage):
             service.generate_response, 
             data.message, 
             data.session_id,
+            data.image,  # New Argument
             True,  # include_examples
             data.training_mode
         )

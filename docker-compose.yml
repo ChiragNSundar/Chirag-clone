@@ -68,6 +68,11 @@ services:
       - OLLAMA_FIRST_CLASS=${OLLAMA_FIRST_CLASS:-false}
       - WAKE_WORD_MODEL=${WAKE_WORD_MODEL:-hey_jarvis}
 
+      # Features v3.1.0 (OTel, RBAC)
+      - OTEL_SERVICE_NAME=chirag-clone-backend
+      - OTEL_TRACES_EXPORTER=console # Change to otlp for Jaeger/Signoz
+      - ENABLE_RBAC=true
+
       # Performance tuning
       - MALLOC_ARENA_MAX=2
       - PYTHONHASHSEED=random

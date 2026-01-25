@@ -75,14 +75,15 @@ export interface KnowledgeQueryResult {
 }
 
 export const api = {
-    async sendMessage(message: string, sessionId: string, trainingMode: boolean = false): Promise<ChatResponse> {
+    async sendMessage(message: string, sessionId: string, trainingMode: boolean = false, image?: string): Promise<ChatResponse> {
         const res = await fetch(`${API_BASE}/chat/message`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message,
                 session_id: sessionId,
-                training_mode: trainingMode
+                training_mode: trainingMode,
+                image
             })
         });
 

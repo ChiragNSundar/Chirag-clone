@@ -130,6 +130,14 @@
 - **Calendar Agent**: The bot can now negotiate meeting times, and create/update/delete events.
 - **Slack Integration**: Auto-draft replies for DMs and thread mentions.
 
+#### 🚀 v3.1 Upgrades (Latest)
+
+- **Multimodal Chat**: Drag-and-drop images for instant analysis (Gemini Vision).
+- **Local AI (Ollama)**: Full offline inference support (`LLM_PROVIDER=ollama`).
+- **Granular RBAC**: Role-based access control for enterprise-grade security.
+- **Observability**: OpenTelemetry tracing for performance monitoring.
+- **Dynamic Moods**: UI themes that adapt to the AI's emotional state.
+
 ### 🏛️ Training Center
 
 - **Chat Uploads**: Learn from WhatsApp, Instagram, Discord archives.
@@ -153,6 +161,26 @@ Handle your socials while you sleep:
 ## 🏗️ Architecture
 
 ### System Overview
+The Chirag Clone is a Digital Twin application composed of a React frontend and a FastAPI backend. It leverages both cloud and local AI models to create a personalized, interactive clone.
+
+### Backend (FastAPI)
+- **Service Layer**:
+  - `LLMService` / `OllamaService`: Text generation (Hybrid Cloud/Local).
+  - `VisionService`: Multimodal image context extraction.
+  - `VoiceService`: TTS/STT (ElevenLabs/Whisper/Piper).
+  - `MemoryService`: Vector database (ChromaDB) interaction for RAG.
+  - `AuthService`: OAuth2 & RBAC.
+  - `ModelFallbackManager`: Resiliency pattern for AI provider failures.
+
+- **Data Layer**:
+  - **SQLModel**: Structured data (Users, Metadata).
+  - **ChromaDB**: Vector embeddings for RAG.
+  - **GraphRAG**: Knowledge graph for entity relationships.
+
+### Frontend (React + Vite)
+- **ChatInterface**: Main interaction hub with Avatar and Multimodal input.
+- **PWA**: Offline-first capabilities with Background Sync.
+- **3D Avatar**: Three.js/R3F based interactive avatar.
 
 ```mermaid
 graph TD

@@ -12,6 +12,11 @@ from datetime import datetime
 from .logger import get_logger
 from .local_voice_service import get_local_voice_service, HAS_FASTER_WHISPER, HAS_PIPER
 from config import Config
+from services.telemetry import instrument_method, setup_telemetry
+
+# Get tracer
+from opentelemetry import trace
+tracer = trace.get_tracer(__name__)
 
 logger = get_logger(__name__)
 
@@ -82,6 +87,7 @@ class VoiceService:
             'stt_available': local_status['local_stt_available'] or self.stt_enabled
         }
     
+    @instrument_method(tracer)
     def text_to_speech(
         self,
         text: str,
@@ -181,6 +187,7 @@ class VoiceService:
         
         return {'error': 'No TTS available. Install piper-tts or set ELEVENLABS_API_KEY.'}
     
+    @instrument_method(tracer)
     def speech_to_text(
         self,
         audio_data: bytes,

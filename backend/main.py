@@ -44,6 +44,10 @@ app = FastAPI(
     default_response_class=ORJSONResponse
 )
 
+# Initialize OpenTelemetry
+from services.telemetry import setup_telemetry
+tracer = setup_telemetry(app)
+
 # ============= Middleware Configuration =============
 
 # Add robustness middleware

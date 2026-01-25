@@ -54,6 +54,7 @@ ESSENTIAL_PACKAGES = [
     'sqlmodel',
     'structlog',
     'orjson',
+    'ollama',  # v3.1 Local AI
     # 'openwakeword',  <-- Disabled on Python 3.14
 ]
 

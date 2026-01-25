@@ -106,6 +106,25 @@ The testing strategy follows the **Testing Pyramid**:
 - **Slack Bot**: Tests `generate_reply_draft` style and `summarize_thread` context handling.
 - **Wake Word**: Tests `process_audio_chunk` with mock audio data and threshold logic.
 
+### 13. Mutation Testing (`mutmut`) 🧬 (v3.1)
+
+- **Purpose**: Verifies test suite quality by injecting faults (mutations) into code.
+- **Config**: Defined in `setup.cfg`.
+- **Usage**:
+  ```bash
+  mutmut run
+  mutmut results
+  ```
+
+### 14. Visual Regression (`Playwright`) 👁️ (v3.1)
+
+- **Purpose**: Detects unintended UI changes.
+- **Specs**: `frontend-react/e2e/visual.spec.ts`.
+- **Usage**:
+  ```bash
+  npx playwright test --update-snapshots
+  ```
+
 ---
 
 ## 🏃 Method of Execution

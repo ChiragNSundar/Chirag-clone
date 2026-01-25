@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/Layout';
 // Replace direct imports with Lazy components
 import {
@@ -16,10 +17,11 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   const [isTrainingAuthenticated, setIsTrainingAuthenticated] = useState(false);
+  const location = useLocation();
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Layout />}>
           <Route index element={
             <LazyWrapper>
@@ -27,7 +29,6 @@ function App() {
             </LazyWrapper>
           } />
 
-          {/* ChatInterface is eager loaded for speed */}
           {/* ChatInterface is eager loaded for speed */}
           <Route path="chat" element={
             <ErrorBoundary>
@@ -70,7 +71,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </AnimatePresence>
   );
 }
 

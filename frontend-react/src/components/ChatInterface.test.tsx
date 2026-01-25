@@ -26,6 +26,15 @@ vi.mock('./ThinkingBubble', () => ({
     ThinkingIndicator: () => <div data-testid="thinking-indicator">Thinking...</div>
 }));
 
+// Mock MoodContext
+vi.mock('../contexts/MoodContext', () => ({
+    useMood: () => ({
+        setMood: vi.fn(),
+        theme: { primary: '#000', secondary: '#000', accent: '#000', background: '#fff' }
+    }),
+    MoodProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+}));
+
 import { api } from '../services/api';
 
 describe('ChatInterface', () => {

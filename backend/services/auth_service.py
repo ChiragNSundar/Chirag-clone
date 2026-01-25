@@ -38,6 +38,15 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 
+import enum
+
+class Role(str, enum.Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    EDITOR = "editor"
+    VIEWER = "viewer"
+
+
 @dataclass
 class User:
     """Authenticated user."""
@@ -46,6 +55,7 @@ class User:
     name: str
     picture: Optional[str] = None
     provider: str = "local"
+    role: Role = Role.VIEWER
     created_at: datetime = None
     
     def __post_init__(self):
@@ -59,6 +69,7 @@ class User:
             "name": self.name,
             "picture": self.picture,
             "provider": self.provider,
+            "role": self.role.value,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
@@ -172,12 +183,18 @@ class AuthService:
                     logger.error("Google userinfo missing user ID")
                     raise HTTPException(status_code=401, detail="Invalid user info from Google")
                 
+                # Determine Role
+                role = Role.VIEWER
+                if is_admin(userinfo.get("email", "")):
+                    role = Role.ADMIN
+                
                 user = User(
                     id=f"google_{userinfo['id']}",
                     email=userinfo.get("email", ""),
                     name=userinfo.get("name", userinfo.get("email", "")),
                     picture=userinfo.get("picture"),
-                    provider="google"
+                    provider="google",
+                    role=role
                 )
                 
                 logger.info(f"User authenticated via Google: {user.email}")
@@ -210,6 +227,7 @@ class AuthService:
             "email": user.email,
             "name": user.name,
             "provider": user.provider,
+            "role": user.role.value,
             "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
             "iat": datetime.utcnow()
         }
@@ -336,3 +354,36 @@ async def require_admin(
         )
     
     return user
+
+
+def require_role(allowed_roles: list[Role]):
+    """
+    Factory for dependency that checks if user has one of the allowed roles.
+    """
+    async def role_checker(
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> Dict[str, Any]:
+        if not credentials:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        
+        auth_service = get_auth_service()
+        user_dict = auth_service.verify_jwt(credentials.credentials)
+        
+        if not user_dict:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        
+        user_role = user_dict.get("role", Role.VIEWER)
+        
+        # Owner/Admin usually have access to everything
+        if user_role == Role.OWNER or user_role == Role.ADMIN:
+             return user_dict
+             
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Access denied. Required role: {[r.value for r in allowed_roles]}"
+            )
+        
+        return user_dict
+    
+    return role_checker

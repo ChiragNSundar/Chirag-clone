@@ -256,8 +256,63 @@ class ModelFallbackManager:
 _manager: Optional[ModelFallbackManager] = None
 
 
+    def register_default_handlers(self):
+        """Register default handlers for known providers."""
+        from services.llm_service import get_llm_service
+        from services.ollama_service import get_ollama_service
+        import logging
+        
+        logger = logging.getLogger(__name__)
+
+        async def google_handler(model_id: str, prompt: str, **kwargs) -> str:
+            # Bridging to existing LLMService for now, or use google-generativeai directly
+            # For consistency, we'll use LLMService's method but forced to specific model
+            # Note: LLMService is sync, so we might need running in threadpool if async required
+            # checking LLMService... it is sync.
+            import asyncio
+            return await asyncio.to_thread(
+                get_llm_service().generate_response, 
+                system_prompt="You are a helpful assistant.", 
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=kwargs.get('max_tokens'),
+                temperature=kwargs.get('temperature')
+            )
+
+        async def openai_handler(model_id: str, prompt: str, **kwargs) -> str:
+            # Similar bridge for OpenAI
+            import asyncio
+            llm = get_llm_service()
+            # Temporarily force provider to openai to use its logic, or use fallback_client directly
+            # Easier to use the fallback logic if available
+            if llm.fallback_client:
+                return await asyncio.to_thread(
+                    llm._openai_fallback_generate,
+                    system_prompt="You are a helpful assistant.",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=kwargs.get('temperature', 0.7),
+                    max_tokens=kwargs.get('max_tokens', 1024)
+                )
+            raise RuntimeError("OpenAI client not initialized")
+
+        async def locall_handler(model_id: str, prompt: str, **kwargs) -> str:
+            # Use new OllamaService
+             return get_ollama_service().generate_chat(
+                messages=[{"role": "user", "content": prompt}],
+                model=model_id,
+                temperature=kwargs.get('temperature', 0.7),
+                max_tokens=kwargs.get('max_tokens', 2048)
+            )
+
+        self.register_handler("google", google_handler)
+        self.register_handler("openai", openai_handler)
+        self.register_handler("local", locall_handler)
+        self.register_handler("ollama", locall_handler)  # Alias
+        logger.info("Registered default model handlers (google, openai, local)")
+
+    
 def get_model_manager() -> ModelFallbackManager:
     global _manager
     if _manager is None:
         _manager = ModelFallbackManager()
+        _manager.register_default_handlers()
     return _manager

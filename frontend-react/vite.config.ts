@@ -49,6 +49,32 @@ const viteConfig = defineConfig({
                 statuses: [0, 200]
               }
             }
+          },
+          {
+            urlPattern: /\/api\/.*\/drafts/,
+            method: 'POST',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'drafts-queue',
+                options: {
+                  maxRetentionTime: 24 * 60 // Retry for max of 24 Hours
+                }
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/training\/journal/,
+            method: 'POST',
+            handler: 'NetworkOnly',
+            options: {
+              backgroundSync: {
+                name: 'journal-queue',
+                options: {
+                  maxRetentionTime: 24 * 60
+                }
+              }
+            }
           }
         ]
       }

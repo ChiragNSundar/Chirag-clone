@@ -15,6 +15,7 @@ from .knowledge_service import get_knowledge_service
 from .graph_service import get_graph_service
 from .search_service import get_search_service
 from .vision_service import get_vision_service
+from .logger import get_logger
 from config import Config
 
 
@@ -57,6 +58,7 @@ class ChatService:
         self,
         user_message: str,
         session_id: str = "default",
+        image_data: str = None,
         include_examples: bool = True,
         training_mode: bool = False,
         enable_thinking: bool = True
@@ -143,6 +145,21 @@ class ChatService:
             except Exception as e:
                 print(f"Web search error: {e}")
         
+        # IMAGE ANALYSIS INJECTION
+        if image_data:
+            try:
+                vision = get_vision_service()
+                logger = get_logger(__name__)
+                logger.info("Analyzing attached image...")
+                
+                # Analyze or describe the image for context
+                # using a specific prompt for chat context
+                analysis = vision.extract_context(image_data)
+                
+                system_prompt += f"\n\n[USER ATTACHED AN IMAGE]\nImage Description: {analysis}\nINSTRUCTION: The user has verified seeing this image. Use the description above to answer their questions about it."
+            except Exception as e:
+                print(f"Vision error: {e}")
+
         # Build message history for LLM
         messages = self._build_messages(history, user_message)
         

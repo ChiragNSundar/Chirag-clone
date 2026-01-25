@@ -104,16 +104,8 @@ class LLMService:
     
     def _check_ollama_available(self) -> bool:
         """Check if Ollama is running and accessible."""
-        try:
-            response = requests.get(f"{Config.OLLAMA_BASE_URL}/api/tags", timeout=2)
-            if response.status_code == 200:
-                models = response.json().get('models', [])
-                if models:
-                    logger.info(f"🦙 Ollama running with {len(models)} model(s): {[m.get('name', 'unknown') for m in models[:3]]}")
-                    return True
-            return False
-        except Exception:
-            return False
+        from services.ollama_service import get_ollama_service
+        return get_ollama_service().is_available()
     
     def _rotate_key(self) -> bool:
         """
@@ -412,37 +404,22 @@ class LLMService:
         temperature: float,
         max_tokens: int
     ) -> str:
-        """Generate using local Ollama."""
-        # Format messages for Ollama
-        prompt = f"System: {system_prompt}\n\n"
-        for msg in messages:
-            role = "Human" if msg['role'] == 'user' else "Assistant"
-            prompt += f"{role}: {msg['content']}\n"
-        prompt += "Assistant:"
+        """Generate using local Ollama via OllamaService."""
+        from services.ollama_service import get_ollama_service
+        
+        # Prepare messages including system prompt
+        ollama_messages = [{"role": "system", "content": system_prompt}] + messages
         
         try:
-            response = requests.post(
-                f"{Config.OLLAMA_BASE_URL}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": temperature,
-                        "num_predict": max_tokens
-                    }
-                },
-                timeout=self.request_timeout
+            return get_ollama_service().generate_chat(
+                messages=ollama_messages,
+                model=self.model,
+                temperature=temperature,
+                max_tokens=max_tokens
             )
-            
-            if response.status_code == 200:
-                return response.json().get('response', '')
-            else:
-                raise Exception(f"Ollama error: {response.text}")
-        except requests.exceptions.ConnectionError:
-            return "Ollama is not running. Please start Ollama with 'ollama serve' or switch to a cloud provider."
-        except requests.exceptions.Timeout:
-            return "Ollama request timed out. The model might be loading."
+        except Exception as e:
+            logger.error(f"Ollama generation failed: {e}")
+            return "I'm having trouble connecting to my local brain (Ollama). Please ensure it's running."
     
     def get_embedding(self, text: str) -> List[float]:
         """

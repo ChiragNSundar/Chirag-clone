@@ -1,5 +1,22 @@
 # Changelog
 
+## [v3.1.0] - 2026-01-25
+
+### 🚀 Major Upgrades
+- **Multimodal Chat**: Added support for drag-and-drop image analysis using `VisionService` (Gemini Vision).
+- **Granular RBAC**: Implemented role-based access control (`Owner`, `Admin`, `Editor`, `Viewer`) for sensitive endpoints.
+- **Local AI**: Integrated `OllamaService` for private, offline inference.
+- **OpenTelemetry**: Added distributed tracing across `FastAPI` and core services.
+- **Dynamic Moods**: implemented `MoodContext` for UI theming based on AI emotion.
+- **Mutation Testing**: Configured `mutmut` for robust test validation.
+- **Visual Regression**: Added Playwright tests for UI consistency.
+
+### 🛡️ Security
+- Secured `/training` endpoints with `@require_role`.
+- Enhanced JWT payload with role information.
+
+---
+
 ## [v3.0.2] - 2026-01-23
 
 ### ⚡ Performance & Robustness

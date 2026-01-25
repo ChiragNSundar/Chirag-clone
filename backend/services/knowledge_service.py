@@ -8,6 +8,10 @@ import json
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 from config import Config
+from services.telemetry import instrument_method
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 # PDF support - optional
 try:
@@ -117,6 +121,7 @@ class KnowledgeService:
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
     
+    @instrument_method(tracer)
     def add_document(
         self,
         content: str,
@@ -288,6 +293,7 @@ class KnowledgeService:
         """Get metadata for a specific document."""
         return self.documents.get(doc_id)
     
+    @instrument_method(tracer)
     def query_knowledge(
         self,
         query: str,

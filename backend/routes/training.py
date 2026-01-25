@@ -9,6 +9,12 @@ from typing import Optional
 import logging
 import asyncio
 
+from services.auth_service import require_role, Role
+
+# Define common role requirements
+require_admin = require_role([Role.ADMIN, Role.OWNER])
+require_editor = require_role([Role.ADMIN, Role.OWNER, Role.EDITOR])
+
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -78,7 +84,7 @@ async def verify_training_auth(pin: str = Form(...)):
 
 # ============= File Upload Endpoints =============
 
-@router.post("/upload/whatsapp")
+@router.post("/upload/whatsapp", dependencies=[Depends(require_editor)])
 async def upload_whatsapp(
     file: UploadFile = File(...),
     your_name: str = Form(...)
@@ -110,7 +116,7 @@ async def upload_whatsapp(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/upload/instagram")
+@router.post("/upload/instagram", dependencies=[Depends(require_editor)])
 async def upload_instagram(
     file: UploadFile = File(...),
     your_username: str = Form(...)
@@ -142,7 +148,7 @@ async def upload_instagram(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/upload/discord")
+@router.post("/upload/discord", dependencies=[Depends(require_editor)])
 async def upload_discord(
     file: UploadFile = File(...),
     your_username: str = Form(...)
@@ -174,7 +180,7 @@ async def upload_discord(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/upload/document")
+@router.post("/upload/document", dependencies=[Depends(require_editor)])
 async def upload_document(
     file: UploadFile = File(...)
 ):
@@ -410,7 +416,7 @@ async def training_feedback(data: TrainingFeedback):
 
 # ============= Reset Endpoint =============
 
-@router.delete("/reset")
+@router.delete("/reset", dependencies=[Depends(require_admin)])
 async def reset_all_training():
     """Reset all learning data - use with caution!"""
     try:
@@ -446,7 +452,7 @@ class ImportRequest(BaseModel):
     merge: bool = True  # If True, merges with existing. If False, replaces.
 
 
-@router.get("/export", dependencies=[Depends(verify_pin)])
+@router.get("/export", dependencies=[Depends(require_admin)])
 async def export_all_brain_data():
     """Export all learned data (training examples, personality profile) as JSON.
     
@@ -492,7 +498,7 @@ async def export_all_brain_data():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/import", dependencies=[Depends(verify_pin)])
+@router.post("/import", dependencies=[Depends(require_admin)])
 async def import_brain_data(file: UploadFile = File(...), merge: bool = Form(True)):
     """Import previously exported brain data.
     

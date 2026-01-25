@@ -37,6 +37,9 @@ graph LR
 * **Python 3.10+** (Separate environment recommended).
 * **Ollama**: For running the final model.
 
+### Permissions
+* **Admin Role**: You must be an Admin/Owner to export training data (v3.1+).
+
 ---
 
 ## 🚀 Step 1: Export Training Data
@@ -49,7 +52,9 @@ Run this command to trigger an export:
 
 ```bash
 # Export to ChatML format (optimized for Llama 3 / Phi-3)
+# NOTE: Requires Admin Authentication (Bearer Token)
 curl -X POST "http://localhost:8000/api/finetune/export" \
+     -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
      -H "Content-Type: application/json" \
      -d '{"format": "chatml", "quality_filter": true, "deduplicate": true}'
 ```
