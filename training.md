@@ -144,7 +144,7 @@ This will produce a file like `adapters/chirag-v1/model-q4_k_m.gguf`.
 
 Create a Modelfile for your new model:
 
-```dockerfile
+```text
 FROM ./adapters/chirag-v1/model-q4_k_m.gguf
 
 TEMPLATE """<|im_start|>system

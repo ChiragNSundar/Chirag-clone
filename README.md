@@ -48,7 +48,6 @@
 
 ### DevOps & Infrastructure
 
-- **Containerization**: Docker + Docker Compose (v2.3)
 - **Server**: Uvicorn (ASGI)
 - **Environment**: Dotenv (.env) management
 - **Linting**: Pre-commit hooks (Black, Prettier, ESLint)
@@ -254,7 +253,6 @@ sequenceDiagram
 
 ### 1. Prerequisites
 
-- Docker Desktop installed
 - [Gemini API Key](https://makersuite.google.com/app/apikey)
 - [ElevenLabs API Key](https://elevenlabs.io) (for voice)
 
@@ -286,17 +284,6 @@ python3 main.py
 cd frontend-react
 npm run dev
 # The app will be available at http://localhost:5173
-```
-
-- **Frontend**: <http://localhost:5173>
-- **Backend API**: <http://localhost:8000>
-
-### Option 2: Docker Environment (Isolated)
-
-If you prefer running in containers:
-
-```bash
-docker-compose up -d --build
 ```
 
 - **Frontend**: <http://localhost:5173>
@@ -385,8 +372,6 @@ Chirag-clone/
 ├── pyproject.toml              # Python Config
 ├── requirements.txt            # Python Dependencies
 ├── install_deps.py             # Robust Installer (NEW)
-├── docker-compose.yml          # Container Orchestration
-├── Dockerfile                  # Production Build Definition
 ├── CHANGELOG.md                # Project History
 ├── README.md                   # Documentation
 ├── testing.md                  # Testing Guide

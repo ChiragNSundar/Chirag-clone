@@ -4,10 +4,7 @@ Covers all API routes with validation, error handling, and edge cases.
 
 Run with: pytest tests/test_main.py -v
 
-Note: These tests require all dependencies (chromadb, etc.) to be installed.
-For CI/CD, run in Docker where dependencies are available.
-"""
-import pytest
+
 from unittest.mock import patch, MagicMock
 import json
 
