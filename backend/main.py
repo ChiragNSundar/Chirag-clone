@@ -121,6 +121,15 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"⚠️  LLM service: {e}")
     
+    # Start background processor
+    try:
+        from services.background_processor_service import get_background_processor_service
+        bg = get_background_processor_service()
+        bg.start()
+        logger.info("✅ Background processor started")
+    except Exception as e:
+        logger.warning(f"⚠️  Background processor: {e}")
+    
     logger.info("=" * 60)
     logger.info("🚀 Server ready to accept requests")
     logger.info("=" * 60)
@@ -202,6 +211,10 @@ app.include_router(finetune_router)
 # Local training routes (LoRA fine-tuning, training jobs)
 from routes.local_training import router as local_training_router
 app.include_router(local_training_router)
+
+# Agentic routes (shell, sandbox, execute, entities, background)
+from routes.agentic import router as agentic_router
+app.include_router(agentic_router)
 
 # ============= Static Frontend Serving =============
 

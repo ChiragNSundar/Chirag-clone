@@ -8,19 +8,18 @@ import structlog
 from config import Config
 
 def configure_logger():
-    """Configure structured logging."""
+    """Configure structured logging.
     
-    # Processors applied to all loggers
-    shared_processors = [
-        structlog.contextvars.merge_contextvars,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-    ]
+    Uses PrintLoggerFactory with UTF-8 stdout to handle emoji on Windows
+    and avoid Python 3.14 stdlib logging incompatibilities.
+    """
+    
+    # Force UTF-8 stdout on Windows to handle emoji in log messages
+    if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass  # reconfigure not available in all environments
 
     # Renderer based on environment
     if Config.DEBUG:
@@ -31,33 +30,25 @@ def configure_logger():
         renderer = structlog.processors.JSONRenderer()
 
     structlog.configure(
-        processors=shared_processors + [
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.stdlib.add_log_level,
+            structlog.stdlib.PositionalArgumentsFormatter(),
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+            structlog.processors.UnicodeDecoder(),
+            renderer,
         ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
 
-    formatter = structlog.stdlib.ProcessorFormatter(
-        foreign_pre_chain=shared_processors,
-        processors=[
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            renderer,
-        ],
-    )
-
-    # Configure standard library logging to use structlog formatter
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-    
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    root_logger.setLevel(Config.LOG_LEVEL)
-
-    # Silence noisy libraries
+    # Silence noisy stdlib loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 def get_logger(name=None):

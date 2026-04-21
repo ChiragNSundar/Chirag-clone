@@ -3,14 +3,12 @@
   "common_phrases": [],
   "emoji_patterns": {},
   "vocabulary": {
-    "ah": 1,
-    "idk": 1,
-    "nothing": 1
+    "maybe": 1,
+    "play": 1,
+    "games": 1
   },
   "avg_message_length": 16.0,
-  "typing_quirks": [
-    "idk"
-  ],
+  "typing_quirks": [],
   "tone_markers": {
     "casual": 0.0,
     "formal": 0.0,
@@ -95,6 +93,10 @@
     {
       "context": "What's on your mind?",
       "response": "ah idk, nothing\n"
+    },
+    {
+      "context": "What motivates you?",
+      "response": "nothing\n"
     }
   ]
 }

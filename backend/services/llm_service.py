@@ -268,6 +268,16 @@ class LLMService:
         temperature = temperature or Config.TEMPERATURE
         max_tokens = max_tokens or Config.MAX_TOKENS
         
+        # PII Scrubbing: Strip sensitive data before sending to cloud LLMs
+        if self.provider in ('gemini', 'openai'):
+            try:
+                from services.pii_scrubber_service import get_pii_scrubber_service
+                scrubber = get_pii_scrubber_service()
+                system_prompt = scrubber.scrub(system_prompt)
+                messages = scrubber.scrub_messages(messages)
+            except Exception as e:
+                logger.warning(f"PII scrubber error (non-fatal): {e}")
+        
         # Try primary provider with retry
         success, result = self._try_primary(system_prompt, messages, temperature, max_tokens)
         

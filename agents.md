@@ -223,6 +223,16 @@ These are the core business-logic modules. Each is a singleton accessed via `get
 | `LocalTrainingService` | `local_training_service.py` | LoRA training job management |
 | `BackupService` | `backup_service.py` | Brain export/import |
 
+### Agentic Capabilities (v3.2)
+| Service | File | Purpose |
+|---------|------|---------|
+| `PIIScrubberService` | `pii_scrubber_service.py` | Regex-based PII redaction before cloud LLM calls (hooked into `LLMService.generate_response()`) |
+| `SandboxService` | `sandbox_service.py` | Restricted Python REPL with AST validation, whitelisted builtins, timeout |
+| `ShellExecutionService` | `shell_execution_service.py` | Safe OS command execution with whitelists, approval workflow, secret stripping |
+| `AutopilotExecutorService` | `autopilot_executor_service.py` | Execute (not just draft) social messages with confidence thresholds, rate limits |
+| `BackgroundProcessorService` | `background_processor_service.py` | Autonomous background tasks (memory consolidation, daily digests, entity refresh) |
+| `EntityResolutionService` | `entity_resolution_service.py` | Cross-platform identity linking, auto-merge by name, unified relationship graph |
+
 ---
 
 ## 🚀 How to Run (Local Development)
@@ -420,6 +430,7 @@ All routes are prefixed with `/api/`. Full reference in `README.md`.
 | `features` | `/api/` | Creative, personality history, calendar, research, rewind |
 | `finetune` | `/api/finetune/` | Dataset export for local training |
 | `local_training` | `/api/training/local/` | LoRA training job management |
+| `agentic` | `/api/agentic/` | Shell exec, sandbox, autopilot execute, entity resolution, background tasks, PII |
 
 ---
 
