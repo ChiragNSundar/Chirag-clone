@@ -2,12 +2,18 @@
   "name": "TestImport",
   "common_phrases": [],
   "emoji_patterns": {},
-  "vocabulary": {},
-  "avg_message_length": 0,
-  "typing_quirks": [],
+  "vocabulary": {
+    "ah": 1,
+    "idk": 1,
+    "nothing": 1
+  },
+  "avg_message_length": 16.0,
+  "typing_quirks": [
+    "idk"
+  ],
   "tone_markers": {
-    "casual": 0.5,
-    "formal": 0.5,
+    "casual": 0.0,
+    "formal": 0.0,
     "brief": 1.0
   },
   "facts": [
@@ -85,6 +91,10 @@
     {
       "context": "Hello",
       "response": "Hi there!"
+    },
+    {
+      "context": "What's on your mind?",
+      "response": "ah idk, nothing\n"
     }
   ]
 }
