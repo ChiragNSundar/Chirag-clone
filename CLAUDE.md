@@ -1,0 +1,5 @@
+# Read agents.md for full project context.
+# This file exists for Claude Code / Claude AI auto-discovery.
+# All rules, architecture, conventions, and gotchas are in agents.md.
+
+Read and follow agents.md in the project root before making any changes.
