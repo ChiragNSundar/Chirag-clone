@@ -33,20 +33,19 @@ class ValidationResult:
     loaded: dict = field(default_factory=dict)
 
 
-# Define all environment variables
+# Define all environment variables — local-first, no cloud API keys
 ENV_VARS = [
-    # Required
-    EnvVar("GOOGLE_API_KEY", Severity.REQUIRED, "Google Gemini API key", secret=True),
-    
-    # Recommended
-    EnvVar("OPENAI_API_KEY", Severity.RECOMMENDED, "OpenAI API key for STT", secret=True),
-    EnvVar("ELEVENLABS_API_KEY", Severity.RECOMMENDED, "ElevenLabs API key for TTS", secret=True),
+    # Recommended (but not required — LM Studio auto-detected)
+    EnvVar("LMSTUDIO_BASE_URL", Severity.RECOMMENDED, "LM Studio server URL", default="http://localhost:1234"),
+    EnvVar("LMSTUDIO_MODEL", Severity.OPTIONAL, "LM Studio model (auto = detect)", default="auto"),
     
     # Optional
+    EnvVar("ELEVENLABS_API_KEY", Severity.OPTIONAL, "ElevenLabs API key for TTS", secret=True),
     EnvVar("DISCORD_BOT_TOKEN", Severity.OPTIONAL, "Discord bot token", secret=True),
     EnvVar("TELEGRAM_BOT_TOKEN", Severity.OPTIONAL, "Telegram bot token", secret=True),
     EnvVar("DATABASE_PATH", Severity.OPTIONAL, "SQLite database path", default="data/clone.db"),
     EnvVar("LOG_LEVEL", Severity.OPTIONAL, "Logging level", default="INFO"),
+    EnvVar("CONTEXT_FILES_DIR", Severity.OPTIONAL, "Context files directory for RAG", default="data/context"),
     
     # Local voice
     EnvVar("LOCAL_WHISPER_MODEL", Severity.OPTIONAL, "Whisper model size", default="base"),

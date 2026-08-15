@@ -112,6 +112,18 @@ class ChatService:
                 examples_text = self._format_examples(examples)
                 system_prompt += f"\n\nHere are examples of how you respond:\n{examples_text}"
         
+        # CONTEXT FILES (Offline RAG) INJECTION — always available, even without LLM
+        if not training_mode:
+            try:
+                from .context_service import get_context_service
+                ctx = get_context_service()
+                context_chunks = ctx.get_relevant_context(user_message, top_k=3)
+                if context_chunks:
+                    context_text = "\n\n".join(context_chunks)
+                    system_prompt += f"\n\n[PERSONAL KNOWLEDGE BASE]\n{context_text}"
+            except Exception as e:
+                print(f"Context service error: {e}")
+
         # KNOWLEDGE BASE (RAG) INJECTION
         if not training_mode:
             try:
