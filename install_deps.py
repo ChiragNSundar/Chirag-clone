@@ -48,8 +48,6 @@ ESSENTIAL_PACKAGES = [
     'aiohttp',
     'python-multipart',
     'aiosqlite',
-    'notion-client',
-    'slack-sdk',
     'diskcache',
     'sqlmodel',
     'structlog',
