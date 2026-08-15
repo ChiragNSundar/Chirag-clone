@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Upload, MessageSquare, BookOpen, PenLine, Trash2, Brain,
-    Mic, FileJson, CheckCircle, AlertCircle, Download, Database,
+    Mic, FileJson, CheckCircle, AlertCircle, Download,
     RefreshCw, Info, Lock, Plus, Instagram, Hash, Search, Link, FileText
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';

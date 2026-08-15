@@ -41,15 +41,8 @@ export const ChatInterface = () => {
     const [showThinking, setShowThinking] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Avatar state
-    const [showAvatar, setShowAvatar] = useState(false);
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [currentSpeechText, setCurrentSpeechText] = useState('');
-
     // Mood context
     const { setMood } = useMood();
-
-    // Image state
 
     // Image state
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -139,16 +132,6 @@ export const ChatInterface = () => {
                 // Assuming simple mapping for now
                 setMood(response.mood.mood as any);
             }
-
-            // Trigger avatar lip-sync animation
-            setCurrentSpeechText(response.response);
-            setIsSpeaking(true);
-
-            // Calculate approximate speaking duration (60ms per character)
-            const speakingDuration = Math.min(response.response.length * 60, 10000);
-            setTimeout(() => {
-                setIsSpeaking(false);
-            }, speakingDuration);
         } catch (error) {
             console.error(error);
             setIsThinking(false);
