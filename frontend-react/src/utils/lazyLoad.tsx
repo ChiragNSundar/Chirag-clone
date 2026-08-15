@@ -26,10 +26,7 @@ export const LazyMemoryGraph = lazy(() =>
     import('../components/MemoryGraph').then(m => ({ default: m.MemoryGraph }))
 );
 
-// Voice Chat - named export (function)
-export const LazyVoiceChat = lazy(() =>
-    import('../components/VoiceChat').then(m => ({ default: m.VoiceChat }))
-);
+
 
 // ============= Loading Fallbacks =============
 
