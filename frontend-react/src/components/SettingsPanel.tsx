@@ -174,12 +174,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
                                     icon={<Eye size={18} />}
                                     offIcon={<EyeOff size={18} />}
                                 />
-                                <SettingToggle
-                                    label="Show 3D Avatar"
-                                    description="Display animated avatar"
-                                    value={settings.showAvatar}
-                                    onChange={v => updateSetting('showAvatar', v)}
-                                />
                             </SettingGroup>
 
                             {/* Notifications */}
