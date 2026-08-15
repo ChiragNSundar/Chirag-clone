@@ -105,7 +105,6 @@ export default mergeConfig(viteConfig, {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'],
-          'vendor-3d': ['three', '@react-three/fiber', '@react-three/drei'],
           'vendor-utils': ['date-fns', 'recharts']
         }
       }
