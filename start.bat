@@ -92,14 +92,10 @@ if exist "chiragcontext.txt" (
 echo [6/6] Launching Chirag Clone...
 echo.
 
-:: Check LM Studio
+:: Check LM Studio cleanly without cmd.exe syntax errors
 echo Checking LM Studio connection...
-%PY_CMD% -c "import requests; r=requests.get('http://localhost:1234/v1/models', timeout=3); models=r.json().get('data',[]); print(f'  LM Studio: {len(models)} model(s) loaded') if models else print('  LM Studio: running but no model loaded')" 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo    LM Studio not detected at http://localhost:1234
-    echo    The clone will run in RAG-only mode (context files).
-    echo    Start LM Studio and load a model for full AI responses.
-)
+%PY_CMD% -c "import requests; exec('try:\n  r=requests.get(\"http://localhost:1234/v1/models\", timeout=1)\n  if r.status_code==200: print(\"  LM Studio connected\")\n  else: print(\"  LM Studio not running (RAG mode active)\")\nexcept Exception:\n  print(\"  LM Studio not detected at http://localhost:1234 (RAG mode active)\")')"
+
 echo.
 
 :: Start backend in separate persistent window
@@ -107,13 +103,13 @@ echo Starting backend server (http://localhost:8000)...
 start "Chirag Clone Backend" cmd /k "cd /d %~dp0 && set PYTHONPATH=%~dp0backend;%~dp0 && %PY_CMD% -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
 
 :: Wait 3s for backend startup
-timeout /t 3 /nobreak >nul
+ping -n 4 127.0.0.1 >nul
 
 :: Start frontend in separate persistent window
 echo Starting frontend server (http://localhost:5173)...
 start "Chirag Clone Frontend" cmd /k "cd /d %~dp0\frontend-react && npm.cmd run dev"
 
-timeout /t 3 /nobreak >nul
+ping -n 4 127.0.0.1 >nul
 
 echo.
 echo ============================================================
@@ -132,4 +128,4 @@ start http://localhost:5173
 echo.
 echo Press any key to exit this installer window.
 echo (The Backend and Frontend windows will remain running.)
-pause >nul
+pause
