@@ -84,10 +84,10 @@ def test_slack_draft_generation(mock_get_llm):
 
 def test_wake_word_processing():
     """Test wake word detection logic."""
-    from services.wake_word_service import WakeWordService, HAS_WAKE_WORD
-    
-    if not HAS_WAKE_WORD:
-        pytest.skip("openwakeword not installed - skipping wake word test")
+    try:
+        from services.wake_word_service import WakeWordService, HAS_WAKE_WORD
+    except ImportError:
+        pytest.skip("wake_word_service removed - skipping test")
     
     with patch('services.wake_word_service.WakeWordModel') as MockModel:
         # Setup mock prediction

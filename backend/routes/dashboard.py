@@ -6,7 +6,16 @@ from typing import Optional
 import logging
 import time
 
-from services.robustness import get_health_monitor
+import sys
+import os
+
+# Ensure backend root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from services.robustness import get_health_monitor
+except ImportError:
+    from backend.services.robustness import get_health_monitor
 
 logger = logging.getLogger(__name__)
 

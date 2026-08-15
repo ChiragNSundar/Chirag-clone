@@ -1,52 +1,55 @@
 """
 Telemetry Configuration - OpenTelemetry setup for tracing.
+Degrades gracefully if opentelemetry packages are not installed.
 """
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from config import Config
+from services.logger import get_logger
+
+logger = get_logger(__name__)
+
+try:
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    HAS_OTEL = True
+except ImportError:
+    HAS_OTEL = False
+
 
 def setup_telemetry(app):
     """Setup OpenTelemetry tracing for the FastAPI application."""
+    if not HAS_OTEL:
+        logger.info("OpenTelemetry not installed — tracing disabled")
+        return None
     
-    # Define resource (service name, version, etc)
-    resource = Resource.create({
-        "service.name": "chirag-clone-backend",
-        "service.version": "3.0.0",
-        "deployment.environment": "production" if not Config.DEBUG else "development"
-    })
-    
-    # Set up the tracer provider
-    provider = TracerProvider(resource=resource)
-    
-    # For now, we'll use Console exporter in dev, but set up structure for Jaeger/OTLP
-    # In production, you'd typically swap this for OTLPSpanExporter
-    if Config.DEBUG:
-         # Export traces to console (useful for debugging, maybe noisy)
-         # processor = BatchSpanProcessor(ConsoleSpanExporter())
-         # provider.add_span_processor(processor)
-         pass # disabling console export by default to avoid noise, enable if needed
-    
-    # We can add a NoOp span processor if we don't want to export anywhere yet
-    # but still want the instrumentation to work (so code doesn't break)
-    
-    trace.set_tracer_provider(provider)
-    
-    # Instrument FastAPI
-    FastAPIInstrumentor.instrument_app(app, tracer_provider=provider)
-    
-    return trace.get_tracer(__name__)
+    try:
+        resource = Resource.create({
+            "service.name": "chirag-clone-backend",
+            "service.version": "3.1.0",
+            "deployment.environment": "production" if not Config.DEBUG else "development"
+        })
+        
+        provider = TracerProvider(resource=resource)
+        trace.set_tracer_provider(provider)
+        FastAPIInstrumentor.instrument_app(app, tracer_provider=provider)
+        
+        return trace.get_tracer(__name__)
+    except Exception as e:
+        logger.warning(f"Telemetry setup warning: {e}")
+        return None
 
-def instrument_method(tracer, span_name=None):
+
+def instrument_method(tracer=None, span_name=None):
     """Decorator to instrument a specific method."""
     def decorator(func):
         from functools import wraps
         @wraps(func)
         def wrapper(*args, **kwargs):
-            name = span_name or func.__name__
-            with tracer.start_as_current_span(name):
-                return func(*args, **kwargs)
+            if HAS_OTEL and tracer:
+                name = span_name or func.__name__
+                with tracer.start_as_current_span(name):
+                    return func(*args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return decorator

@@ -8,10 +8,13 @@ import json
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 from config import Config
-from services.telemetry import instrument_method
-from opentelemetry import trace
+from services.telemetry import instrument_method, HAS_OTEL
 
-tracer = trace.get_tracer(__name__)
+if HAS_OTEL:
+    from opentelemetry import trace
+    tracer = trace.get_tracer(__name__)
+else:
+    tracer = None
 
 # PDF support - optional
 try:
