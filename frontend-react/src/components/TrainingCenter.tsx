@@ -7,14 +7,13 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { api } from '../services/api';
-import { VoiceStudio } from './VoiceStudio';
 
 interface TrainingCenterProps {
     isAuthenticated: boolean;
     onAuthenticate: () => void;
 }
 
-type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts' | 'brain' | 'voice_studio' | 'finetune';
+type TabType = 'chats' | 'train_chat' | 'journal' | 'documents' | 'facts' | 'brain' | 'finetune';
 
 const UploadCard = ({
     title,
@@ -308,7 +307,6 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         { id: 'documents', label: 'Documents', icon: BookOpen },
         { id: 'facts', label: 'Facts', icon: BookOpen },
         { id: 'brain', label: 'Brain Station', icon: Brain },
-        { id: 'voice_studio', label: 'Voice Studio', icon: Mic },
         { id: 'finetune', label: 'Fine-Tuning', icon: Database },
     ];
 
