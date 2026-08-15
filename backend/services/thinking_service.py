@@ -129,7 +129,6 @@ THINKING:"""
         
         thinking_text = ""
         steps = []
-        current_step = None
         
         for line in lines:
             line = line.strip()

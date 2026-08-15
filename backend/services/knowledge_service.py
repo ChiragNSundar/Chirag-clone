@@ -6,7 +6,7 @@ import os
 import hashlib
 import json
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from config import Config
 from services.telemetry import instrument_method, HAS_OTEL
 

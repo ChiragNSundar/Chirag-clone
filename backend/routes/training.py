@@ -212,7 +212,6 @@ async def upload_document(
             # Extract text from PDF
             try:
                 import fitz  # PyMuPDF
-                import io
                 pdf_doc = fitz.open(stream=content, filetype="pdf")
                 for page in pdf_doc:
                     text_content += page.get_text()

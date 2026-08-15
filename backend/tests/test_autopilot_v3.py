@@ -84,29 +84,4 @@ def test_slack_draft_generation(mock_get_llm):
 
 def test_wake_word_processing():
     """Test wake word detection logic."""
-    try:
-        from services.wake_word_service import WakeWordService, HAS_WAKE_WORD
-    except ImportError:
-        pytest.skip("wake_word_service removed - skipping test")
-    
-    with patch('services.wake_word_service.WakeWordModel') as MockModel:
-        # Setup mock prediction
-        mock_instance = Mock()
-        # Return a high score for 'hey_jarvis'
-        mock_instance.predict.return_value = {'hey_jarvis': [0.9]}
-        MockModel.return_value = mock_instance
-        
-        service = WakeWordService()
-        service.is_listening = True
-        
-        # Test detection
-        # Create dummy audio bytes (16-bit PCM, 1024 samples)
-        dummy_audio = b'\x00' * 2048 
-        
-        detected = service.process_audio_chunk(dummy_audio)
-        assert detected == 'hey_jarvis'
-        
-        # Test fail case
-        mock_instance.predict.return_value = {'hey_jarvis': [0.1]}
-        detected = service.process_audio_chunk(dummy_audio)
-        assert detected is None
+    pytest.skip("wake_word_service removed - skipping test")

@@ -3,7 +3,7 @@ Chat Service - Orchestrates the chat generation process.
 Now includes active learning, analytics tracking, confidence scoring,
 knowledge base (RAG), vision support, and web search.
 """
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Tuple
 import time
 from .llm_service import get_llm_service
 from .personality_service import get_personality_service
@@ -14,7 +14,6 @@ from .mood_service import get_mood_service
 from .knowledge_service import get_knowledge_service
 from .graph_service import get_graph_service
 from .search_service import get_search_service
-from .logger import get_logger
 try:
     from config import Config
 except ImportError:
@@ -78,6 +77,7 @@ class ChatService:
         Returns:
             Tuple of (response, confidence, mood, thinking_data)
         """
+        start_time = time.time()
         # Get conversation history
         history = self.memory.get_conversation_history(
             session_id, 
@@ -233,7 +233,7 @@ class ChatService:
         confidence = self._calculate_confidence(examples, response)
         
         # Track analytics
-        response_time = int((time.time() - start_time) * 1000) if 'start_time' in dir() else 0
+        response_time = int((time.time() - start_time) * 1000)
         try:
             analytics = get_analytics_service()
             analytics.log_conversation(
@@ -386,7 +386,7 @@ Remember: Every response teaches you something about {profile.name}. Pay attenti
         
         # Analyze the correction for style patterns
         try:
-            analysis = self.learning.analyze_message(correction)
+            self.learning.analyze_message(correction)
             self.learning.learn_from_exchange(
                 user_message=context,
                 bot_response=correction,
