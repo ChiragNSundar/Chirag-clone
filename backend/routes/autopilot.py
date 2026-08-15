@@ -255,47 +255,7 @@ async def generate_twitter_reply(request: DraftRequest):
 
 
 
-# ============= Gmail Endpoints =============
 
-@router.get("/gmail/status")
-async def get_gmail_status():
-    """Get Gmail autopilot status."""
-    try:
-        from services.gmail_autopilot import get_gmail_autopilot
-        service = get_gmail_autopilot()
-        return service.get_status()
-    except Exception as e:
-        logger.error(f"Gmail status error: {e}")
-        return {"configured": False, "error": str(e)}
-
-
-@router.get("/gmail/drafts")
-async def get_gmail_drafts(status: Optional[str] = None):
-    """Get Gmail draft queue."""
-    try:
-        from services.gmail_autopilot import get_gmail_autopilot
-        service = get_gmail_autopilot()
-        return {"drafts": service.get_drafts(status=status)}
-    except Exception as e:
-        logger.error(f"Gmail drafts error: {e}")
-        return {"drafts": []}
-
-
-@router.post("/gmail/draft/reply")
-async def generate_gmail_reply(request: EmailReplyRequest):
-    """Generate an email reply draft."""
-    try:
-        from services.gmail_autopilot import get_gmail_autopilot
-        service = get_gmail_autopilot()
-        draft = service.generate_reply(
-            subject=request.subject,
-            body=request.body,
-            sender_name=request.sender_name
-        )
-        return {"success": True, "draft": draft}
-    except Exception as e:
-        logger.error(f"Gmail reply error: {e}")
-        return {"success": False, "error": str(e)}
 
 
 # ============= WhatsApp Endpoints =============
