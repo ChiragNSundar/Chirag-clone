@@ -79,6 +79,7 @@ class ChatService:
             Tuple of (response, confidence, mood, thinking_data)
         """
         start_time = time.time()
+        current_mood: Optional[dict] = None
         # Get conversation history
         history = self.memory.get_conversation_history(
             session_id, 
@@ -250,7 +251,7 @@ class ChatService:
         # Store the response
         self.memory.add_conversation_message(session_id, "assistant", response)
         
-        return response, confidence, current_mood if 'current_mood' in locals() else None, thinking_data
+        return response, confidence, current_mood, thinking_data
     
     def _calculate_confidence(self, examples: List[Dict], response: str) -> float:
         """Calculate confidence score based on available context."""
