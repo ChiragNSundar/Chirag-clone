@@ -2,7 +2,6 @@
 Dashboard Routes - Statistics, analytics, profile, and visualization endpoints.
 """
 from fastapi import APIRouter, HTTPException
-from typing import Optional
 import logging
 import time
 
@@ -99,8 +98,6 @@ async def health_check(detailed: bool = False):
     Returns:
         Health status with optional service details
     """
-    from config import Config
-    
     health_monitor = get_health_monitor()
     
     # Basic health info
