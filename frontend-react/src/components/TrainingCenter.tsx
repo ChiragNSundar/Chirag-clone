@@ -521,12 +521,6 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
                 );
             case 'brain':
                 return <BrainStationTab />;
-            case 'voice_studio':
-                return (
-                    <div className="glass-panel p-0 h-[600px] overflow-hidden">
-                        <VoiceStudio />
-                    </div>
-                );
             case 'finetune':
                 return renderFineTuneTab();
             default:

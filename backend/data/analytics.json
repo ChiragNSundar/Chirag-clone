@@ -303,6 +303,22 @@
       "response_time_ms": 4087,
       "confidence": 0.6,
       "is_training": false
+    },
+    {
+      "timestamp": "2026-08-15T18:17:24.949854",
+      "user_message": "gay",
+      "bot_response": "I'm currently running in knowledge-base mode (LM Studio is not connected). I can still answer based on my stored knowledge and context files. For full conversational AI, please start LM Studio with a ",
+      "response_time_ms": 8158,
+      "confidence": 0.6,
+      "is_training": false
+    },
+    {
+      "timestamp": "2026-08-15T18:18:51.820141",
+      "user_message": "hi",
+      "bot_response": "I'm currently running in knowledge-base mode (LM Studio is not connected). I can still answer based on my stored knowledge and context files. For full conversational AI, please start LM Studio with a ",
+      "response_time_ms": 4073,
+      "confidence": 0.6,
+      "is_training": false
     }
   ],
   "daily_stats": {
@@ -358,11 +374,11 @@
       }
     },
     "2026-08-15": {
-      "total_messages": 4,
+      "total_messages": 6,
       "training_messages": 0,
       "hours": {
         "17": 2,
-        "18": 2
+        "18": 4
       }
     }
   },
@@ -412,7 +428,9 @@
     0,
     0,
     8147,
-    4087
+    4087,
+    8158,
+    4073
   ],
   "quality_scores": [
     0.7,
@@ -449,6 +467,8 @@
     0.7,
     0.5,
     0.5,
+    0.6,
+    0.6,
     0.6,
     0.6,
     0.6,

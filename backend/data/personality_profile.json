@@ -2,101 +2,15 @@
   "name": "TestImport",
   "common_phrases": [],
   "emoji_patterns": {},
-  "vocabulary": {
-    "game": 1
-  },
-  "avg_message_length": 4.0,
+  "vocabulary": {},
+  "avg_message_length": 0,
   "typing_quirks": [],
   "tone_markers": {
-    "casual": 0.0,
-    "formal": 0.0,
-    "brief": 1.0
+    "casual": 0.5,
+    "formal": 0.5
   },
   "facts": [
-    "Only this fact",
-    "i am bad",
-    "hey i am gay"
+    "Only this fact"
   ],
-  "response_examples": [
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "Hello",
-      "response": "Hi there!"
-    },
-    {
-      "context": "What's on your mind?",
-      "response": "ah idk, nothing\n"
-    },
-    {
-      "context": "What motivates you?",
-      "response": "nothing\n"
-    }
-  ]
+  "response_examples": []
 }

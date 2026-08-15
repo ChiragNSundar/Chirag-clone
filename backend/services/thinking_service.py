@@ -69,7 +69,7 @@ class ThinkingService:
         self,
         message: str,
         personality_context: str = "",
-        relevant_memories: List[str] = None
+        relevant_memories: Optional[List[str]] = None
     ) -> Tuple[str, List[Dict]]:
         """
         Generate inner monologue / thinking process before answering.
