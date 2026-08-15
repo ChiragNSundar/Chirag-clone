@@ -15,7 +15,10 @@ from .knowledge_service import get_knowledge_service
 from .graph_service import get_graph_service
 from .search_service import get_search_service
 from .logger import get_logger
-from config import Config
+try:
+    from config import Config
+except ImportError:
+    from backend.config import Config
 
 
 class ChatService:

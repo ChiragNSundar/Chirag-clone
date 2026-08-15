@@ -5,6 +5,7 @@ Auto-loads .txt/.md/.json files from the context directory,
 chunks them, indexes with BM25, and provides relevant context
 for chat responses — even when LM Studio is not running.
 """
+import sys
 import os
 import re
 import json
@@ -13,9 +14,17 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 
-from config import Config
-from services.logger import get_logger
-from services.hybrid_rag import BM25, SearchResult
+# Ensure backend root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from config import Config
+    from services.logger import get_logger
+    from services.hybrid_rag import BM25, SearchResult
+except ImportError:
+    from backend.config import Config
+    from backend.services.logger import get_logger
+    from backend.services.hybrid_rag import BM25, SearchResult
 
 logger = get_logger(__name__)
 
