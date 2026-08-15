@@ -6,7 +6,7 @@ import os
 import hashlib
 import json
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from config import Config
 from services.telemetry import instrument_method, HAS_OTEL
 
@@ -158,7 +158,7 @@ class KnowledgeService:
         
         # Add chunks to ChromaDB
         chunk_ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
-        metadatas = [{
+        metadatas: Any = [{
             "doc_id": doc_id,
             "chunk_index": i,
             "filename": filename,
@@ -169,11 +169,12 @@ class KnowledgeService:
         # Delete existing chunks if document is being updated
         self._delete_chunks(doc_id)
         
-        self.collection.add(
-            documents=chunks,
-            ids=chunk_ids,
-            metadatas=metadatas
-        )
+        if self.collection:
+            self.collection.add(
+                documents=chunks,
+                ids=chunk_ids,
+                metadatas=metadatas
+            )
         
         # Store metadata
         doc_meta = {
@@ -264,6 +265,8 @@ class KnowledgeService:
     
     def _delete_chunks(self, doc_id: str):
         """Delete all chunks for a document."""
+        if not self.collection:
+            return
         try:
             # Get all chunk IDs for this document
             results = self.collection.get(
@@ -318,8 +321,10 @@ class KnowledgeService:
         Returns:
             List of relevant chunks with metadata
         """
+        if not self.collection:
+            return []
         try:
-            where_filter = {"category": category} if category else None
+            where_filter: Any = {"category": category} if category else None
             
             results = self.collection.query(
                 query_texts=[query],
@@ -328,10 +333,13 @@ class KnowledgeService:
             )
             
             chunks = []
-            if results and results['documents'] and results['documents'][0]:
+            if results and results.get('documents') and results['documents'][0]:
+                metadatas_list = results.get('metadatas')
+                distances_list = results.get('distances')
+                
                 for i, doc in enumerate(results['documents'][0]):
-                    meta = results['metadatas'][0][i] if results['metadatas'] else {}
-                    distance = results['distances'][0][i] if results.get('distances') else 0
+                    meta = metadatas_list[0][i] if (metadatas_list and len(metadatas_list) > 0 and len(metadatas_list[0]) > i) else {}
+                    distance = distances_list[0][i] if (distances_list and len(distances_list) > 0 and len(distances_list[0]) > i) else 0
                     
                     chunks.append({
                         'content': doc,
@@ -374,7 +382,7 @@ class KnowledgeService:
     
     def get_stats(self) -> Dict:
         """Get statistics about the knowledge base."""
-        total_chunks = self.collection.count()
+        total_chunks = self.collection.count() if self.collection else 0
         total_docs = len(self.documents)
         total_chars = sum(doc.get('char_count', 0) for doc in self.documents.values())
         
