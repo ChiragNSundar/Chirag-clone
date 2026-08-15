@@ -74,18 +74,18 @@ const BotCard = ({
                 </div>
                 <div>
                     <h3 className="font-semibold text-lg">{title}</h3>
-                    <StatusBadge running={status.running} configured={status.configured} />
+                    <StatusBadge running={status?.running || false} configured={status?.configured || false} />
                 </div>
             </div>
         </div>
 
-        {status.error && (
+        {status?.error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/20 text-red-400 text-sm">
                 {status.error}
             </div>
         )}
 
-        {!status.configured && (
+        {!status?.configured && (
             <div className="mb-4 p-3 rounded-lg bg-zinc-500/20 text-zinc-400 text-sm">
                 Set the bot token in your <code className="text-white">.env</code> file to enable.
             </div>
@@ -96,7 +96,7 @@ const BotCard = ({
         <div className="flex gap-2 mt-4">
             <button
                 onClick={onStart}
-                disabled={!status.configured || status.running || loading}
+                disabled={!status?.configured || status?.running || loading}
                 className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {loading ? <RefreshCcw className="animate-spin" size={16} /> : <Play size={16} />}
@@ -104,7 +104,7 @@ const BotCard = ({
             </button>
             <button
                 onClick={onStop}
-                disabled={!status.running || loading}
+                disabled={!status?.running || loading}
                 className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 <Pause size={16} />
@@ -112,7 +112,7 @@ const BotCard = ({
             </button>
         </div>
 
-        {status.recent_replies !== undefined && status.recent_replies > 0 && (
+        {status?.recent_replies !== undefined && status.recent_replies > 0 && (
             <p className="text-xs text-zinc-500 mt-3 text-center">
                 {status.recent_replies} replies sent this session
             </p>
@@ -130,8 +130,8 @@ export const AutopilotPage = () => {
         try {
             const res = await fetch('http://localhost:8000/api/autopilot/status');
             const data = await res.json();
-            setDiscordStatus(data.discord);
-            setTelegramStatus(data.telegram);
+            if (data?.discord) setDiscordStatus(data.discord);
+            if (data?.telegram) setTelegramStatus(data.telegram);
         } catch (e) {
             console.error('Failed to fetch status:', e);
         }
