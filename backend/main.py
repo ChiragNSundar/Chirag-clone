@@ -192,9 +192,7 @@ app.include_router(cognitive_router)
 from routes.knowledge import router as knowledge_router
 app.include_router(knowledge_router)
 
-# Vision routes (desktop analysis, image analysis)
-from routes.vision import router as vision_router
-app.include_router(vision_router)
+# Vision routes — REMOVED (local-first, no cloud multimodal API)
 
 # Agent routes (web browsing)
 from routes.agent import router as agent_router

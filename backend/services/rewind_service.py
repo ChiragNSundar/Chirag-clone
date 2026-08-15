@@ -13,7 +13,6 @@ from collections import deque
 from threading import Lock
 
 from services.logger import get_logger
-from services.vision_service import get_vision_service
 from config import Config
 
 logger = get_logger(__name__)
@@ -71,7 +70,7 @@ class RewindService:
         self._lock = Lock()
         self._paused = False
         self._excluded_windows: set = {'Terminal', 'Activity Monitor', 'Keychain Access'}
-        self._vision_service = get_vision_service()
+        # Vision service removed (local-first, no cloud multimodal)
         self._last_hash: Optional[str] = None
         
         logger.info(f"Rewind service initialized: {self.MAX_FRAMES} frame buffer ({self.MAX_BUFFER_MINUTES} mins)")
@@ -256,18 +255,8 @@ class RewindService:
         }
     
     def _analyze_frame(self, frame: RewindFrame) -> str:
-        """Analyze a frame using vision service."""
-        try:
-            result = self._vision_service.analyze_image(
-                frame.image_base64,
-                prompt="Describe what's on this computer screen in 2-3 sentences. Focus on the main content (documents, websites, apps) and any visible text.",
-                mime_type="image/jpeg"
-            )
-            if result.get('success'):
-                return result.get('description', '')
-            return f"[Could not analyze: {result.get('error', 'unknown')}]"
-        except Exception as e:
-            return f"[Analysis failed: {e}]"
+        """Analyze a frame — vision service removed, returns metadata only."""
+        return f"[Screen capture at {frame.timestamp.strftime('%H:%M:%S')} - {frame.window_name}]"
     
     def _build_context(self, frames: List[RewindFrame], question: str) -> str:
         """Build context from analyzed frames."""
