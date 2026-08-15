@@ -43,12 +43,83 @@ init_db()  # Initialize SQLModel DB
 for warning in config_warnings:
     logger.warning(f"[CONFIG] {warning}")
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle events for FastAPI application."""
+    # Startup
+    logger.info("=" * 60)
+    logger.info("🧠 Chirag Clone API v2.3.0 Starting...")
+    logger.info("=" * 60)
+    
+    # Log configuration warnings
+    if config_warnings:
+        logger.warning(f"⚠️  {len(config_warnings)} configuration warning(s)")
+    else:
+        logger.info("✅ Configuration validated successfully")
+    
+    # Pre-warm critical services (optional, for faster first request)
+    try:
+        from services.personality_service import get_personality_service
+        personality = get_personality_service()
+        logger.info(f"✅ Personality service ready: {personality.get_profile().name}")
+    except Exception as e:
+        logger.warning(f"⚠️  Personality service: {e}")
+    
+    # Check LLM availability
+    try:
+        from services.llm_service import get_llm_service
+        llm = get_llm_service()
+        circuit_state = llm.get_circuit_state()
+        logger.info(f"✅ LLM service ready: {Config.LLM_PROVIDER} (circuit: {circuit_state['state']})")
+    except Exception as e:
+        logger.warning(f"⚠️  LLM service: {e}")
+    
+    # Start background processor
+    try:
+        from services.background_processor_service import get_background_processor_service
+        bg = get_background_processor_service()
+        bg.start()
+        logger.info("✅ Background processor started")
+    except Exception as e:
+        logger.warning(f"⚠️  Background processor: {e}")
+    
+    logger.info("=" * 60)
+    logger.info("🚀 Server ready to accept requests")
+    logger.info("=" * 60)
+
+    yield
+
+    # Shutdown
+    logger.info("🛑 Chirag Clone API shutting down...")
+    
+    # Cleanup HTTP connection pool
+    try:
+        from services.http_pool import cleanup_http_pool
+        await cleanup_http_pool()
+        logger.info("✅ HTTP connection pool closed")
+    except Exception as e:
+        logger.warning(f"⚠️ HTTP pool cleanup: {e}")
+    
+    # Clear cache
+    try:
+        from services.cache_service import get_cache_service
+        cache = get_cache_service()
+        stats = cache.get_stats()
+        cache.clear()
+        logger.info(f"✅ Cache cleared (was {stats['size']} entries, {stats['hit_rate']}% hit rate)")
+    except Exception as e:
+        logger.warning(f"⚠️ Cache cleanup: {e}")
+
+
 # ============= Application Setup =============
 
 app = FastAPI(
     title="Chirag Clone API",
     description="Personal AI Clone Bot API - v2.3 with Real-Time Voice, Vision, and Brain Station",
-    version="2.3.0"
+    version="2.3.0",
+    lifespan=lifespan
 )
 
 # Initialize OpenTelemetry
@@ -95,75 +166,6 @@ app.add_middleware(
 # Add Rate Limiting Middleware
 from services.rate_limiter import rate_limit
 app.middleware("http")(rate_limit)
-
-# ============= Lifecycle Events =============
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services and log startup status."""
-    logger.info("=" * 60)
-    logger.info("🧠 Chirag Clone API v2.3.0 Starting...")
-    logger.info("=" * 60)
-    
-    # Log configuration warnings
-    if config_warnings:
-        logger.warning(f"⚠️  {len(config_warnings)} configuration warning(s)")
-    else:
-        logger.info("✅ Configuration validated successfully")
-    
-    # Pre-warm critical services (optional, for faster first request)
-    try:
-        from services.personality_service import get_personality_service
-        personality = get_personality_service()
-        logger.info(f"✅ Personality service ready: {personality.get_profile().name}")
-    except Exception as e:
-        logger.warning(f"⚠️  Personality service: {e}")
-    
-    # Check LLM availability
-    try:
-        from services.llm_service import get_llm_service
-        llm = get_llm_service()
-        circuit_state = llm.get_circuit_state()
-        logger.info(f"✅ LLM service ready: {Config.LLM_PROVIDER} (circuit: {circuit_state['state']})")
-    except Exception as e:
-        logger.warning(f"⚠️  LLM service: {e}")
-    
-    # Start background processor
-    try:
-        from services.background_processor_service import get_background_processor_service
-        bg = get_background_processor_service()
-        bg.start()
-        logger.info("✅ Background processor started")
-    except Exception as e:
-        logger.warning(f"⚠️  Background processor: {e}")
-    
-    logger.info("=" * 60)
-    logger.info("🚀 Server ready to accept requests")
-    logger.info("=" * 60)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown."""
-    logger.info("🛑 Chirag Clone API shutting down...")
-    
-    # Cleanup HTTP connection pool
-    try:
-        from services.http_pool import cleanup_http_pool
-        await cleanup_http_pool()
-        logger.info("✅ HTTP connection pool closed")
-    except Exception as e:
-        logger.warning(f"⚠️ HTTP pool cleanup: {e}")
-    
-    # Clear cache
-    try:
-        from services.cache_service import get_cache_service
-        cache = get_cache_service()
-        stats = cache.get_stats()
-        cache.clear()
-        logger.info(f"✅ Cache cleared (was {stats['size']} entries, {stats['hit_rate']}% hit rate)")
-    except Exception as e:
-        logger.warning(f"⚠️ Cache cleanup: {e}")
 
 # ============= Router Registration =============
 
