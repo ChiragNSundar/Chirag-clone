@@ -73,9 +73,9 @@ class TelegramBotService:
             
             try:
                 # Generate response
-                response = self.chat_service.generate_response(
+                response, *_ = self.chat_service.generate_response(
                     user_message=user_message,
-                    conversation_history=[],
+                    session_id="telegram",
                     training_mode=False
                 )
                 
@@ -111,7 +111,7 @@ class TelegramBotService:
             print("Telegram Autopilot starting...")
             self.is_running = True
             
-            self.loop.run_until_complete(self.app.run_polling(allowed_updates=Update.ALL_TYPES))
+            self.app.run_polling(allowed_updates=Update.ALL_TYPES)
         except Exception as e:
             print(f"Telegram bot error: {e}")
             self.is_running = False
