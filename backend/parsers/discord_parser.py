@@ -11,7 +11,7 @@ from datetime import datetime
 class DiscordParser:
     """Parser for Discord chat exports from DiscordChatExporter."""
     
-    def __init__(self, your_user_id: str = None, your_username: str = None):
+    def __init__(self, your_user_id: Optional[str] = None, your_username: Optional[str] = None):
         """
         Initialize the parser.
         

@@ -323,7 +323,7 @@ async def get_conversation_analytics():
     try:
         from services.conversation_analytics_service import get_conversation_analytics_service
         service = get_conversation_analytics_service()
-        return service.get_conversation_analytics()
+        return service.get_comprehensive_analytics()
     except Exception as e:
         logger.error(f"Conversation analytics error: {e}")
         return {}
@@ -335,7 +335,7 @@ async def get_topic_distribution(limit: int = 20):
     try:
         from services.conversation_analytics_service import get_conversation_analytics_service
         service = get_conversation_analytics_service()
-        return service.get_topic_distribution(limit=limit)
+        return {"topics": service.get_topic_distribution(limit=limit)}
     except Exception as e:
         logger.error(f"Topic distribution error: {e}")
         return {"topics": []}
