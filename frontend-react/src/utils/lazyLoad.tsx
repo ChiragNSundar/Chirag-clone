@@ -19,10 +19,7 @@ export const LazyProfilePage = lazy(() =>
     import('../components/ProfilePage').then(m => ({ default: m.ProfilePage }))
 );
 
-// Autopilot Page - named export
-export const LazyAutopilotPage = lazy(() =>
-    import('../components/AutopilotPage').then(m => ({ default: m.AutopilotPage }))
-);
+
 
 // Memory Graph - named export
 export const LazyMemoryGraph = lazy(() =>
