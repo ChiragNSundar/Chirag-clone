@@ -1,6 +1,8 @@
 """
-Model Fallback System - Automatically switch to backup models when primary fails.
-Implements tiered fallback with circuit breaker integration.
+Model Fallback System - Manages LM Studio model availability.
+If LM Studio is down, the system falls back to RAG + context files.
+
+No cloud providers. No Ollama. LM Studio is the sole LLM.
 """
 import asyncio
 from typing import Optional, List, Any, Callable, Dict
@@ -15,10 +17,8 @@ logger = get_logger(__name__)
 
 class ModelTier(Enum):
     """Model tiers for fallback priority."""
-    PRIMARY = 1      # Best quality, highest cost
-    SECONDARY = 2    # Good quality, medium cost
-    FALLBACK = 3     # Basic quality, low cost/local
-    EMERGENCY = 4    # Minimal, always available
+    PRIMARY = 1      # LM Studio loaded model
+    FALLBACK = 2     # RAG + context files (no LLM)
 
 
 @dataclass
@@ -26,53 +26,35 @@ class ModelConfig:
     """Configuration for a single model."""
     name: str
     tier: ModelTier
-    provider: str  # 'google', 'openai', 'anthropic', 'local'
+    provider: str  # 'lmstudio' or 'rag'
     model_id: str
     max_tokens: int = 4096
     temperature: float = 0.7
-    timeout_seconds: float = 30.0
-    cost_per_1k_tokens: float = 0.0
+    timeout_seconds: float = 120.0
+    cost_per_1k_tokens: float = 0.0  # Always 0 — local only
     capabilities: List[str] = field(default_factory=list)
     
     def supports(self, capability: str) -> bool:
         return capability in self.capabilities or not self.capabilities
 
 
-# Default model configurations
+# Default model configurations — LM Studio only
 DEFAULT_MODELS = [
     ModelConfig(
-        name="gemini-pro",
+        name="lmstudio-primary",
         tier=ModelTier.PRIMARY,
-        provider="google",
-        model_id="gemini-1.5-pro",
-        max_tokens=8192,
-        cost_per_1k_tokens=0.00125,
-        capabilities=["chat", "code", "reasoning", "long_context"]
-    ),
-    ModelConfig(
-        name="gemini-flash",
-        tier=ModelTier.SECONDARY,
-        provider="google",
-        model_id="gemini-1.5-flash",
-        max_tokens=8192,
-        cost_per_1k_tokens=0.000075,
-        capabilities=["chat", "code", "fast"]
-    ),
-    ModelConfig(
-        name="gpt-4o-mini",
-        tier=ModelTier.FALLBACK,
-        provider="openai",
-        model_id="gpt-4o-mini",
+        provider="lmstudio",
+        model_id="auto",  # Auto-detect from LM Studio
         max_tokens=4096,
-        cost_per_1k_tokens=0.00015,
-        capabilities=["chat", "code"]
+        cost_per_1k_tokens=0.0,
+        capabilities=["chat", "code", "reasoning"]
     ),
     ModelConfig(
-        name="local-ollama",
-        tier=ModelTier.EMERGENCY,
-        provider="local",
-        model_id="llama3:8b",
-        max_tokens=2048,
+        name="rag-fallback",
+        tier=ModelTier.FALLBACK,
+        provider="rag",
+        model_id="context-files",
+        max_tokens=0,  # No generation — retrieval only
         cost_per_1k_tokens=0.0,
         capabilities=["chat"]
     ),
@@ -84,10 +66,10 @@ class ModelFallbackManager:
     Manages model fallback with automatic switching.
     
     Features:
-    - Tiered fallback based on model priority
+    - LM Studio as primary (auto-detect loaded model)
+    - RAG + context files as fallback when LLM is unavailable
     - Circuit breaker integration
-    - Cost tracking
-    - Automatic recovery to primary
+    - Usage tracking
     """
     
     def __init__(self, models: Optional[List[ModelConfig]] = None):
@@ -136,7 +118,7 @@ class ModelFallbackManager:
         self,
         prompt: str,
         capability: Optional[str] = None,
-        max_retries: int = 3,
+        max_retries: int = 2,
         **kwargs
     ) -> tuple[str, ModelConfig]:
         """
@@ -215,14 +197,14 @@ class ModelFallbackManager:
         
         stats["tokens_in"] += tokens_in
         stats["tokens_out"] += tokens_out
-        stats["estimated_cost"] += (tokens_in + tokens_out) / 1000 * model.cost_per_1k_tokens
+        # Cost is always 0 for local models
     
     def get_usage_stats(self) -> dict:
         """Get usage statistics for all models."""
         return {
             "models": self._usage_stats,
             "current_model": self._current_model.name if self._current_model else None,
-            "total_cost": sum(s["estimated_cost"] for s in self._usage_stats.values())
+            "total_cost": 0.0  # Always free — local only
         }
     
     def get_health_status(self) -> dict:
@@ -250,66 +232,45 @@ class ModelFallbackManager:
         
         return status
 
+    def register_default_handlers(self):
+        """Register default handlers for known providers."""
+        from services.llm_service import get_llm_service
+
+        async def lmstudio_handler(model_id: str, prompt: str, **kwargs) -> str:
+            """Handler for LM Studio via LLMService."""
+            return await asyncio.to_thread(
+                get_llm_service().generate_response,
+                system_prompt="You are a helpful assistant.",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=kwargs.get('max_tokens'),
+                temperature=kwargs.get('temperature')
+            )
+
+        async def rag_handler(model_id: str, prompt: str, **kwargs) -> str:
+            """Handler for RAG-only fallback (no LLM generation)."""
+            try:
+                from services.context_service import get_context_service
+                ctx = get_context_service()
+                relevant = ctx.get_relevant_context(prompt, top_k=5)
+                if relevant:
+                    return (
+                        "Based on my knowledge base:\n\n" +
+                        "\n\n".join(relevant)
+                    )
+            except Exception:
+                pass
+            return "I'm currently in knowledge-base only mode. Please start LM Studio for full AI responses."
+
+        self.register_handler("lmstudio", lmstudio_handler)
+        self.register_handler("rag", rag_handler)
+        logger.info("Registered model handlers (lmstudio, rag)")
+
 
 # ============= Singleton =============
 
 _manager: Optional[ModelFallbackManager] = None
 
 
-    def register_default_handlers(self):
-        """Register default handlers for known providers."""
-        from services.llm_service import get_llm_service
-        from services.ollama_service import get_ollama_service
-        import logging
-        
-        logger = logging.getLogger(__name__)
-
-        async def google_handler(model_id: str, prompt: str, **kwargs) -> str:
-            # Bridging to existing LLMService for now, or use google-generativeai directly
-            # For consistency, we'll use LLMService's method but forced to specific model
-            # Note: LLMService is sync, so we might need running in threadpool if async required
-            # checking LLMService... it is sync.
-            import asyncio
-            return await asyncio.to_thread(
-                get_llm_service().generate_response, 
-                system_prompt="You are a helpful assistant.", 
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=kwargs.get('max_tokens'),
-                temperature=kwargs.get('temperature')
-            )
-
-        async def openai_handler(model_id: str, prompt: str, **kwargs) -> str:
-            # Similar bridge for OpenAI
-            import asyncio
-            llm = get_llm_service()
-            # Temporarily force provider to openai to use its logic, or use fallback_client directly
-            # Easier to use the fallback logic if available
-            if llm.fallback_client:
-                return await asyncio.to_thread(
-                    llm._openai_fallback_generate,
-                    system_prompt="You are a helpful assistant.",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=kwargs.get('temperature', 0.7),
-                    max_tokens=kwargs.get('max_tokens', 1024)
-                )
-            raise RuntimeError("OpenAI client not initialized")
-
-        async def locall_handler(model_id: str, prompt: str, **kwargs) -> str:
-            # Use new OllamaService
-             return get_ollama_service().generate_chat(
-                messages=[{"role": "user", "content": prompt}],
-                model=model_id,
-                temperature=kwargs.get('temperature', 0.7),
-                max_tokens=kwargs.get('max_tokens', 2048)
-            )
-
-        self.register_handler("google", google_handler)
-        self.register_handler("openai", openai_handler)
-        self.register_handler("local", locall_handler)
-        self.register_handler("ollama", locall_handler)  # Alias
-        logger.info("Registered default model handlers (google, openai, local)")
-
-    
 def get_model_manager() -> ModelFallbackManager:
     global _manager
     if _manager is None:
