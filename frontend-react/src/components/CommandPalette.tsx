@@ -65,15 +65,6 @@ export function CommandPalette() {
             keywords: ['about', 'personality'],
             category: 'navigation'
         },
-        {
-            id: 'nav-autopilot',
-            title: 'Go to Autopilot',
-            description: 'Manage social integrations',
-            icon: <Zap size={18} />,
-            action: () => { navigate('/autopilot'); setIsOpen(false); },
-            keywords: ['discord', 'telegram', 'bot'],
-            category: 'navigation'
-        },
         // Actions
         {
             id: 'action-new-chat',
