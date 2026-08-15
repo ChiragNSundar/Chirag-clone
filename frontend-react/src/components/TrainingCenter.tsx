@@ -187,12 +187,11 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-white/5 p-6 rounded-xl border border-white/10">
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <Database className="w-5 h-5 text-purple-400" />
-                    Local Fine-Tuning Pipeline
+                    <FileJson className="w-5 h-5 text-purple-400" />
+                    Export Training Dataset
                 </h3>
                 <p className="text-white/60 mb-6">
-                    Create a custom version of the AI model trained specifically on your data.
-                    This prepares a dataset from your conversation history and personality examples.
+                    Export your conversation history, learned facts, and personality examples into a standardized ChatML JSONL dataset for local fine-tuning or backup.
                 </p>
 
                 {ftStats && (
@@ -307,7 +306,7 @@ export const TrainingCenter = ({ isAuthenticated, onAuthenticate }: TrainingCent
         { id: 'documents', label: 'Documents', icon: BookOpen },
         { id: 'facts', label: 'Facts', icon: BookOpen },
         { id: 'brain', label: 'Brain Station', icon: Brain },
-        { id: 'finetune', label: 'Fine-Tuning', icon: Database },
+        { id: 'finetune', label: 'Export Dataset', icon: FileJson },
     ];
 
     const resetAllLearning = async () => {
