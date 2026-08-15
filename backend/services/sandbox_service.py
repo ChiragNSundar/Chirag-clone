@@ -268,7 +268,6 @@ class SandboxService:
         start_time = time.monotonic()
 
         def _run():
-            nonlocal result
             old_stdout = sys.stdout
             old_stderr = sys.stderr
             try:

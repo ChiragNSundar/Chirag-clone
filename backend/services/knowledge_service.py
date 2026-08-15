@@ -11,7 +11,7 @@ from config import Config
 from services.telemetry import instrument_method, HAS_OTEL
 
 if HAS_OTEL:
-    from opentelemetry import trace
+    from opentelemetry import trace  # type: ignore
     tracer = trace.get_tracer(__name__)
 else:
     tracer = None
