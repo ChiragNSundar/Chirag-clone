@@ -79,9 +79,7 @@ pandas>=2.1.4
 numpy>=1.26.2
 regex==2025.11.3
 
-# Social Integrations
-discord.py==2.3.2
-python-telegram-bot==20.7
+# Integrations
 notion-client>=2.0.0
 
 # Auth

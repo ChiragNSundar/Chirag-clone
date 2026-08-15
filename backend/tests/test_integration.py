@@ -89,23 +89,6 @@ class TestProfileVisualizationWorkflow:
                 assert root_nodes[0]["label"] == profile["name"]
 
 
-class TestAutopilotWorkflow:
-    """Test autopilot bot workflow."""
-    
-    def test_status_then_settings(self):
-        """Test getting status then updating settings."""
-        # Get status first
-        status_response = client.get("/api/autopilot/status")
-        assert status_response.status_code == 200
-        
-        # Try updating discord settings (the available settings endpoint)
-        settings_response = client.post("/api/autopilot/discord/settings", json={
-            "auto_reply_dms": True,
-            "auto_reply_mentions": True
-        })
-        # Any response is acceptable (may not be configured)
-        assert settings_response.status_code in [200, 404, 422, 500]
-
 
 class TestAnalyticsWorkflow:
     """Test analytics workflow."""

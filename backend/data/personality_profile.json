@@ -8,12 +8,16 @@
   "tone_markers": {
     "casual": 0.5,
     "formal": 0.5,
-    "brief": 0.9500000000000004
+    "brief": 1.0
   },
   "facts": [
     "Only this fact"
   ],
   "response_examples": [
+    {
+      "context": "Test context",
+      "response": "Test response"
+    },
     {
       "context": "Test context",
       "response": "Test response"

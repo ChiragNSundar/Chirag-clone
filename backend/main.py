@@ -185,12 +185,6 @@ app.include_router(training_router)
 from routes.dashboard import router as dashboard_router
 app.include_router(dashboard_router)
 
-# Autopilot routes (Discord, Telegram, Twitter, LinkedIn, Gmail, WhatsApp)
-from routes.autopilot import router as autopilot_router
-app.include_router(autopilot_router)
-
-# Voice routes — REMOVED (ElevenLabs and cloud voice services removed)
-
 # Cognitive routes (core memory, active learning)
 from routes.cognitive import router as cognitive_router
 app.include_router(cognitive_router)

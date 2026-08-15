@@ -291,14 +291,6 @@ class BackgroundProcessorService:
         except Exception as e:
             digest["sections"]["entities"] = {"error": str(e)}
 
-        # Autopilot stats
-        try:
-            from services.autopilot_executor_service import get_autopilot_executor_service
-            executor = get_autopilot_executor_service()
-            digest["sections"]["autopilot"] = executor.get_stats()
-        except Exception as e:
-            digest["sections"]["autopilot"] = {"error": str(e)}
-
         # Save digest to disk
         try:
             os.makedirs(self._digest_path, exist_ok=True)
@@ -325,7 +317,7 @@ class BackgroundProcessorService:
         start = time.time()
         logger.info("Running knowledge graph maintenance...")
 
-        results = {"errors": []}
+        results: Dict[str, Any] = {"errors": []}
 
         try:
             from services.graph_service import get_graph_service
@@ -360,7 +352,7 @@ class BackgroundProcessorService:
         task_name = "health_check"
         start = time.time()
 
-        results = {"errors": []}
+        results: Dict[str, Any] = {"errors": []}
 
         try:
             # LLM circuit breaker
