@@ -101,7 +101,7 @@ class TelegramBotService:
                 await update.message.reply_text(status)
         
         try:
-            self.app = Application.builder().token(self.token).build()
+            self.app = ApplicationBuilder().token(self.token).build()
             
             # Add handlers
             self.app.add_handler(CommandHandler("start", start_command))
