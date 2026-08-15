@@ -192,7 +192,7 @@ class SandboxService:
         # Persistent namespace for multi-step execution
         self._session_namespaces: Dict[str, Dict] = {}
 
-        logger.info("Sandbox service initialized", enabled=self.enabled)
+        logger.info(f"Sandbox service initialized (enabled={self.enabled})")
 
     def _build_safe_globals(self, session_id: Optional[str] = None) -> Dict:
         """Build the restricted globals dict for execution."""
