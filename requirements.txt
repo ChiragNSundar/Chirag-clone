@@ -34,6 +34,8 @@ typing_extensions==4.15.0
 typing-inspection==0.4.2
 
 # Database & ORM
+sqlmodel>=0.0.14
+sqlalchemy>=2.0.0
 aiosqlite>=0.19.0
 
 # ML & Embeddings (local only)
