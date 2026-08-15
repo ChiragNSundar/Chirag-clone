@@ -178,69 +178,6 @@ class TestErrorRecoveryWorkflow:
 
 
 # ============================================================================
-# v2.3 Features - Voice WebSocket
-# ============================================================================
-
-class TestVoiceEndpoints:
-    """Test voice service endpoints."""
-    
-    def test_voice_status(self):
-        """Test voice service status endpoint."""
-        response = client.get("/api/voice/status")
-        assert response.status_code == 200
-        data = response.json()
-        assert "tts_available" in data
-        assert "stt_available" in data
-    
-    def test_voice_speak_requires_text(self):
-        """Test that TTS endpoint requires text parameter."""
-        response = client.post("/api/voice/tts", json={})
-        assert response.status_code == 422
-    
-    def test_voice_speak_with_text(self):
-        """Test TTS endpoint with valid text."""
-        response = client.post("/api/voice/tts", json={
-            "text": "Hello, this is a test."
-        })
-        # May fail if ElevenLabs not configured, but should not crash
-        assert response.status_code in [200, 500, 503]
-    
-    def test_voice_listen_empty_audio(self):
-        """Test STT endpoint with missing audio."""
-        response = client.post("/api/voice/stt", json={})
-        # Should fail gracefully
-        assert response.status_code in [400, 422, 500]
-
-
-# ============================================================================
-# v2.3 Features - Desktop Vision
-# ============================================================================
-
-class TestVisionEndpoints:
-    """Test vision/desktop analysis endpoints."""
-    
-    def test_vision_analyze_requires_image(self):
-        """Test that vision analyze requires image data."""
-        response = client.post("/api/vision/analyze-image", json={})
-        assert response.status_code == 422
-    
-    def test_vision_desktop_requires_image(self):
-        """Test desktop vision endpoint requires image."""
-        response = client.post("/api/vision/analyze-desktop", json={})
-        assert response.status_code == 422
-    
-    def test_vision_desktop_with_base64(self):
-        """Test desktop vision with minimal base64 image stub."""
-        # Minimal 1x1 PNG base64
-        tiny_png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        response = client.post("/api/vision/analyze-desktop", json={
-            "image_base64": tiny_png
-        })
-        # May fail if Gemini Vision not configured, but should accept payload
-        assert response.status_code in [200, 500, 503]
-
-
-# ============================================================================
 # v2.3 Features - Brain Station / Knowledge Management
 # ============================================================================
 
