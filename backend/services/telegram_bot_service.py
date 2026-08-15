@@ -9,8 +9,8 @@ from datetime import datetime
 
 # python-telegram-bot is optional
 try:
-    from telegram import Update  # type: ignore
-    from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes  # type: ignore
+    from telegram import Update
+    from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False

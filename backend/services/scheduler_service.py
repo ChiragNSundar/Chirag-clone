@@ -11,10 +11,10 @@ from config import Config
 
 # APScheduler import with fallback
 try:
-    from apscheduler.schedulers.background import BackgroundScheduler  # type: ignore
-    from apscheduler.triggers.cron import CronTrigger  # type: ignore
-    from apscheduler.triggers.date import DateTrigger  # type: ignore
-    from apscheduler.triggers.interval import IntervalTrigger  # type: ignore
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    from apscheduler.triggers.date import DateTrigger
+    from apscheduler.triggers.interval import IntervalTrigger
     HAS_APSCHEDULER = True
 except ImportError:
     HAS_APSCHEDULER = False

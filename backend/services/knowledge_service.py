@@ -34,8 +34,8 @@ class KnowledgeService:
     
     def __init__(self):
         try:
-            import chromadb  # type: ignore
-            from chromadb.config import Settings  # type: ignore
+            import chromadb
+            from chromadb.config import Settings
             
             self.client = chromadb.PersistentClient(
                 path=Config.CHROMA_DB_PATH,
