@@ -7,7 +7,7 @@ import secrets
 import time
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 from functools import wraps
 
@@ -60,7 +60,7 @@ class User:
     
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -228,8 +228,8 @@ class AuthService:
             "name": user.name,
             "provider": user.provider,
             "role": user.role.value,
-            "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
-            "iat": datetime.utcnow()
+            "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
+            "iat": datetime.now(timezone.utc)
         }
         return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
