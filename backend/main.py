@@ -8,8 +8,6 @@ All endpoint logic has been moved to routes/ modules for better maintainability.
 import sys
 import os
 import pathlib
-import logging
-import time
 
 # Ensure both backend dir and repo root are in sys.path
 backend_dir = os.path.dirname(os.path.abspath(__file__))
