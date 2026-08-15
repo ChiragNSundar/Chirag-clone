@@ -166,7 +166,7 @@ class BackgroundProcessorService:
         start = time.time()
         logger.info("Running memory consolidation...")
 
-        results = {"merged": 0, "pruned": 0, "errors": []}
+        results: Dict[str, Any] = {"merged": 0, "pruned": 0, "errors": []}
 
         try:
             # Core memory summarization
@@ -210,7 +210,7 @@ class BackgroundProcessorService:
         start = time.time()
         logger.info("Running entity resolution refresh...")
 
-        results = {"suggestions": 0, "auto_merged": 0, "errors": []}
+        results: Dict[str, Any] = {"suggestions": 0, "auto_merged": 0, "errors": []}
 
         try:
             from services.entity_resolution_service import get_entity_resolution_service
