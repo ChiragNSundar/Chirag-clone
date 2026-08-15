@@ -338,18 +338,6 @@ class AutopilotExecutorService:
                 if hasattr(bot, "send_message"):
                     return bot.send_message(draft.recipient_id, draft.content)
 
-            elif platform == "slack":
-                from services.slack_bot_service import get_slack_bot_service
-                bot = get_slack_bot_service()
-                if hasattr(bot, "send_message"):
-                    return bot.send_message(draft.recipient_id, draft.content)
-
-            elif platform == "twitter":
-                from services.twitter_bot_service import get_twitter_bot_service
-                bot = get_twitter_bot_service()
-                if hasattr(bot, "post_tweet"):
-                    return bot.post_tweet(draft.content)
-
             elif platform == "whatsapp":
                 from services.whatsapp_bot_service import get_whatsapp_bot_service
                 bot = get_whatsapp_bot_service()

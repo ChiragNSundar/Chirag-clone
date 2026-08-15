@@ -53,28 +53,7 @@ def test_calendar_crud_methods():
     assert service.delete_event('123') is True
 
 
-# ============= Slack Bot Tests =============
 
-@patch('services.slack_bot_service.get_llm_service')
-def test_slack_draft_generation(mock_get_llm):
-    """Test generating Slack reply drafts."""
-    from services.slack_bot_service import SlackBotService
-    
-    mock_llm = Mock()
-    mock_llm.generate_response.return_value = "Sure, I can help with that."
-    mock_get_llm.return_value = mock_llm
-    
-    service = SlackBotService()
-    service.is_configured = False 
-    
-    with patch('services.slack_bot_service.get_personality_service') as mock_p:
-        mock_p.return_value.get_profile.return_value.name = "Bot"
-        
-        draft = service.generate_reply_draft("Can you help?")
-        
-        assert draft['platform'] == 'slack'
-        assert draft['draft_reply'] == "Sure, I can help with that."
-        assert len(service.pending_replies) == 1
 
 
 # ============= Wake Word Tests =============
