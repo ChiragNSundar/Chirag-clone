@@ -14,7 +14,6 @@ from .mood_service import get_mood_service
 from .knowledge_service import get_knowledge_service
 from .graph_service import get_graph_service
 from .search_service import get_search_service
-from .vision_service import get_vision_service
 from .logger import get_logger
 from config import Config
 
@@ -145,20 +144,8 @@ class ChatService:
             except Exception as e:
                 print(f"Web search error: {e}")
         
-        # IMAGE ANALYSIS INJECTION
-        if image_data:
-            try:
-                vision = get_vision_service()
-                logger = get_logger(__name__)
-                logger.info("Analyzing attached image...")
-                
-                # Analyze or describe the image for context
-                # using a specific prompt for chat context
-                analysis = vision.extract_context(image_data)
-                
-                system_prompt += f"\n\n[USER ATTACHED AN IMAGE]\nImage Description: {analysis}\nINSTRUCTION: The user has verified seeing this image. Use the description above to answer their questions about it."
-            except Exception as e:
-                print(f"Vision error: {e}")
+        # IMAGE ANALYSIS — Vision service removed (local-first, no cloud multimodal)
+        # image_data parameter kept for API compatibility but not processed
 
         # Build message history for LLM
         messages = self._build_messages(history, user_message)

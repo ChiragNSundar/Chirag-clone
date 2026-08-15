@@ -1,12 +1,14 @@
 """
-LLM Service - Handles interactions with various LLM providers.
-Enhanced with retry logic, circuit breaker, and timeouts.
-Supports Gemini (primary), OpenAI (fallback), Anthropic, and Ollama.
+LLM Service - Handles interactions with LM Studio (local LLM).
+No cloud APIs are used. If LM Studio is not running, the system
+falls back to RAG + context files for responses.
+
+Includes retry logic, circuit breaker, and timeouts.
 """
 import json
 import time
 import requests
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from threading import Lock
 from config import Config
 from services.logger import get_logger
@@ -69,68 +71,30 @@ class CircuitBreaker:
 
 
 class LLMService:
-    """Unified interface for different LLM providers with automatic fallback, retry, and circuit breaker."""
+    """
+    Unified LLM interface using LM Studio as the sole provider.
+    
+    If LM Studio is unavailable, returns a flag indicating
+    the system should fall back to RAG + context files.
+    """
     
     def __init__(self):
-        self.provider = Config.LLM_PROVIDER
-        self.fallback_provider = 'openai' if self.provider == 'gemini' else None
+        self.provider = 'lmstudio'
         self.client = None
-        self.fallback_client = None
         self.model = None
         self._init_error = None
         self._lazy_init_done = False
-        
-        # Ollama First-Class: Auto-detect if Ollama is running
-        if Config.OLLAMA_AUTO_DETECT and self.provider != 'ollama':
-            if self._check_ollama_available():
-                if Config.OLLAMA_FIRST_CLASS:
-                    logger.info("🦙 Ollama detected and OLLAMA_FIRST_CLASS=true, using as primary provider")
-                    self.provider = 'ollama'
-                else:
-                    logger.info("🦙 Ollama detected, available as fallback (set OLLAMA_FIRST_CLASS=true to use as primary)")
-        
-        # Key Rotation
-        self._current_key_index = 0
-        self._key_rotation_lock = Lock()
+        self._lmstudio_available = False
         
         # Resilience settings
-        self.max_retries = getattr(Config, 'LLM_RETRY_COUNT', 3)
-        self.request_timeout = getattr(Config, 'LLM_REQUEST_TIMEOUT', 30)
+        self.max_retries = getattr(Config, 'LLM_RETRY_COUNT', 2)
+        self.request_timeout = getattr(Config, 'LLM_REQUEST_TIMEOUT', 120)
         
         # Circuit breaker
         failure_threshold = getattr(Config, 'CIRCUIT_BREAKER_THRESHOLD', 5)
         reset_timeout = getattr(Config, 'CIRCUIT_BREAKER_TIMEOUT', 60)
         self._circuit_breaker = CircuitBreaker(failure_threshold, reset_timeout)
     
-    def _check_ollama_available(self) -> bool:
-        """Check if Ollama is running and accessible."""
-        from services.ollama_service import get_ollama_service
-        return get_ollama_service().is_available()
-    
-    def _rotate_key(self) -> bool:
-        """
-        Rotate to the next available API key.
-        Returns True if rotated, False if no other keys available.
-        """
-        if self.provider != 'gemini' or not Config.GEMINI_API_KEYS or len(Config.GEMINI_API_KEYS) <= 1:
-            return False
-            
-        with self._key_rotation_lock:
-            prev_index = self._current_key_index
-            self._current_key_index = (self._current_key_index + 1) % len(Config.GEMINI_API_KEYS)
-            
-            # Re-initialize client with new key
-            try:
-                import google.generativeai as genai
-                new_key = Config.GEMINI_API_KEYS[self._current_key_index]
-                genai.configure(api_key=new_key)
-                self.client = genai
-                logger.info(f"🔄 Rotated API Key: {prev_index} -> {self._current_key_index}")
-                return True
-            except Exception as e:
-                logger.error(f"Failed to rotate key: {e}")
-                return False
-
     def _lazy_init(self):
         """Lazy initialization of LLM client - only when first needed."""
         if self._lazy_init_done:
@@ -141,60 +105,46 @@ class LLMService:
             self._init_client()
         except Exception as e:
             self._init_error = str(e)
-            logger.error(f"LLM initialization error: {e}")
+            logger.warning(f"LLM initialization: {e}. Will use RAG + context files as fallback.")
     
     def _init_client(self):
-        """Initialize the appropriate LLM client based on provider."""
-        if self.provider == 'gemini':
-            if not Config.GEMINI_API_KEYS or Config.GEMINI_API_KEYS[0] == 'your-gemini-api-key-here':
-                raise ValueError("Gemini API key not configured. Please set GEMINI_API_KEY in .env file.")
-            
-            import google.generativeai as genai
-            # Use current key from rotation
-            current_key = Config.GEMINI_API_KEYS[self._current_key_index]
-            genai.configure(api_key=current_key)
-            self.client = genai
-            self.model = Config.GEMINI_MODEL
-            
-            # Also init fallback if available
-            if Config.OPENAI_API_KEY and Config.OPENAI_API_KEY != 'sk-your-openai-key-here':
-                try:
-                    from openai import OpenAI
-                    self.fallback_client = OpenAI(api_key=Config.OPENAI_API_KEY)
-                except Exception as e:
-                    logger.warning(f"OpenAI fallback init failed: {e}")
-                    self.fallback_client = None
-            else:
-                self.fallback_client = None
-                
-        elif self.provider == 'openai':
-            if not Config.OPENAI_API_KEY or Config.OPENAI_API_KEY == 'sk-your-openai-key-here':
-                raise ValueError("OpenAI API key not configured. Please set OPENAI_API_KEY in .env file.")
-            
-            from openai import OpenAI
-            self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
-            self.model = Config.OPENAI_MODEL
-            self.fallback_client = None
-            
-        elif self.provider == 'ollama':
-            self.client = None  # Use requests for Ollama
-            self.model = Config.OLLAMA_MODEL
-            self.fallback_client = None
+        """Initialize the LM Studio client."""
+        from services.lmstudio_service import get_lmstudio_service
+        
+        lmstudio = get_lmstudio_service()
+        self._lmstudio_available = lmstudio.is_available()
+        
+        if self._lmstudio_available:
+            self.client = lmstudio
+            self.model = Config.LMSTUDIO_MODEL
+            logger.info(f"🖥️ LM Studio connected at {Config.LMSTUDIO_BASE_URL}")
         else:
-            raise ValueError(f"Unknown LLM provider: {self.provider}")
+            logger.warning(
+                "🔌 LM Studio not available. Running in RAG-only mode. "
+                "Start LM Studio with a model loaded for full AI responses."
+            )
+
+    def is_llm_available(self) -> bool:
+        """Check if an LLM is currently available for generation."""
+        self._lazy_init()
+        if self._lmstudio_available:
+            return True
+        # Re-check in case LM Studio was started after init
+        from services.lmstudio_service import get_lmstudio_service
+        self._lmstudio_available = get_lmstudio_service().is_available()
+        if self._lmstudio_available:
+            self.client = get_lmstudio_service()
+            self.model = Config.LMSTUDIO_MODEL
+        return self._lmstudio_available
     
     def _retry_with_backoff(self, func, *args, **kwargs):
         """
         Execute function with exponential backoff retry.
-        Automatically rotates API keys on quota errors.
         Returns (success, result_or_error)
         """
         last_error = None
         
-        # Dynamic retries - if we rotate keys, we can try more times
-        max_attempts = self.max_retries + len(Config.GEMINI_API_KEYS) if Config.GEMINI_API_KEYS else self.max_retries
-        
-        for attempt in range(max_attempts):
+        for attempt in range(self.max_retries):
             try:
                 result = func(*args, **kwargs)
                 return True, result
@@ -202,27 +152,10 @@ class LLMService:
                 last_error = e
                 error_msg = str(e).lower()
                 
-                # Check for Quota/Rate Limit Errors
-                if 'quota' in error_msg or 'limit' in error_msg or '429' in error_msg:
-                    logger.warning(f"Rate limit hit with key {self._current_key_index}: {e}")
-                    
-                    # Try to rotate key
-                    if self._rotate_key():
-                        logger.info("Retrying immediately with new key...")
-                        time.sleep(0.5) # Brief pause before retry
-                        continue
-                    else:
-                         logger.error("No other keys available for rotation.")
-                         return False, e
-                
-                # Don't retry on Auth errors unless we can rotate? 
-                # Usually auth error means invalid key, so maybe we SHOULD rotate.
-                if 'api key' in error_msg or 'authentication' in error_msg:
-                     logger.warning(f"Auth error with key {self._current_key_index}: {e}")
-                     if self._rotate_key():
-                         logger.info("Rotated key due to auth failure, retrying...")
-                         continue
-                     return False, e
+                # Don't retry on connection errors (LM Studio is down)
+                if 'connection' in error_msg or 'connect' in error_msg:
+                    logger.warning("LM Studio connection failed, not retrying")
+                    return False, e
                 
                 # Exponential backoff for other errors
                 if attempt < self.max_retries - 1:
@@ -240,12 +173,15 @@ class LLMService:
         max_tokens: int = None
     ) -> str:
         """
-        Generate a response from the LLM with automatic fallback, retry, and circuit breaker.
+        Generate a response from LM Studio.
+        
+        If LM Studio is unavailable, returns a message indicating
+        RAG-only mode. The chat service will handle context injection.
         
         Args:
             system_prompt: The system message defining bot personality
             messages: List of message dicts with 'role' and 'content'
-            temperature: Creativity of responses (0-1)
+            temperature: Creativity of responses (0-2)
             max_tokens: Maximum response length
             
         Returns:
@@ -254,212 +190,74 @@ class LLMService:
         # Lazy initialization
         self._lazy_init()
         
-        if self._init_error:
-            return f"I'm having trouble connecting to the AI service. Please check your API key configuration."
+        # Check if LLM is available
+        if not self.is_llm_available():
+            return self._rag_only_response()
         
         # Check circuit breaker
         if not self._circuit_breaker.can_proceed():
-            logger.warning("Circuit breaker is OPEN, blocking request")
-            if self.fallback_client:
-                logger.info("Attempting fallback while circuit is open")
-                return self._try_fallback(system_prompt, messages, temperature, max_tokens)
-            return "I'm temporarily unavailable. Please try again in a minute."
+            logger.warning("Circuit breaker is OPEN, blocking LLM request")
+            return self._rag_only_response()
         
         temperature = temperature or Config.TEMPERATURE
         max_tokens = max_tokens or Config.MAX_TOKENS
         
-        # PII Scrubbing: Strip sensitive data before sending to cloud LLMs
-        if self.provider in ('gemini', 'openai'):
-            try:
-                from services.pii_scrubber_service import get_pii_scrubber_service
-                scrubber = get_pii_scrubber_service()
-                system_prompt = scrubber.scrub(system_prompt)
-                messages = scrubber.scrub_messages(messages)
-            except Exception as e:
-                logger.warning(f"PII scrubber error (non-fatal): {e}")
-        
-        # Try primary provider with retry
-        success, result = self._try_primary(system_prompt, messages, temperature, max_tokens)
+        # Try LM Studio with retry
+        success, result = self._try_lmstudio(system_prompt, messages, temperature, max_tokens)
         
         if success:
             self._circuit_breaker.record_success()
             return result
         
-        # Primary failed - record failure
+        # LM Studio failed — record failure
         self._circuit_breaker.record_failure()
+        self._lmstudio_available = False
         
-        # Try fallback
-        if self.fallback_client and self.fallback_provider == 'openai':
-            logger.info("Falling back to OpenAI...")
-            return self._try_fallback(system_prompt, messages, temperature, max_tokens)
-        
-        # No fallback available
-        return self._format_error_message(result)
+        return self._rag_only_response()
     
-    def _try_primary(self, system_prompt, messages, temperature, max_tokens):
-        """Try primary provider with retry logic."""
+    def _try_lmstudio(self, system_prompt, messages, temperature, max_tokens):
+        """Try LM Studio with retry logic."""
         def generate():
-            if self.provider == 'gemini':
-                return self._gemini_generate(system_prompt, messages, temperature, max_tokens)
-            elif self.provider == 'openai':
-                return self._openai_generate(system_prompt, messages, temperature, max_tokens)
-            elif self.provider == 'ollama':
-                return self._ollama_generate(system_prompt, messages, temperature, max_tokens)
+            return self._lmstudio_generate(system_prompt, messages, temperature, max_tokens)
         
         return self._retry_with_backoff(generate)
     
-    def _try_fallback(self, system_prompt, messages, temperature, max_tokens):
-        """Try fallback provider."""
-        try:
-            return self._openai_fallback_generate(system_prompt, messages, temperature, max_tokens)
-        except Exception as e:
-            logger.error(f"Fallback also failed: {e}")
-            return self._format_error_message(e)
-    
-    def _format_error_message(self, error) -> str:
-        """Format error into a user-friendly message."""
-        error_msg = str(error).lower() if error else 'unknown error'
-        
-        if 'api key' in error_msg or 'authentication' in error_msg:
-            return "API key seems invalid. Please check your API configuration."
-        elif 'quota' in error_msg or 'limit' in error_msg or 'rate' in error_msg:
-            return "API limit reached. Please try again later."
-        elif 'timeout' in error_msg:
-            return "Request timed out. Please try again."
-        elif 'connection' in error_msg:
-            return "Could not connect to AI service. Please check your internet connection."
-        else:
-            return "I couldn't generate a response. Please try again."
-    
-    def _gemini_generate(
+    def _lmstudio_generate(
         self,
         system_prompt: str,
         messages: List[Dict[str, str]],
         temperature: float,
         max_tokens: int
     ) -> str:
-        """Generate using Google Gemini API."""
-        model = self.client.GenerativeModel(
-            model_name=self.model,
-            system_instruction=system_prompt,
-            generation_config={
-                "temperature": temperature,
-                "max_output_tokens": max_tokens,
-            }
-        )
-        
-        # Convert messages to Gemini format
-        chat_history = []
-        for msg in messages[:-1]:  # All but last message
-            role = "user" if msg['role'] == 'user' else "model"
-            chat_history.append({
-                "role": role,
-                "parts": [msg['content']]
-            })
-        
-        chat = model.start_chat(history=chat_history)
-        
-        # Send the last message
-        last_msg = messages[-1]['content'] if messages else ""
-        response = chat.send_message(last_msg)
-        
-        return response.text
-    
-    def _openai_generate(
-        self,
-        system_prompt: str,
-        messages: List[Dict[str, str]],
-        temperature: float,
-        max_tokens: int
-    ) -> str:
-        """Generate using OpenAI API."""
-        full_messages = [{"role": "system", "content": system_prompt}] + messages
-        
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=full_messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=self.request_timeout
-        )
-        
-        return response.choices[0].message.content
-    
-    def _openai_fallback_generate(
-        self,
-        system_prompt: str,
-        messages: List[Dict[str, str]],
-        temperature: float,
-        max_tokens: int
-    ) -> str:
-        """Generate using OpenAI API as fallback."""
-        full_messages = [{"role": "system", "content": system_prompt}] + messages
-        
-        response = self.fallback_client.chat.completions.create(
-            model=Config.OPENAI_MODEL,
-            messages=full_messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=self.request_timeout
-        )
-        
-        return response.choices[0].message.content
-    
-
-    
-    def _ollama_generate(
-        self,
-        system_prompt: str,
-        messages: List[Dict[str, str]],
-        temperature: float,
-        max_tokens: int
-    ) -> str:
-        """Generate using local Ollama via OllamaService."""
-        from services.ollama_service import get_ollama_service
+        """Generate using LM Studio via LMStudioService."""
+        from services.lmstudio_service import get_lmstudio_service
         
         # Prepare messages including system prompt
-        ollama_messages = [{"role": "system", "content": system_prompt}] + messages
+        lm_messages = [{"role": "system", "content": system_prompt}] + messages
         
-        try:
-            return get_ollama_service().generate_chat(
-                messages=ollama_messages,
-                model=self.model,
-                temperature=temperature,
-                max_tokens=max_tokens
-            )
-        except Exception as e:
-            logger.error(f"Ollama generation failed: {e}")
-            return "I'm having trouble connecting to my local brain (Ollama). Please ensure it's running."
+        return get_lmstudio_service().generate_chat(
+            messages=lm_messages,
+            model=self.model,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+    
+    def _rag_only_response(self) -> str:
+        """
+        Return a response indicating RAG-only mode.
+        The chat service should detect this and use context files instead.
+        """
+        return (
+            "I'm currently running in knowledge-base mode (LM Studio is not connected). "
+            "I can still answer based on my stored knowledge and context files. "
+            "For full conversational AI, please start LM Studio with a model loaded."
+        )
     
     def get_embedding(self, text: str) -> List[float]:
         """
         Get text embedding for similarity search.
-        Uses Gemini embeddings if available, otherwise sentence-transformers.
+        Uses local sentence-transformers (always available, no LLM needed).
         """
-        self._lazy_init()
-        
-        if self.provider == 'gemini' and self.client and Config.GEMINI_API_KEY:
-            try:
-                result = self.client.embed_content(
-                    model="models/embedding-001",
-                    content=text,
-                    task_type="retrieval_document"
-                )
-                return result['embedding']
-            except Exception as e:
-                logger.warning(f"Gemini embedding failed, using local: {e}")
-                
-        if self.provider == 'openai' and self.client and Config.OPENAI_API_KEY:
-            try:
-                response = self.client.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=text
-                )
-                return response.data[0].embedding
-            except Exception as e:
-                logger.warning(f"OpenAI embedding failed, using local: {e}")
-        
-        # Fallback to local sentence-transformers
         from sentence_transformers import SentenceTransformer
         if not hasattr(self, '_embedding_model'):
             self._embedding_model = SentenceTransformer(Config.EMBEDDING_MODEL)
@@ -471,8 +269,9 @@ class LLMService:
         """
         Load a custom LoRA adapter for inference.
         
-        This registers the adapter with Ollama if using local inference,
-        or updates the model path for direct loading.
+        For LM Studio, GGUF models can be loaded directly.
+        The adapter would need to be merged with the base model first
+        and exported as GGUF, then loaded in LM Studio.
         
         Args:
             adapter_path: Path to the trained adapter directory
@@ -494,93 +293,31 @@ class LLMService:
         self._current_adapter = adapter_path
         self._adapter_loaded = True
         
-        # If using Ollama, check for GGUF and register
-        if self.provider == 'ollama':
-            gguf_dir = os.path.join(adapter_path, "gguf")
-            if os.path.exists(gguf_dir):
-                gguf_files = [f for f in os.listdir(gguf_dir) if f.endswith('.gguf')]
-                if gguf_files:
-                    gguf_path = os.path.join(gguf_dir, gguf_files[0])
-                    adapter_name = os.path.basename(adapter_path)
-                    
-                    # Create Modelfile for Ollama
-                    self._register_ollama_model(gguf_path, adapter_name)
-                    
-                    # Update model to use the custom adapter
-                    self.model = adapter_name
-                    
-                    logger.info(f"Loaded GGUF adapter: {adapter_name}")
-                    return {
-                        "success": True,
-                        "adapter": adapter_name,
-                        "path": gguf_path,
-                        "provider": "ollama"
-                    }
+        # Check for GGUF export
+        gguf_dir = os.path.join(adapter_path, "gguf")
+        if os.path.exists(gguf_dir):
+            gguf_files = [f for f in os.listdir(gguf_dir) if f.endswith('.gguf')]
+            if gguf_files:
+                logger.info(
+                    f"Found GGUF export: {gguf_files[0]}. "
+                    "Load this file in LM Studio to use the fine-tuned model."
+                )
+                return {
+                    "success": True,
+                    "adapter": os.path.basename(adapter_path),
+                    "gguf_file": os.path.join(gguf_dir, gguf_files[0]),
+                    "provider": "lmstudio",
+                    "note": "Load the GGUF file in LM Studio to use this adapter."
+                }
         
-        # For other providers, we note the adapter but can't directly load
-        # The adapter would need to be merged with the base model first
         logger.info(f"Adapter registered: {adapter_path}")
         return {
             "success": True,
             "adapter": os.path.basename(adapter_path),
             "path": adapter_path,
             "provider": self.provider,
-            "note": "Adapter registered. For cloud providers, merge adapter with base model first."
+            "note": "Merge adapter with base model and export as GGUF for LM Studio."
         }
-    
-    def _register_ollama_model(self, gguf_path: str, model_name: str) -> bool:
-        """Register a GGUF model with Ollama."""
-        import subprocess
-        import tempfile
-        
-        modelfile_content = f"""FROM {gguf_path}
-
-TEMPLATE \"\"\"<|im_start|>system
-{{{{ .System }}}}<|im_end|>
-<|im_start|>user
-{{{{ .Prompt }}}}<|im_end|>
-<|im_start|>assistant
-\"\"\"
-
-PARAMETER stop "<|im_start|>"
-PARAMETER stop "<|im_end|>"
-PARAMETER temperature 0.7
-PARAMETER top_p 0.9
-"""
-        
-        try:
-            # Write temporary Modelfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.modelfile', delete=False) as f:
-                f.write(modelfile_content)
-                modelfile_path = f.name
-            
-            # Run ollama create
-            result = subprocess.run(
-                ["ollama", "create", model_name, "-f", modelfile_path],
-                capture_output=True,
-                text=True,
-                timeout=300  # 5 min timeout for model creation
-            )
-            
-            import os
-            os.unlink(modelfile_path)
-            
-            if result.returncode == 0:
-                logger.info(f"Registered Ollama model: {model_name}")
-                return True
-            else:
-                logger.error(f"Failed to register Ollama model: {result.stderr}")
-                return False
-                
-        except subprocess.TimeoutExpired:
-            logger.error("Ollama model creation timed out")
-            return False
-        except FileNotFoundError:
-            logger.error("Ollama CLI not found. Please install Ollama.")
-            return False
-        except Exception as e:
-            logger.error(f"Error registering Ollama model: {e}")
-            return False
     
     def unload_adapter(self) -> Dict[str, Any]:
         """
@@ -593,12 +330,7 @@ PARAMETER top_p 0.9
             return {"success": True, "message": "No adapter was loaded"}
         
         # Reset to default model
-        if self.provider == 'gemini':
-            self.model = Config.GEMINI_MODEL
-        elif self.provider == 'openai':
-            self.model = Config.OPENAI_MODEL
-        elif self.provider == 'ollama':
-            self.model = Config.OLLAMA_MODEL
+        self.model = Config.LMSTUDIO_MODEL
         
         self._current_adapter = None
         self._adapter_loaded = False
@@ -680,8 +412,6 @@ PARAMETER top_p 0.9
         Returns:
             Benchmark results with timing and quality metrics
         """
-        import time
-        
         if prompts is None:
             prompts = [
                 "Hello, how are you doing today?",
