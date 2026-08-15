@@ -7,20 +7,12 @@ import threading
 from typing import Optional, Any
 from datetime import datetime
 
-# python-telegram-bot is optional
 try:
     from telegram import Update
-    from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+    from telegram.ext import Application, ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
-    class _MockUpdate:
-        ALL_TYPES = None
-    class _MockContextTypes:
-        DEFAULT_TYPE = Any
-    Update = _MockUpdate  # type: ignore
-    Application = Any  # type: ignore
-    ContextTypes = _MockContextTypes  # type: ignore
 
 
 class TelegramBotService:
