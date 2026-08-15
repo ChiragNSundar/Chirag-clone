@@ -152,6 +152,13 @@ export const ChatInterface = () => {
         } catch (error) {
             console.error(error);
             setIsThinking(false);
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: "I ran into an issue connecting to the AI backend. Please check that LM Studio is running on localhost:1234 or try again.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMsg]);
         } finally {
             setIsLoading(false);
         }

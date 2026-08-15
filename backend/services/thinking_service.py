@@ -107,8 +107,9 @@ Format your thinking as a brief internal monologue (2-4 sentences), then list ke
 THINKING:"""
 
         try:
-            response = self.llm.generate(
-                prompt=thinking_prompt,
+            response = self.llm.generate_response(
+                system_prompt=thinking_prompt,
+                messages=[],
                 max_tokens=300,
                 temperature=0.7
             )
