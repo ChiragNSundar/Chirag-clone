@@ -124,18 +124,7 @@ async def health_check(detailed: bool = False):
         except Exception as e:
             health_monitor.update_status("memory", False, str(e))
         
-        # Check voice service
-        try:
-            from services.voice_service import get_voice_service
-            voice = get_voice_service()
-            voice_status = voice.get_status()
-            health_monitor.update_status(
-                "voice",
-                voice_status.get("tts_available", False) or voice_status.get("stt_available", False),
-                f"TTS: {voice_status.get('tts_available')}, STT: {voice_status.get('stt_available')}"
-            )
-        except Exception as e:
-            health_monitor.update_status("voice", False, str(e))
+        # Voice service removed (local-first)
         
         # Check knowledge service
         try:

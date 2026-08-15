@@ -209,24 +209,12 @@ class TestConfigValidation:
         from config import Config
         
         # Required attributes
-        assert hasattr(Config, 'GEMINI_API_KEY')
+        assert hasattr(Config, 'LMSTUDIO_BASE_URL')
         assert hasattr(Config, 'LLM_PROVIDER')
         assert hasattr(Config, 'DATA_DIR')
         assert hasattr(Config, 'MAX_MESSAGE_LENGTH')
         assert hasattr(Config, 'LLM_RETRY_COUNT')
-        
-    def test_gemini_models_list(self):
-        """Test that GEMINI_MODELS list exists and is valid."""
-        from config import Config
-        
-        assert hasattr(Config, 'GEMINI_MODELS')
-        assert isinstance(Config.GEMINI_MODELS, list)
-        assert len(Config.GEMINI_MODELS) > 0
-        
-        # All should be v2+ or gemma
-        for model in Config.GEMINI_MODELS:
-            is_valid = 'gemini-2' in model.lower() or 'gemma' in model.lower()
-            assert is_valid, f"Invalid model in hierarchy: {model}"
+        assert Config.LLM_PROVIDER == 'lmstudio'
 
 
 if __name__ == '__main__':
