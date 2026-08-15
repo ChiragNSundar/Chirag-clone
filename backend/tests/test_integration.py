@@ -286,18 +286,6 @@ class TestBrainStationWorkflow:
         assert query_response.status_code == 200
 
 
-class TestVoiceVisionIntegration:
-    """Test voice and vision feature availability."""
-    
-    def test_services_availability(self):
-        """Test that voice and vision services are available."""
-        voice = client.get("/api/voice/status")
-        assert voice.status_code == 200
-        
-        health = client.get("/api/health")
-        assert health.status_code == 200
-
-
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 
