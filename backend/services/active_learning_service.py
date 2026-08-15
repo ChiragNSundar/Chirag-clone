@@ -259,8 +259,9 @@ Only list clear, factual information. If no clear facts, respond with "None".
 Facts:"""
 
         try:
-            response = self.llm.generate(
-                prompt=prompt,
+            response = self.llm.generate_response(
+                system_prompt=prompt,
+                messages=[],
                 max_tokens=200,
                 temperature=0.3
             )

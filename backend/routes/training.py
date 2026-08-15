@@ -584,3 +584,89 @@ async def import_brain_data(file: UploadFile = File(...), merge: bool = Form(Tru
         logger.error(f"Import error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============= Train by Chatting (Assessment & Extraction) Endpoints =============
+
+@router.get("/chat/prompt")
+async def get_training_prompt():
+    """Get a personality assessment question to ask the user."""
+    try:
+        from services.active_learning_service import get_active_learning_service
+        active_learning = get_active_learning_service()
+        
+        questions = active_learning.generate_proactive_questions(max_questions=1)
+        if questions and len(questions) > 0:
+            prompt_text = questions[0]['question']
+            domain = questions[0].get('domain', 'general')
+        else:
+            prompt_text = "What is a core value or principle that guides how you make decisions?"
+            domain = "personality"
+            
+        return {
+            "success": True,
+            "prompt": prompt_text,
+            "domain": domain
+        }
+    except Exception as e:
+        logger.error(f"Error generating training prompt: {e}")
+        return {
+            "success": True,
+            "prompt": "How do you usually react when something unexpected happens?",
+            "domain": "general"
+        }
+
+
+@router.post("/chat")
+async def submit_training_chat(data: TrainingChatMessage):
+    """Process user response to a training prompt, extract facts & traits, and store permanently."""
+    try:
+        from services.active_learning_service import get_active_learning_service
+        active_learning = get_active_learning_service()
+        personality = _get_personality_service()
+        memory = _get_memory_service()
+        
+        # 1. Process answer & extract facts
+        res = active_learning.process_answer(
+            question=data.bot_message,
+            answer=data.user_response
+        )
+        extracted_facts = res.get('extracted_facts', [])
+        
+        # 2. Add as a training example in SQLite & Vector store
+        memory.add_training_example(
+            context=data.bot_message,
+            response=data.user_response,
+            source="train_by_chatting"
+        )
+        
+        # 3. Analyze user response style for personality traits (vocab, message length, emojis)
+        personality.analyze_messages([data.user_response])
+        
+        # Add facts to personality profile
+        for fact in extracted_facts:
+            personality.add_fact(fact)
+            
+        # 4. Save personality profile to file
+        personality.save_profile()
+        
+        # 5. Persistent File Backup to backend/data/context/learned_facts.txt
+        # This ensures that even across git pushes / fresh clones, the facts persist as a context file!
+        context_dir = Config.CONTEXT_FILES_DIR
+        os.makedirs(context_dir, exist_ok=True)
+        facts_file = os.path.join(context_dir, "learned_facts.txt")
+        
+        with open(facts_file, "a", encoding="utf-8") as f:
+            f.write(f"\n# Q: {data.bot_message}\n# A: {data.user_response}\n")
+            for fact in extracted_facts:
+                f.write(f"- {fact}\n")
+                
+        return {
+            "success": True,
+            "message": "Learned from response!",
+            "extracted_facts": extracted_facts,
+            "total_facts": len(personality.get_profile().facts)
+        }
+    except Exception as e:
+        logger.error(f"Error submitting training chat: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
