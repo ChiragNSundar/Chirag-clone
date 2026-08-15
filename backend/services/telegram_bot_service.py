@@ -66,17 +66,18 @@ class TelegramBotService:
         
         async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Handle /start command."""
-            await update.message.reply_text(
-                "Hi! I'm an AI clone. Send me a message and I'll respond!"
-            )
+            if update and update.message:
+                await update.message.reply_text(
+                    "Hi! I'm an AI clone. Send me a message and I'll respond!"
+                )
         
         async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Handle incoming messages."""
-            if not self.auto_reply_enabled:
+            if not self.auto_reply_enabled or not update or not update.message or not update.message.text:
                 return
             
             user_message = update.message.text
-            user_name = update.effective_user.first_name or "Unknown"
+            user_name = (update.effective_user.first_name if update.effective_user else "Unknown") or "Unknown"
             
             try:
                 # Generate response
@@ -94,15 +95,18 @@ class TelegramBotService:
                     response=response
                 )
                 
-                await update.message.reply_text(response)
+                if update.message:
+                    await update.message.reply_text(response)
             except Exception as e:
                 print(f"Telegram reply error: {e}")
-                await update.message.reply_text("Sorry, I couldn't process that right now.")
+                if update.message:
+                    await update.message.reply_text("Sorry, I couldn't process that right now.")
         
         async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             """Handle /status command."""
             status = "🟢 Autopilot Active" if self.auto_reply_enabled else "🔴 Autopilot Paused"
-            await update.message.reply_text(status)
+            if update and update.message:
+                await update.message.reply_text(status)
         
         try:
             self.app = Application.builder().token(self.token).build()

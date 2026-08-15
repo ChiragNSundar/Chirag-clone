@@ -7,10 +7,16 @@
   "typing_quirks": [],
   "tone_markers": {
     "casual": 0.5,
-    "formal": 0.5
+    "formal": 0.5,
+    "brief": 0.55
   },
   "facts": [
     "Only this fact"
   ],
-  "response_examples": []
+  "response_examples": [
+    {
+      "context": "Test context",
+      "response": "Test response"
+    }
+  ]
 }
