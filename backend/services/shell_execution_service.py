@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Shell Execution Service - Safe, sandboxed OS command execution.
 

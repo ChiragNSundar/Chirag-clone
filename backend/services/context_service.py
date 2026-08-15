@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Context Service - Offline RAG using local context files.
 Auto-loads .txt/.md/.json files from the context directory,

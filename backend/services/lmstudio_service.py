@@ -5,9 +5,10 @@ Uses the OpenAI-compatible API endpoint (http://localhost:1234/v1).
 LM Studio is the PRIMARY and ONLY LLM provider for this project.
 No cloud APIs are used — all inference stays local.
 """
+from __future__ import annotations
 import json
 import requests
-from typing import List, Dict, Optional, Any, Generator
+from typing import List, Dict, Optional, Any, Generator, Union
 from config import Config
 from services.logger import get_logger
 
@@ -82,7 +83,7 @@ class LMStudioService:
         temperature: float = 0.7,
         max_tokens: int = 4096,
         stream: bool = False
-    ) -> str | Generator:
+    ) -> Union[str, Generator]:
         """
         Generate chat response from LM Studio via OpenAI-compatible API.
 
