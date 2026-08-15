@@ -52,7 +52,6 @@ export const Layout = () => {
                     <NavItem to="/memory" icon={Network} label="Memory Graph" />
                     <NavItem to="/profile" icon={User} label="About Me" />
                     <NavItem to="/training" icon={GraduationCap} label="Training" />
-                    <NavItem to="/autopilot" icon={Bot} label="Autopilot" />
                 </nav>
 
                 <div className="p-4 rounded-xl bg-white/5 border border-white/10">
