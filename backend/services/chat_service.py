@@ -3,7 +3,7 @@ Chat Service - Orchestrates the chat generation process.
 Now includes active learning, analytics tracking, confidence scoring,
 knowledge base (RAG), vision support, and web search.
 """
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import time
 from .llm_service import get_llm_service
 from .personality_service import get_personality_service
@@ -24,7 +24,7 @@ class ChatService:
     """Main chat service that generates responses like the user."""
     
     # Simple LRU cache for responses
-    _response_cache = {}
+    _response_cache: Dict[str, str] = {}
     _cache_max_size = 100
     
     def __init__(self):
@@ -32,12 +32,13 @@ class ChatService:
         self.personality = get_personality_service()
         self.memory = get_memory_service()
         self.learning = get_learning_service()
+        self._response_cache = ChatService._response_cache
     
     def _get_cache_key(self, message: str) -> str:
         """Generate a cache key for a message."""
         return message.strip().lower()[:100]
     
-    def _check_cache(self, message: str) -> str:
+    def _check_cache(self, message: str) -> Optional[str]:
         """Check if response is cached."""
         key = self._get_cache_key(message)
         return self._response_cache.get(key)
@@ -59,11 +60,11 @@ class ChatService:
         self,
         user_message: str,
         session_id: str = "default",
-        image_data: str = None,
+        image_data: Optional[str] = None,
         include_examples: bool = True,
         training_mode: bool = False,
         enable_thinking: bool = True
-    ) -> Tuple[str, float, dict, dict]:
+    ) -> Tuple[str, float, Optional[dict], dict]:
         """
         Generate a response as the user's clone.
         

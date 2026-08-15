@@ -249,7 +249,7 @@ class SandboxService:
         if not is_safe:
             self._total_blocked += 1
             self._add_audit("blocked", code, reason)
-            logger.warning("Sandbox blocked unsafe code", reason=reason)
+            logger.warning(f"Sandbox blocked unsafe code: {reason}")
             return ExecutionResult(
                 success=False,
                 error=f"Code blocked: {reason}",
@@ -297,7 +297,7 @@ class SandboxService:
             result.error = f"Execution timed out after {effective_timeout}s"
             result.error_type = "TimeoutError"
             self._add_audit("timeout", code, result.error)
-            logger.warning("Sandbox execution timed out", timeout=effective_timeout)
+            logger.warning(f"Sandbox execution timed out after {effective_timeout}s")
         else:
             # Capture output
             stdout_val = stdout_capture.getvalue()

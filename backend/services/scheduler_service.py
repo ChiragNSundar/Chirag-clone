@@ -128,18 +128,22 @@ class SchedulerService:
                     hours=schedule.get('interval_hours', 24)
                 )
             elif trigger_type == 'once':
-                run_time = datetime.fromisoformat(schedule.get('run_at'))
+                run_at = schedule.get('run_at')
+                if not run_at:
+                    return
+                run_time = datetime.fromisoformat(str(run_at))
                 trigger = DateTrigger(run_date=run_time)
             else:
                 return
             
-            self.scheduler.add_job(
-                self._execute_schedule,
-                trigger=trigger,
-                id=schedule_id,
-                args=[schedule_id],
-                replace_existing=True
-            )
+            if self.scheduler:
+                self.scheduler.add_job(
+                    self._execute_schedule,
+                    trigger=trigger,
+                    id=schedule_id,
+                    args=[schedule_id],
+                    replace_existing=True
+                )
             
         except Exception as e:
             print(f"Error registering job {schedule_id}: {e}")
@@ -272,7 +276,8 @@ class SchedulerService:
             self._register_job(schedule_id, schedule)
         else:
             try:
-                self.scheduler.remove_job(schedule_id)
+                if self.scheduler:
+                    self.scheduler.remove_job(schedule_id)
             except:
                 pass
         

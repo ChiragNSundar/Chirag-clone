@@ -4,7 +4,7 @@ Telegram Bot Service - Autopilot for Telegram messages.
 import os
 import asyncio
 import threading
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 # python-telegram-bot is optional
@@ -14,8 +14,9 @@ try:
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
-    Update = None
-    Application = None
+    Update = Any  # type: ignore
+    Application = Any  # type: ignore
+    ContextTypes = Any  # type: ignore
 
 
 class TelegramBotService:
