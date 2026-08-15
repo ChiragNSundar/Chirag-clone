@@ -132,11 +132,14 @@ class DiscordBotService:
     
     def get_status(self) -> dict:
         """Get bot status."""
+    def get_status(self) -> dict:
+        """Get status of Discord bot."""
+        configured = self.is_configured()
         return {
-            'configured': self.is_configured(),
+            'configured': configured,
             'running': self.is_running,
-            'auto_reply_dms': self.auto_reply_dms,
-            'auto_reply_mentions': self.auto_reply_mentions,
+            'auto_reply_dms': self.auto_reply_dms if configured else False,
+            'auto_reply_mentions': self.auto_reply_mentions if configured else False,
             'recent_replies': len(self.reply_log)
         }
     

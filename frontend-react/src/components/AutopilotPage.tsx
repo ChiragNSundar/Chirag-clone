@@ -223,14 +223,14 @@ export const AutopilotPage = () => {
                     <div className="space-y-2 text-sm">
                         <div className="flex items-center justify-between p-2 rounded bg-white/5">
                             <span className="text-zinc-400">Auto-reply to DMs</span>
-                            <span className={discordStatus.auto_reply_dms ? 'text-green-400' : 'text-zinc-500'}>
-                                {discordStatus.auto_reply_dms ? 'ON' : 'OFF'}
+                            <span className={discordStatus.configured && discordStatus.auto_reply_dms ? 'text-green-400' : 'text-zinc-500'}>
+                                {discordStatus.configured && discordStatus.auto_reply_dms ? 'ON' : 'OFF'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between p-2 rounded bg-white/5">
                             <span className="text-zinc-400">Auto-reply to mentions</span>
-                            <span className={discordStatus.auto_reply_mentions ? 'text-green-400' : 'text-zinc-500'}>
-                                {discordStatus.auto_reply_mentions ? 'ON' : 'OFF'}
+                            <span className={discordStatus.configured && discordStatus.auto_reply_mentions ? 'text-green-400' : 'text-zinc-500'}>
+                                {discordStatus.configured && discordStatus.auto_reply_mentions ? 'ON' : 'OFF'}
                             </span>
                         </div>
                     </div>
@@ -247,8 +247,8 @@ export const AutopilotPage = () => {
                     <div className="space-y-2 text-sm">
                         <div className="flex items-center justify-between p-2 rounded bg-white/5">
                             <span className="text-zinc-400">Auto-reply enabled</span>
-                            <span className={telegramStatus.auto_reply_enabled ? 'text-green-400' : 'text-zinc-500'}>
-                                {telegramStatus.auto_reply_enabled ? 'ON' : 'OFF'}
+                            <span className={telegramStatus.configured && telegramStatus.auto_reply_enabled ? 'text-green-400' : 'text-zinc-500'}>
+                                {telegramStatus.configured && telegramStatus.auto_reply_enabled ? 'ON' : 'OFF'}
                             </span>
                         </div>
                     </div>

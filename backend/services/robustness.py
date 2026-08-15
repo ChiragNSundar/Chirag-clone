@@ -147,7 +147,8 @@ class GlobalExceptionMiddleware(BaseHTTPMiddleware):
                 status_code=500,
                 content={
                     "error": "Internal server error",
-                    "message": "An unexpected error occurred. Please try again later."
+                    "message": f"An unexpected error occurred: {str(e)}",
+                    "detail": str(e)
                 }
             )
 

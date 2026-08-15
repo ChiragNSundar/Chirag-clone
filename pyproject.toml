@@ -45,3 +45,7 @@ name = "chirag-clone"
 version = "2.6.0"
 description = "Personal AI Digital Twin"
 requires-python = ">=3.11"
+
+[tool.pyright]
+extraPaths = ["backend"]
+executionEnvironments = [{ root = ".", extraPaths = ["backend"] }]

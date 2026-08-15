@@ -1,0 +1,14 @@
+{
+  "extraPaths": [
+    "backend"
+  ],
+  "pythonVersion": "3.14",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "backend"
+      ]
+    }
+  ]
+}

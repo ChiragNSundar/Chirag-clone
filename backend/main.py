@@ -18,7 +18,7 @@ if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, ORJSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -48,8 +48,7 @@ for warning in config_warnings:
 app = FastAPI(
     title="Chirag Clone API",
     description="Personal AI Clone Bot API - v2.3 with Real-Time Voice, Vision, and Brain Station",
-    version="2.3.0",
-    default_response_class=ORJSONResponse
+    version="2.3.0"
 )
 
 # Initialize OpenTelemetry

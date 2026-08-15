@@ -129,10 +129,11 @@ class TelegramBotService:
     
     def get_status(self) -> dict:
         """Get bot status."""
+        configured = self.is_configured()
         return {
-            'configured': self.is_configured(),
+            'configured': configured,
             'running': self.is_running,
-            'auto_reply_enabled': self.auto_reply_enabled,
+            'auto_reply_enabled': self.auto_reply_enabled if configured else False,
             'recent_replies': len(self.reply_log)
         }
     
