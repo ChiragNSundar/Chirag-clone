@@ -279,6 +279,14 @@
       "response_time_ms": 0,
       "confidence": 0.6,
       "is_training": false
+    },
+    {
+      "timestamp": "2026-08-15T17:56:07.400144",
+      "user_message": "hi",
+      "bot_response": "I'm currently running in knowledge-base mode (LM Studio is not connected). I can still answer based on my stored knowledge and context files. For full conversational AI, please start LM Studio with a ",
+      "response_time_ms": 0,
+      "confidence": 0.6,
+      "is_training": false
     }
   ],
   "daily_stats": {
@@ -334,10 +342,10 @@
       }
     },
     "2026-08-15": {
-      "total_messages": 1,
+      "total_messages": 2,
       "training_messages": 0,
       "hours": {
-        "17": 1
+        "17": 2
       }
     }
   },
@@ -350,6 +358,7 @@
     "retarded": 1
   },
   "response_times": [
+    0,
     0,
     0,
     0,
@@ -421,6 +430,7 @@
     0.7,
     0.5,
     0.5,
+    0.6,
     0.6
   ]
 }
