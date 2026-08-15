@@ -5,15 +5,25 @@ Main application entry point.
 This is a refactored version of the original main.py with endpoints organized into routers.
 All endpoint logic has been moved to routes/ modules for better maintainability.
 """
+import sys
+import os
+import pathlib
+import logging
+import time
+
+# Ensure both backend dir and repo root are in sys.path
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(backend_dir)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-import os
-import logging
-import time
-import pathlib
 
 from config import Config, validate_config
 from services.logger import get_logger
