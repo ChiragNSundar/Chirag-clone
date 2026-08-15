@@ -56,7 +56,7 @@ if not exist ".env" (
 
 :: ============= Install Backend Dependencies =============
 echo [4/6] Checking backend dependencies...
-%PY_CMD% -c "import fastapi; import sqlmodel; import requests" >nul 2>&1
+%PY_CMD% -c "import fastapi; import sqlmodel; import requests; import orjson" >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo    Installing Python packages...
     %PIP_CMD% install -r requirements.txt
@@ -69,7 +69,7 @@ echo [5/6] Checking frontend dependencies...
 if not exist "frontend-react\node_modules" (
     echo    Installing npm packages...
     pushd frontend-react
-    call npm.cmd install
+    call npm.cmd install --ignore-scripts
     popd
     echo    Frontend dependencies installed.
 ) else (
@@ -102,16 +102,16 @@ if %ERRORLEVEL% neq 0 (
 )
 echo.
 
-:: Start backend in background window
+:: Start backend in separate persistent window
 echo Starting backend server (http://localhost:8000)...
-start "Chirag Clone Backend" /min cmd /c "cd /d %~dp0 && set PYTHONPATH=%~dp0backend;%~dp0 && %PY_CMD% -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
+start "Chirag Clone Backend" cmd /k "cd /d %~dp0 && set PYTHONPATH=%~dp0backend;%~dp0 && %PY_CMD% -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload"
 
-:: Wait 3s for backend
+:: Wait 3s for backend startup
 timeout /t 3 /nobreak >nul
 
-:: Start frontend in background window
+:: Start frontend in separate persistent window
 echo Starting frontend server (http://localhost:5173)...
-start "Chirag Clone Frontend" /min cmd /c "cd /d %~dp0\frontend-react && npm.cmd run dev"
+start "Chirag Clone Frontend" cmd /k "cd /d %~dp0\frontend-react && npm.cmd run dev"
 
 timeout /t 3 /nobreak >nul
 
@@ -128,4 +128,8 @@ echo    Opening browser...
 echo.
 
 start http://localhost:5173
-pause
+
+echo.
+echo Press any key to exit this installer window.
+echo (The Backend and Frontend windows will remain running.)
+pause >nul
