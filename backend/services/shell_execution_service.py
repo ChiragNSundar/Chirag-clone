@@ -358,7 +358,7 @@ class ShellExecutionService:
         safe_env = dict(os.environ)
         # Remove sensitive env vars from subprocess environment
         sensitive_keys = [
-            "GEMINI_API_KEY", "OPENAI_API_KEY", "JWT_SECRET",
+            "JWT_SECRET",
             "ELEVENLABS_API_KEY", "DISCORD_BOT_TOKEN",
             "TELEGRAM_BOT_TOKEN", "TWITTER_CLIENT_SECRET",
             "GOOGLE_CLIENT_SECRET", "GMAIL_CLIENT_SECRET",
