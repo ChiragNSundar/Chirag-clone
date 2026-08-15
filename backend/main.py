@@ -180,9 +180,7 @@ app.include_router(dashboard_router)
 from routes.autopilot import router as autopilot_router
 app.include_router(autopilot_router)
 
-# Voice routes (TTS, STT, real-time streaming)
-from routes.voice import router as voice_router
-app.include_router(voice_router)
+# Voice routes — REMOVED (ElevenLabs and cloud voice services removed)
 
 # Cognitive routes (core memory, active learning)
 from routes.cognitive import router as cognitive_router
