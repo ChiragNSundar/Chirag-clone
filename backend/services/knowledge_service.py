@@ -33,19 +33,23 @@ class KnowledgeService:
     CHUNK_OVERLAP = 50  # Overlap between chunks
     
     def __init__(self):
-        import chromadb
-        from chromadb.config import Settings
-        
-        self.client = chromadb.PersistentClient(
-            path=Config.CHROMA_DB_PATH,
-            settings=Settings(anonymized_telemetry=False)
-        )
-        
-        # Collection for knowledge documents
-        self.collection = self.client.get_or_create_collection(
-            name="knowledge_base",
-            metadata={"description": "Personal knowledge documents for RAG"}
-        )
+        try:
+            import chromadb  # type: ignore
+            from chromadb.config import Settings  # type: ignore
+            
+            self.client = chromadb.PersistentClient(
+                path=Config.CHROMA_DB_PATH,
+                settings=Settings(anonymized_telemetry=False)
+            )
+            
+            # Collection for knowledge documents
+            self.collection = self.client.get_or_create_collection(
+                name="knowledge_base",
+                metadata={"description": "Personal knowledge documents for RAG"}
+            )
+        except Exception:
+            self.client = None
+            self.collection = None
         
         # Document metadata storage (JSON file)
         self.metadata_path = os.path.join(Config.DATA_DIR, "knowledge_metadata.json")

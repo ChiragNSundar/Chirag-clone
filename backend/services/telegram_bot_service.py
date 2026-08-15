@@ -14,9 +14,13 @@ try:
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
-    Update = Any  # type: ignore
+    class _MockUpdate:
+        ALL_TYPES = None
+    class _MockContextTypes:
+        DEFAULT_TYPE = Any
+    Update = _MockUpdate  # type: ignore
     Application = Any  # type: ignore
-    ContextTypes = Any  # type: ignore
+    ContextTypes = _MockContextTypes  # type: ignore
 
 
 class TelegramBotService:
