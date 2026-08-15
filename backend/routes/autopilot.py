@@ -252,43 +252,7 @@ async def generate_twitter_reply(request: DraftRequest):
         return {"success": False, "error": str(e)}
 
 
-# ============= LinkedIn Endpoints =============
 
-@router.get("/linkedin/status")
-async def get_linkedin_status():
-    """Get LinkedIn autopilot status."""
-    try:
-        from services.linkedin_autopilot import get_linkedin_autopilot
-        service = get_linkedin_autopilot()
-        return service.get_status()
-    except Exception as e:
-        logger.error(f"LinkedIn status error: {e}")
-        return {"configured": False, "error": str(e)}
-
-
-@router.get("/linkedin/drafts")
-async def get_linkedin_drafts(status: Optional[str] = None):
-    """Get LinkedIn draft queue."""
-    try:
-        from services.linkedin_autopilot import get_linkedin_autopilot
-        service = get_linkedin_autopilot()
-        return {"drafts": service.get_drafts(status=status)}
-    except Exception as e:
-        logger.error(f"LinkedIn drafts error: {e}")
-        return {"drafts": []}
-
-
-@router.post("/linkedin/draft/reply")
-async def generate_linkedin_reply(request: DraftRequest):
-    """Generate a LinkedIn reply draft."""
-    try:
-        from services.linkedin_autopilot import get_linkedin_autopilot
-        service = get_linkedin_autopilot()
-        draft = service.generate_reply(original_text=request.text, topic=request.topic)
-        return {"success": True, "draft": draft}
-    except Exception as e:
-        logger.error(f"LinkedIn reply error: {e}")
-        return {"success": False, "error": str(e)}
 
 
 # ============= Gmail Endpoints =============
