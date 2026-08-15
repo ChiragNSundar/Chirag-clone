@@ -15,26 +15,10 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Check if chromadb is available
-try:
-    import chromadb
-    CHROMADB_AVAILABLE = True
-except ImportError:
-    CHROMADB_AVAILABLE = False
+from main import app
+from fastapi.testclient import TestClient
 
-# Skip all tests if chromadb is not installed
-pytestmark = pytest.mark.skipif(
-    not CHROMADB_AVAILABLE,
-    reason="chromadb not installed - skipping integration tests"
-)
-
-if CHROMADB_AVAILABLE:
-    from main import app
-    from fastapi.testclient import TestClient
-    client = TestClient(app)
-else:
-    # Dummy client for when chromadb is not available
-    client = None
+client = TestClient(app)
 
 
 class TestChatWorkflow:
