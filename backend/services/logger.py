@@ -1,32 +1,38 @@
 """
-Structured Logging Service using structlog.
+Structured Logging Service using structlog with standard logging fallback.
 Provides JSON logging in production and colored console logging in development.
 """
 import logging
 import sys
-import structlog
+
+try:
+    import structlog
+    HAS_STRUCTLOG = True
+except ImportError:
+    HAS_STRUCTLOG = False
+
 from config import Config
 
 def configure_logger():
-    """Configure structured logging.
-    
-    Uses PrintLoggerFactory with UTF-8 stdout to handle emoji on Windows
-    and avoid Python 3.14 stdlib logging incompatibilities.
-    """
-    
+    """Configure structured logging."""
+    if not HAS_STRUCTLOG:
+        logging.basicConfig(
+            level=Config.LOG_LEVEL,
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        )
+        return
+
     # Force UTF-8 stdout on Windows to handle emoji in log messages
     if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
         try:
             sys.stdout.reconfigure(encoding='utf-8', errors='replace')
         except Exception:
-            pass  # reconfigure not available in all environments
+            pass
 
     # Renderer based on environment
     if Config.DEBUG:
-        # Development: Colored console output
         renderer = structlog.dev.ConsoleRenderer()
     else:
-        # Production: JSON output
         renderer = structlog.processors.JSONRenderer()
 
     structlog.configure(
@@ -52,12 +58,13 @@ def configure_logger():
 
 
 def get_logger(name=None):
-    """Get a structured logger."""
-    return structlog.get_logger(name)
+    """Get a logger instance."""
+    if HAS_STRUCTLOG:
+        return structlog.get_logger(name)
+    return logging.getLogger(name or "app")
 
 # Auto-configure on import
 try:
     configure_logger()
 except Exception as e:
-    # Fallback if configuration fails (e.g. during circular imports or testing)
     print(f"Logging config failed: {e}")

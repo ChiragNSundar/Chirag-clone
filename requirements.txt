@@ -103,6 +103,7 @@ psutil>=5.9.0
 cachetools==6.2.4
 
 # Logging & Monitoring
+structlog>=24.0.0
 coloredlogs==15.0.1
 colorama==0.4.6
 rich==14.2.0
