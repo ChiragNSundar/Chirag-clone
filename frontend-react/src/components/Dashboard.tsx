@@ -114,29 +114,29 @@ export const Dashboard = () => {
         fetchData();
     }, []);
 
-    // Prepare chart data
-    const sourceChartData = data ? Object.entries(data.training.sources).map(([name, value]) => ({
+    // Prepare chart data safely
+    const sourceChartData = data?.training?.sources ? Object.entries(data.training.sources).map(([name, value]) => ({
         name: name.charAt(0).toUpperCase() + name.slice(1),
         value
     })) : [];
 
-    const emojiChartData = data ? Object.entries(data.personality.top_emojis).map(([emoji, count]) => ({
+    const emojiChartData = data?.personality?.top_emojis ? Object.entries(data.personality.top_emojis).map(([emoji, count]) => ({
         emoji,
         count
     })) : [];
 
     const metricsData = [
-        { name: 'Facts', value: data?.personality.facts_count || 0 },
-        { name: 'Quirks', value: data?.personality.quirks_count || 0 },
-        { name: 'Emojis', value: data?.personality.emoji_count || 0 },
-        { name: 'Examples', value: data?.training.total_examples || 0 },
+        { name: 'Facts', value: data?.personality?.facts_count || 0 },
+        { name: 'Quirks', value: data?.personality?.quirks_count || 0 },
+        { name: 'Emojis', value: data?.personality?.emoji_count || 0 },
+        { name: 'Examples', value: data?.training?.total_examples || 0 },
     ];
 
     const learningProgressData = [
         { name: 'Week 1', value: 10 },
         { name: 'Week 2', value: 25 },
         { name: 'Week 3', value: 45 },
-        { name: 'Week 4', value: data?.learning_progress.personality_score || 0 },
+        { name: 'Week 4', value: data?.learning_progress?.personality_score || 0 },
     ];
 
     if (loading) {
@@ -153,6 +153,8 @@ export const Dashboard = () => {
             </div>
         );
     }
+
+    const personalityScore = data?.learning_progress?.personality_score || 0;
 
     return (
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -173,28 +175,28 @@ export const Dashboard = () => {
                 <StatCard
                     icon={Database}
                     title="Training Examples"
-                    value={data?.training.total_examples || 0}
+                    value={data?.training?.total_examples || 0}
                     subtitle="Total data points"
                     color="primary"
                 />
                 <StatCard
                     icon={FileText}
                     title="Personal Facts"
-                    value={data?.personality.facts_count || 0}
+                    value={data?.personality?.facts_count || 0}
                     subtitle="Stored knowledge"
                     color="green"
                 />
                 <StatCard
                     icon={Zap}
                     title="Unique Quirks"
-                    value={data?.personality.quirks_count || 0}
+                    value={data?.personality?.quirks_count || 0}
                     subtitle="Communication patterns"
                     color="purple"
                 />
                 <StatCard
                     icon={Smile}
                     title="Emoji Patterns"
-                    value={data?.personality.emoji_count || 0}
+                    value={data?.personality?.emoji_count || 0}
                     subtitle="Expression styles"
                     color="yellow"
                 />
@@ -213,10 +215,10 @@ export const Dashboard = () => {
                         Personality Completion
                     </h3>
                     <div className="flex flex-col items-center">
-                        <ProgressRing progress={data?.learning_progress.personality_score || 0} size={160} />
+                        <ProgressRing progress={personalityScore} size={160} />
                         <p className="mt-4 text-sm text-zinc-400 text-center">
-                            {data?.learning_progress.personality_score || 0 < 30 ? 'Just getting started! Upload more data.' :
-                                data?.learning_progress.personality_score || 0 < 70 ? 'Making good progress on learning you.' :
+                            {personalityScore < 30 ? 'Just getting started! Upload more data.' :
+                                personalityScore < 70 ? 'Making good progress on learning you.' :
                                     'Excellent! Your clone knows you well.'}
                         </p>
                     </div>
@@ -354,8 +356,8 @@ export const Dashboard = () => {
                     Your Signature Phrases
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                    {(data?.personality.common_phrases || []).length > 0 ? (
-                        data?.personality.common_phrases.map((phrase, i) => (
+                    {(data?.personality?.common_phrases || []).length > 0 ? (
+                        data?.personality?.common_phrases?.map((phrase, i) => (
                             <span
                                 key={i}
                                 className="px-3 py-1.5 rounded-full text-sm"
@@ -383,13 +385,13 @@ export const Dashboard = () => {
                 <div className="flex items-center gap-4">
                     <Clock size={16} className="text-zinc-500" />
                     <span className="text-sm text-zinc-400">
-                        Avg message length: <span className="text-white font-medium">{data?.personality.avg_message_length || 0} characters</span>
+                        Avg message length: <span className="text-white font-medium">{data?.personality?.avg_message_length || 0} characters</span>
                     </span>
                 </div>
                 <div className="flex items-center gap-4">
                     <Brain size={16} className="text-zinc-500" />
                     <span className="text-sm text-zinc-400">
-                        Data sources: <span className="text-white font-medium">{data?.learning_progress.data_sources_count || 0} platforms</span>
+                        Data sources: <span className="text-white font-medium">{data?.learning_progress?.data_sources_count || 0} platforms</span>
                     </span>
                 </div>
             </motion.div>

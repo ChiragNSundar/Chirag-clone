@@ -106,7 +106,7 @@ start "Chirag Clone Backend" cmd /k "cd /d %~dp0 && set PYTHONPATH=%~dp0backend;
 ping -n 4 127.0.0.1 >nul
 
 :: Start frontend in separate persistent window
-echo Starting frontend server (http://localhost:5173)...
+echo Starting frontend server (http://localhost:5180)...
 start "Chirag Clone Frontend" cmd /k "cd /d %~dp0\frontend-react && npm.cmd run dev"
 
 ping -n 4 127.0.0.1 >nul
@@ -116,14 +116,14 @@ echo ============================================================
 echo    Chirag Clone is RUNNING!
 echo ============================================================
 echo.
-echo    Frontend UI: http://localhost:5173
+echo    Frontend UI: http://localhost:5180
 echo    Backend API: http://localhost:8000
 echo    API Docs:    http://localhost:8000/docs
 echo.
 echo    Opening browser...
 echo.
 
-start http://localhost:5173
+start http://localhost:5180
 
 echo.
 echo Press any key to exit this installer window.

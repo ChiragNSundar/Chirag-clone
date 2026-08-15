@@ -5,6 +5,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // Base Vite config
 const viteConfig = defineConfig({
+  server: {
+    port: 5180,
+    strictPort: false,
+  },
   plugins: [
     react(),
     VitePWA({
