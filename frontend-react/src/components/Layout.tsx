@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Network, User, GraduationCap, Bot } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Network, User, GraduationCap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 
