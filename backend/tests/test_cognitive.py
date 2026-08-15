@@ -11,33 +11,6 @@ def test_daily_briefing_generation():
     pytest.skip("daily_briefing_service removed - skipping test")
 
 
-# ============= Notion Sync Tests =============
-
-def test_notion_text_extraction():
-    """Test extracting text from Notion blocks."""
-    from services.notion_sync_service import NotionSyncService
-    
-    service = NotionSyncService()
-    
-    # Text block
-    block = {
-        'type': 'paragraph',
-        'paragraph': {
-            'rich_text': [{'plain_text': 'Hello World'}]
-        }
-    }
-    assert service._extract_text_from_block(block) == 'Hello World'
-    
-    # To-do block
-    todo_block = {
-        'type': 'to_do',
-        'to_do': {
-            'checked': True,
-            'rich_text': [{'plain_text': 'Task 1'}]
-        }
-    }
-    assert service._extract_text_from_block(todo_block) == '✓ Task 1'
-
 
 # ============= Memory Editing Tests =============
 

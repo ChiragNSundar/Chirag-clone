@@ -200,30 +200,7 @@ async def get_today_briefing(audio: bool = False):
         return {"text": "Could not generate briefing", "error": str(e)}
 
 
-# ============= Notion Sync =============
 
-@router.get("/notion/status")
-async def get_notion_status():
-    """Get Notion sync service status."""
-    try:
-        from services.notion_sync_service import get_notion_service
-        return get_notion_service().get_status()
-    except Exception as e:
-        logger.error(f"Notion status error: {e}")
-        return {"configured": False, "error": str(e)}
-
-
-@router.post("/notion/sync")
-async def trigger_notion_sync():
-    """Trigger manual Notion sync."""
-    try:
-        from services.notion_sync_service import get_notion_service
-        notion = get_notion_service()
-        result = await asyncio.to_thread(notion.sync_to_knowledge_base)
-        return result
-    except Exception as e:
-        logger.error(f"Notion sync error: {e}")
-        return {"success": False, "error": str(e)}
 
 
 # ============= Wake Word =============
