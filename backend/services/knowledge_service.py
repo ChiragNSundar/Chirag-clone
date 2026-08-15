@@ -333,11 +333,12 @@ class KnowledgeService:
             )
             
             chunks = []
-            if results and results.get('documents') and results['documents'][0]:
-                metadatas_list = results.get('metadatas')
-                distances_list = results.get('distances')
-                
-                for i, doc in enumerate(results['documents'][0]):
+            documents_list = results.get('documents') if results else None
+            metadatas_list = results.get('metadatas') if results else None
+            distances_list = results.get('distances') if results else None
+            
+            if documents_list and len(documents_list) > 0 and documents_list[0]:
+                for i, doc in enumerate(documents_list[0]):
                     meta = metadatas_list[0][i] if (metadatas_list and len(metadatas_list) > 0 and len(metadatas_list[0]) > i) else {}
                     distance = distances_list[0][i] if (distances_list and len(distances_list) > 0 and len(distances_list[0]) > i) else 0
                     

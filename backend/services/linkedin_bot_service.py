@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 # Try to import linkedin-api
 try:
-    from linkedin_api import Linkedin
+    from linkedin_api import Linkedin  # type: ignore
     HAS_LINKEDIN = True
 except ImportError:
     HAS_LINKEDIN = False
