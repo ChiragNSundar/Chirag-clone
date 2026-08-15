@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, ThumbsUp, ThumbsDown, Eye, EyeOff, Brain } from 'lucide-react';
 import { api } from '../services/api';
 import clsx from 'clsx';
-import { Avatar3D } from './Avatar3D';
 import { ThinkingBubble, ThinkingIndicator } from './ThinkingBubble';
 import { useMood } from '../contexts/MoodContext';
 
@@ -173,21 +172,6 @@ export const ChatInterface = () => {
                 </div>
             )}
 
-            {/* Avatar Panel */}
-            <div className="flex flex-col items-center gap-2">
-                <Avatar3D
-                    speaking={isSpeaking}
-                    text={currentSpeechText}
-                    visible={showAvatar}
-                />
-                <button
-                    onClick={() => setShowAvatar(!showAvatar)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs bg-zinc-800/50 hover:bg-zinc-700 border border-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                >
-                    {showAvatar ? <EyeOff size={14} /> : <Eye size={14} />}
-                    {showAvatar ? 'Hide Avatar' : 'Show Avatar'}
-                </button>
-            </div>
 
             {/* Chat Panel */}
             <div className="flex-1 flex flex-col gap-4">

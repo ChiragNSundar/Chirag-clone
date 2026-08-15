@@ -13,10 +13,6 @@ vi.mock('../services/api', () => ({
     }
 }));
 
-// Mock Avatar3D since it uses Three.js which doesn't work in jsdom
-vi.mock('./Avatar3D', () => ({
-    Avatar3D: () => <div data-testid="mock-avatar">Avatar</div>
-}));
 
 // Mock ThinkingBubble
 vi.mock('./ThinkingBubble', () => ({
