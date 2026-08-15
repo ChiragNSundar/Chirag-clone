@@ -200,56 +200,7 @@ async def get_autopilot_logs():
         return {"logs": []}
 
 
-# ============= Twitter/X Endpoints =============
 
-@router.get("/twitter/status")
-async def get_twitter_status():
-    """Get Twitter autopilot status."""
-    try:
-        from services.twitter_autopilot import get_twitter_autopilot
-        service = get_twitter_autopilot()
-        return service.get_status()
-    except Exception as e:
-        logger.error(f"Twitter status error: {e}")
-        return {"configured": False, "error": str(e)}
-
-
-@router.get("/twitter/drafts")
-async def get_twitter_drafts(status: Optional[str] = None):
-    """Get Twitter draft queue."""
-    try:
-        from services.twitter_autopilot import get_twitter_autopilot
-        service = get_twitter_autopilot()
-        return {"drafts": service.get_drafts(status=status)}
-    except Exception as e:
-        logger.error(f"Twitter drafts error: {e}")
-        return {"drafts": []}
-
-
-@router.post("/twitter/draft/tweet")
-async def generate_tweet_draft(request: DraftRequest):
-    """Generate a tweet draft."""
-    try:
-        from services.twitter_autopilot import get_twitter_autopilot
-        service = get_twitter_autopilot()
-        draft = service.generate_draft(topic=request.topic or request.text)
-        return {"success": True, "draft": draft}
-    except Exception as e:
-        logger.error(f"Twitter draft error: {e}")
-        return {"success": False, "error": str(e)}
-
-
-@router.post("/twitter/draft/reply")
-async def generate_twitter_reply(request: DraftRequest):
-    """Generate a reply draft."""
-    try:
-        from services.twitter_autopilot import get_twitter_autopilot
-        service = get_twitter_autopilot()
-        draft = service.generate_reply(original_text=request.text, topic=request.topic)
-        return {"success": True, "draft": draft}
-    except Exception as e:
-        logger.error(f"Twitter reply error: {e}")
-        return {"success": False, "error": str(e)}
 
 
 

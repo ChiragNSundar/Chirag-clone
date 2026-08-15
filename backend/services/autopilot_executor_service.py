@@ -344,12 +344,6 @@ class AutopilotExecutorService:
                 if hasattr(bot, "send_message"):
                     return bot.send_message(draft.recipient_id, draft.content)
 
-            elif platform == "gmail":
-                from services.gmail_bot_service import get_gmail_bot_service
-                bot = get_gmail_bot_service()
-                if hasattr(bot, "send_draft"):
-                    return bot.send_draft(draft.recipient_id, draft.content)
-
             elif platform == "twitter":
                 from services.twitter_bot_service import get_twitter_bot_service
                 bot = get_twitter_bot_service()
