@@ -8,7 +8,6 @@ import {
   LazyTrainingCenter,
   LazyMemoryGraph,
   LazyProfilePage,
-  LazyAutopilotPage,
   LazyWrapper
 } from './utils/lazyLoad';
 // ChatInterface remains eager loaded as it's the main entry point often accessed
@@ -62,11 +61,7 @@ function App() {
             }
           />
 
-          <Route path="autopilot" element={
-            <LazyWrapper>
-              <LazyAutopilotPage />
-            </LazyWrapper>
-          } />
+
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
