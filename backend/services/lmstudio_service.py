@@ -6,11 +6,21 @@ LM Studio is the PRIMARY and ONLY LLM provider for this project.
 No cloud APIs are used — all inference stays local.
 """
 from __future__ import annotations
+import sys
+import os
 import json
 import requests
 from typing import List, Dict, Optional, Any, Generator, Union
-from config import Config
-from services.logger import get_logger
+
+# Ensure backend root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from config import Config
+    from services.logger import get_logger
+except ImportError:
+    from backend.config import Config
+    from backend.services.logger import get_logger
 
 logger = get_logger(__name__)
 

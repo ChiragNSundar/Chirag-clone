@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Rewind Service - Temporal memory buffer for desktop screen capture.
 Enables answering questions like "What was I looking at 10 minutes ago?"
@@ -6,14 +7,23 @@ import base64
 import io
 import time
 import hashlib
+import sys
+import os
 from typing import Optional, Dict, List
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from collections import deque
 from threading import Lock
 
-from services.logger import get_logger
-from config import Config
+# Ensure backend root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from services.logger import get_logger
+    from config import Config
+except ImportError:
+    from backend.services.logger import get_logger
+    from backend.config import Config
 
 logger = get_logger(__name__)
 
