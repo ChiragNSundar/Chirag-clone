@@ -195,11 +195,7 @@ app.include_router(knowledge_router)
 
 # Vision routes — REMOVED (local-first, no cloud multimodal API)
 
-# Agent routes (web browsing)
-from routes.agent import router as agent_router
-app.include_router(agent_router)
-
-# Features routes (creative, personality history, calendar, quiz, research, rewind)
+# Features routes (creative, personality history, quiz, research)
 from routes.features import router as features_router
 app.include_router(features_router)
 

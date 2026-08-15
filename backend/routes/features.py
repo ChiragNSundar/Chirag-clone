@@ -118,41 +118,7 @@ async def get_personality_evolution():
 
 # ============= Calendar =============
 
-@router.get("/api/calendar/status")
-async def get_calendar_status():
-    """Get calendar service status."""
-    try:
-        from services.calendar_service import get_calendar_service
-        service = get_calendar_service()
-        return service.get_status()
-    except Exception as e:
-        logger.error(f"Calendar status error: {e}")
-        return {"configured": False, "error": str(e)}
 
-
-@router.get("/api/calendar/events")
-async def get_calendar_events(days: int = 7):
-    """Get upcoming calendar events."""
-    try:
-        from services.calendar_service import get_calendar_service
-        service = get_calendar_service()
-        return {"events": service.get_upcoming_events(days=days)}
-    except Exception as e:
-        logger.error(f"Calendar events error: {e}")
-        return {"events": []}
-
-
-@router.get("/api/calendar/today-summary")
-async def get_today_summary():
-    """Get AI-generated summary of today's schedule."""
-    try:
-        from services.calendar_service import get_calendar_service
-        service = get_calendar_service()
-        summary = await asyncio.to_thread(service.get_today_summary)
-        return {"summary": summary}
-    except Exception as e:
-        logger.error(f"Today summary error: {e}")
-        return {"summary": "Unable to retrieve today's schedule."}
 
 
 # ============= Accuracy Quiz =============
@@ -285,92 +251,5 @@ async def research_status():
         return {"available": False, "error": str(e)}
 
 
-# ============= Desktop Rewind Memory =============
 
-@router.post("/api/rewind/frame")
-async def add_rewind_frame(
-    image_base64: str = Form(...),
-    window_name: str = Form(...),
-    mime_type: str = Form(default="image/png")
-):
-    """
-    Add a frame to the rewind buffer.
-    Called by the desktop widget during continuous capture.
-    """
-    try:
-        from services.rewind_service import get_rewind_service
-        service = get_rewind_service()
-        success = service.add_frame(image_base64, window_name, mime_type)
-        return {"success": success}
-    except Exception as e:
-        logger.error(f"Rewind frame error: {e}")
-        return {"success": False, "error": str(e)}
-
-
-@router.post("/api/rewind/query")
-async def query_rewind(data: RewindQuery):
-    """
-    Query the rewind buffer using natural language.
-    """
-    try:
-        from services.rewind_service import get_rewind_service
-        service = get_rewind_service()
-        
-        result = await asyncio.to_thread(
-            service.query,
-            data.question,
-            time_range_minutes=data.time_range_minutes
-        )
-        
-        return {
-            "success": True,
-            "answer": result.get("answer", ""),
-            "relevant_frames": result.get("frames", [])
-        }
-    except Exception as e:
-        logger.error(f"Rewind query error: {e}")
-        return {"success": False, "error": str(e)}
-
-
-@router.get("/api/rewind/status")
-async def get_rewind_status():
-    """Get rewind service status."""
-    try:
-        from services.rewind_service import get_rewind_service
-        service = get_rewind_service()
-        return service.get_status()
-    except Exception as e:
-        logger.error(f"Rewind status error: {e}")
-        return {"active": False, "buffer_size": 0, "error": str(e)}
-
-
-@router.get("/api/rewind/timeline")
-async def get_rewind_timeline(limit: int = 20):
-    """Get timeline of recent frames."""
-    try:
-        from services.rewind_service import get_rewind_service
-        return {"timeline": get_rewind_service().get_timeline(limit)}
-    except Exception as e:
-        return {"timeline": [], "error": str(e)}
-
-
-@router.post("/api/rewind/pause")
-async def pause_rewind():
-    """Pause rewind capture."""
-    from services.rewind_service import get_rewind_service
-    return get_rewind_service().pause()
-
-
-@router.post("/api/rewind/resume")
-async def resume_rewind():
-    """Resume rewind capture."""
-    from services.rewind_service import get_rewind_service
-    return get_rewind_service().resume()
-
-
-@router.delete("/api/rewind/clear")
-async def clear_rewind():
-    """Clear rewind buffer (privacy)."""
-    from services.rewind_service import get_rewind_service
-    return get_rewind_service().clear()
 

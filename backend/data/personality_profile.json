@@ -8,52 +8,12 @@
   "tone_markers": {
     "casual": 0.5,
     "formal": 0.5,
-    "brief": 1.0
+    "brief": 0.55
   },
   "facts": [
     "Only this fact"
   ],
   "response_examples": [
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
-    {
-      "context": "Test context",
-      "response": "Test response"
-    },
     {
       "context": "Test context",
       "response": "Test response"
