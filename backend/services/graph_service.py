@@ -7,34 +7,29 @@ import networkx as nx
 import json
 import os
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from config import Config
 
 logger = logging.getLogger(__name__)
 
 class GraphService:
-    """
-    Manages the Knowledge Graph.
-    Nodes = Entities (Person, Concept, Project, etc.)
-    Edges = Relationships (worked_on, unrelated_to, part_of, etc.)
-    """
+    """Service for managing the entity-relationship knowledge graph."""
     
     def __init__(self):
-        self.graph_path = os.path.join(Config.DATA_DIR, "memory_graph.json")
-        self.graph = nx.MultiDiGraph()
-        self._load_graph()
+        self.graph_path = os.path.join(Config.DATA_DIR, "knowledge_graph.json")
+        self.graph = self._load_graph()
         
-    def _load_graph(self):
-        """Load graph from JSON file."""
+    def _load_graph(self) -> nx.MultiDiGraph:
+        """Load graph from JSON file or create new."""
         if os.path.exists(self.graph_path):
             try:
                 with open(self.graph_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    self.graph = nx.node_link_graph(data)
-                logger.info(f"Loaded knowledge graph with {self.graph.number_of_nodes()} nodes")
+                    return nx.node_link_graph(data, directed=True, multigraph=True)
             except Exception as e:
                 logger.error(f"Failed to load graph: {e}")
-                self.graph = nx.MultiDiGraph()
+        
+        return nx.MultiDiGraph()
     
     def _save_graph(self):
         """Save graph to JSON file."""
@@ -46,7 +41,7 @@ class GraphService:
         except Exception as e:
             logger.error(f"Failed to save graph: {e}")
 
-    def add_relation(self, source: str, target: str, relation: str, metadata: Dict = None):
+    def add_relation(self, source: str, target: str, relation: str, metadata: Optional[Dict] = None):
         """Add a relationship (edge) between two entities."""
         if not source or not target:
             return
